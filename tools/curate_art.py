@@ -1,0 +1,263 @@
+#!/usr/bin/env python3
+"""Curate the AUSSIE8 master art library into the game's runtime folder.
+
+Only approved, reviewed assets are copied, under the game's own identifiers.
+Reference sheets, previews, source atlases and rejected art stay out of the build.
+
+    python3 tools/curate_art.py /path/to/extracted/AUSSIE8_MASTER_ART_LIBRARY
+
+Writes:
+    play/art/...                  runtime images (PNG for sprites, lossless WebP for scenes)
+    play/art/manifest.js          window.A8_ART: every runtime asset the game may load
+    docs/ART_INTEGRATION_REPORT.md mapped / held back / missing, with reasons
+"""
+import json, sys, hashlib
+from pathlib import Path
+from PIL import Image
+import numpy as np
+
+LIB = Path(sys.argv[1]) if len(sys.argv) > 1 else Path('/home/claude/artlib/master')
+P = LIB / 'packs'
+REPO = Path(__file__).resolve().parent.parent
+OUT = REPO / 'play' / 'art'
+OUTLINE = (20, 10, 8, 255)
+
+mapped, held, missing = [], [], []
+
+
+def src(rel):
+    p = P / rel
+    if not p.exists():
+        raise SystemExit(f'missing source file: {rel}')
+    return p
+
+
+def rgba(rel):
+    return Image.open(src(rel)).convert('RGBA')
+
+
+def save(im, rel, lossless_webp=False):
+    path = OUT / rel
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if lossless_webp:
+        im.convert('RGB').save(path, 'WEBP', lossless=True, method=6)
+    else:
+        im.save(path, optimize=True)
+    return rel
+
+
+def strip(frames):
+    w, h = frames[0].size
+    s = Image.new('RGBA', (w * len(frames), h), (0, 0, 0, 0))
+    for i, f in enumerate(frames):
+        assert f.size == (w, h), f.size
+        s.alpha_composite(f, (i * w, 0))
+    return s
+
+
+def add_outline(im):
+    a = np.array(im)
+    m = a[..., 3] > 0
+    edge = np.zeros_like(m)
+    edge[1:, :] |= m[:-1, :]; edge[:-1, :] |= m[1:, :]; edge[:, 1:] |= m[:, :-1]; edge[:, :-1] |= m[:, 1:]
+    edge &= ~m
+    a[edge] = OUTLINE
+    return Image.fromarray(a)
+
+
+def clean_frame_edges(im, border=6):
+    """Expression crops were cut from a framed sheet and carry pale frame lines up to 6 px in from
+    each edge. Crop a clean border off (96 -> 84 px); the game scales portraits with nearest-neighbour."""
+    w, h = im.size
+    return im.crop((border, border, w - border, h - border))
+
+
+def ok(game_id, rel_out, source, note=''):
+    mapped.append((game_id, rel_out, source, note))
+
+
+# ---------------------------------------------------------------- trucks + damage (Batch03)
+TRUCK_ROWS = ['you', 'duke', 'sal', 'shazza', 'tash', 'thommo', 'yowie', 'earl']
+FILE_ID = {'you': 'player'}
+sheet = Image.new('RGBA', (24 * 4, 14 * len(TRUCK_ROWS)), (0, 0, 0, 0))
+for r, tid in enumerate(TRUCK_ROWS):
+    fid = FILE_ID.get(tid, tid)
+    for s in range(4):
+        name = f'truck_{fid}.png' if s == 0 else f'truck_{fid}_damage_{s}.png'
+        im = rgba(f'BATCH03_TRUCK_DAMAGE/track/{name}')
+        assert im.size == (24, 14)
+        sheet.alpha_composite(im, (s * 24, r * 14))
+    ok(f'truck:{tid} (clean + damage 1-3)', 'art/trucks.png', f'BATCH03_TRUCK_DAMAGE/track/truck_{fid}*.png')
+save(sheet, 'trucks.png')
+
+# ---------------------------------------------------------------- wreck debris (Batch08A)
+DEBRIS = ['tyre', 'wheel', 'bumper', 'body_panel', 'hood_fragment', 'glass', 'metal_shard', 'exhaust', 'spring', 'headlight', 'plastic', 'oil']
+deb = Image.new('RGBA', (16 * 3, 16 * len(DEBRIS)), (0, 0, 0, 0))
+for r, t in enumerate(DEBRIS):
+    for v in range(3):
+        deb.alpha_composite(rgba(f'BATCH08A_WRECK_DEBRIS/{t}_{v + 1:02d}.png'), (v * 16, r * 16))
+save(deb, 'debris.png')
+ok('debris: 12 parts x 3 variants', 'art/debris.png', 'BATCH08A_WRECK_DEBRIS/*.png')
+
+# ---------------------------------------------------------------- racing + surface effects (Batch04, Batch05)
+FX = {
+    'crash': ('BATCH04_RACING_EFFECTS/crash/crash_{:02d}.png', 8),
+    'smoke': ('BATCH04_RACING_EFFECTS/smoke/smoke_{:02d}.png', 8),
+    'nitro': ('BATCH04_RACING_EFFECTS/nitro/nitro_{:02d}.png', 6),
+    'shunt': ('BATCH04_RACING_EFFECTS/shunt/shunt_{:02d}.png', 6),
+    'drift_dust': ('BATCH05_SURFACE_EFFECTS/drift_dust/drift_dust_{:02d}.png', 10),
+    'mud_spray': ('BATCH05_SURFACE_EFFECTS/mud_spray/mud_spray_{:02d}.png', 8),
+    'water_splash': ('BATCH05_SURFACE_EFFECTS/water_splash/water_splash_{:02d}.png', 8),
+    'mud_splatter': ('BATCH05_SURFACE_EFFECTS/mud_splatter/mud_splatter_{:02d}.png', 6),
+}
+fx_manifest = {}
+for k, (pat, n) in FX.items():
+    save(strip([rgba(pat.format(i)) for i in range(n)]), f'fx/{k}.png')
+    fx_manifest[k] = {'src': f'fx/{k}.png', 'w': 32, 'h': 32, 'n': n}
+    ok(f'fx:{k} ({n} frames)', f'art/fx/{k}.png', pat.format(0).rsplit('_', 1)[0] + '_*.png')
+
+# ---------------------------------------------------------------- wildlife (Batch06): side view, outlined for contrast
+WILD = {
+    'roo_run': ('BATCH06_WILDLIFE/kangaroo_run_{:02d}.png', range(1, 9)),
+    'roo_leap': ('BATCH06_WILDLIFE/kangaroo_leap_{:02d}.png', range(1, 5)),
+    'emu_run': ('BATCH06_WILDLIFE/emu_run_{:02d}.png', range(1, 9)),
+    'emu_evade': ('BATCH06_WILDLIFE/emu_evade_{:02d}.png', range(1, 5)),
+}
+wild_manifest = {}
+for k, (pat, rng) in WILD.items():
+    frames = [add_outline(rgba(pat.format(i))) for i in rng]
+    save(strip(frames), f'wildlife/{k}.png')
+    wild_manifest[k] = {'src': f'wildlife/{k}.png', 'w': 32, 'h': 32, 'n': len(frames)}
+    ok(f'wildlife:{k}', f'art/wildlife/{k}.png', pat.format(1).rsplit('_', 1)[0] + '_*.png', '1px outline added for contrast on red dirt')
+held.append(('BATCH06_WILDLIFE/kangaroo_hit_*.png, emu_hit_*.png', 'Show the animal knocked flat with dizzy stars. Canon: animals always bounce away unhurt, so collisions use the leap/evade frames.'))
+held.append(('BATCH06_WILDLIFE/dust_*, dirt_kickup_*, icon_*, sign_*', 'Not needed at runtime (dust comes from Batch05); some frames are clipped (dust_trail_06, emu_evade_01).'))
+
+# ---------------------------------------------------------------- pickups + Stewards (Batch07)
+pick = {}
+for k in ['nitro', 'cash', 'spanner', 'pie']:
+    rel = save(rgba(f'BATCH07_PICKUPS_STEWARDS/track/pickup_{k}.png'), f'pickups/{k}.png')
+    pick[k] = rel
+    ok(f'pickup:{k}', 'art/' + rel, f'BATCH07_PICKUPS_STEWARDS/track/pickup_{k}.png')
+for c in ['red', 'blue']:
+    pick['stewards_' + c] = save(rgba(f'BATCH07_PICKUPS_STEWARDS/track/stewards_ute_{c}.png'), f'pickups/stewards_ute_{c}.png')
+ok('stewards_ute (lights red / blue)', 'art/pickups/stewards_ute_*.png', 'BATCH07_PICKUPS_STEWARDS/track/stewards_ute_{red,blue}.png')
+
+# ---------------------------------------------------------------- track backdrops + props (Batch08)
+TRACK_BACKDROPS = ['red_centre', 'kakadu', 'flinders', 'coober_pedy', 'nullarbor', 'kimberley', 'daintree', 'showdown']
+bd = []
+for k in TRACK_BACKDROPS:
+    bd.append(save(rgba(f'BATCH08_TRACK_SCENERY/backdrops/{k}.png'), f'backdrops/{k}.png'))
+    ok(f'backdrop:{k}', f'art/backdrops/{k}.png', f'BATCH08_TRACK_SCENERY/backdrops/{k}.png')
+PROPS = ['tyre_stack', 'hay_bale', 'rock_small', 'rock_cluster', 'saltbush', 'desert_scrub', 'paperbark_canopy', 'boab_canopy', 'rainforest_canopy', 'mine_mound', 'barrel', 'traffic_cone', 'gold_ring_marker', 'mud_puddle', 'water_puddle']
+props = {}
+for k in PROPS:
+    props[k] = save(rgba(f'BATCH08_TRACK_SCENERY/props/{k}.png'), f'props/{k}.png')
+ok('props: ' + ', '.join(PROPS), 'art/props/*.png', 'BATCH08_TRACK_SCENERY/props/*.png')
+
+# ---------------------------------------------------------------- portraits
+portraits = {}
+for rid in ['duke', 'sal', 'shazza', 'tash', 'thommo', 'earl']:
+    portraits[rid] = {'neutral': save(rgba(f'BATCH08B_RIVALS/portraits/{rid}.png'), f'portraits/{rid}_neutral.png')}
+    ok(f'portrait:{rid}_neutral', f'art/portraits/{rid}_neutral.png', f'BATCH08B_RIVALS/portraits/{rid}.png', 'only one mood supplied')
+ROSA = {'neutral': 1, 'smug': 2, 'happy': 3, 'neutral2': 4, 'serious': 5, 'surprised': 6}
+portraits['rosa'] = {m: save(clean_frame_edges(rgba(f'PROFILE_ASSETS/expressions/rosa_{i:02d}.png')), f'portraits/rosa_{m}.png') for m, i in ROSA.items()}
+ok('portrait:rosa (neutral, smug, happy, neutral2, serious, surprised)', 'art/portraits/rosa_*.png', 'PROFILE_ASSETS/expressions/rosa_01..06.png', '6 px framed edge cropped (84x84); no true angry/sad: "serious" is used as a labelled stand-in')
+YOWIE = {'neutral': 1, 'calm': 2, 'smug': 3, 'angry': 4, 'surprised': 5, 'sad': 6}
+portraits['yowie'] = {m: save(clean_frame_edges(rgba(f'PROFILE_ASSETS/expressions/yowie_{i:02d}.png')), f'portraits/yowie_{m}.png') for m, i in YOWIE.items()}
+ok('portrait:yowie (neutral, calm, smug, angry, surprised, sad)', 'art/portraits/yowie_*.png', 'PROFILE_ASSETS/expressions/yowie_01..06.png', 'head-only crops, 6 px framed edge cropped (84x84): no bandolier')
+for rid in ['marge', 'rick']:
+    portraits[rid] = {'neutral': save(rgba(f'PROFILE_ASSETS/profiles/{rid}.png'), f'portraits/{rid}_neutral.png')}
+    ok(f'portrait:{rid}_neutral', f'art/portraits/{rid}_neutral.png', f'PROFILE_ASSETS/profiles/{rid}.png')
+held.append(('PROFILE_ASSETS june / dex profiles + expressions, radio_june_calm', 'Off-model: June is canon a 22-year-old Black woman with braids in a green and gold polo (the art shows an older woman in a straw hat and glasses). Dex is canon a slick 45-year-old in a gold suit (the art shows a bearded old man with a cigar). The Batch09 event cards draw both closer to canon.'))
+held.append(('PROFILE_ASSETS duke/marge/rick/hank_1994 expressions', 'Bad crops: heads cut off and name-plate fragments ("UKE", "RGE", "ICK", "NK") baked in.'))
+held.append(('PROFILE_ASSETS/profiles/duke.png vs BATCH08B_RIVALS/portraits/duke.png', 'Two different Dukes (blond with sunglasses vs brown hair and cap). The rival-kit Duke is used everywhere for consistency with the other rivals and his radio head. Owner to pick one.'))
+held.append(('BATCH08B_RIVALS grid/*.png, radio/*.png cards', 'Names are baked into the image and the Yowie\'s is truncated ("THE"). The game draws names itself over the clean portraits.'))
+
+# ---------------------------------------------------------------- radio heads (Batch13)
+radio = {}
+for rid in ['duke', 'sal', 'shazza', 'tash', 'thommo', 'earl', 'yowie']:
+    radio[rid] = save(rgba(f'BATCH13_BROADCAST_HUD/ui/radio_{rid}_calm.png'), f'radio/{rid}.png')
+ok('radio heads (calm): duke, sal, shazza, tash, thommo, earl, yowie', 'art/radio/*.png', 'BATCH13_BROADCAST_HUD/ui/radio_*_calm.png', 'calm only; angry is shown with a red frame, labelled placeholder')
+
+# ---------------------------------------------------------------- RPG locations (Batch10 + two CORE scenes)
+scenes = {}
+for k in ['paddock', 'roadhouse', 'rosas_garage', 'dexs_gambling_shed', 'outback_casino', 'gold_coast_nightlife', 'bush_camp', 'channel8_race_control', 'flying_doctor_strip', 'hanks_homestead', 'scrap_yard', 'mining_town']:
+    scenes[k] = save(rgba(f'BATCH10_RPG_LOCATIONS/backgrounds/{k}.png'), f'scenes/{k}.webp', True)
+ok('scenes: 12 RPG locations', 'art/scenes/*.webp', 'BATCH10_RPG_LOCATIONS/backgrounds/*.png')
+for k in ['pit_garage_night', 'ch8_interview']:
+    scenes[k] = save(rgba(f'CORE_ASSETS/assets/scenes/{k}.png'), f'scenes/{k}.webp', True)
+    ok(f'scene:{k}', f'art/scenes/{k}.webp', f'CORE_ASSETS/assets/scenes/{k}.png', 'softer than Batch10; replace when a sharper version exists')
+held.append(('CORE_ASSETS/assets/scenes/roadhouse.png, paddock_dusk.png', 'Superseded by the sharper Batch10 roadhouse and paddock.'))
+
+# ---------------------------------------------------------------- story event cards (Batch09)
+EVENT_ART = {
+    'stranded': 'hank_stranded', 'june_intro': 'june_spotter', 'dex_intro': 'dex_betting_line',
+    'garage_night': 'unlocked_shed', 'benefit': 'flying_doctor_benefit', 'casino': 'gold_coast_casino',
+    'rosa_shop': 'rosa_repossession', 'dex_debt': 'dex_debt', 'june_doubt': 'june_shaky_hands',
+    'reporter': 'live_channel_8', 'hank_revenge': 'loose_wheel_nuts', 'quiet': 'open_road', 'yowie_pies': 'yowie_pies',
+}
+events = {}
+for eid, f in EVENT_ART.items():
+    events[eid] = save(rgba(f'BATCH09_STORY_EVENTS/events/{f}.png'), f'events/{f}.webp', True)
+    ok(f'event:{eid}', f'art/events/{f}.webp', f'BATCH09_STORY_EVENTS/events/{f}.png')
+held.append(('BATCH09_STORY_EVENTS duke_envelope.png, duke_roadhouse.png', 'Show an old man in a cowboy hat, not Duke (young, blond champion). Those events use the paddock/roadhouse backgrounds with Duke\'s portrait instead.'))
+held.append(('BATCH09_STORY_EVENTS hank_racing_cam.png', 'Shows a video camera; in the story Hank\'s "racing cam" is an engine camshaft. The event uses Hank\'s homestead instead.'))
+
+# ---------------------------------------------------------------- endings (Batch11)
+endings = {}
+for k in ['peoples_champion', 'champion_no_halo', 'crowned_in_red_dirt', 'hero_of_the_outback', 'just_another_driver', 'run_out_of_town']:
+    endings[k] = save(rgba(f'BATCH11_SIX_ENDINGS/endings/{k}.png'), f'endings/{k}.webp', True)
+ok('endings: all six', 'art/endings/*.webp', 'BATCH11_SIX_ENDINGS/endings/*.png', 'note: the art shows the player as one specific man; the bible keeps the player unstated')
+
+# ---------------------------------------------------------------- Yowie reveal + flashback (Batch12): held back
+held.append(('BATCH12_FLASHBACK_YOWIE/endings/yowie_reveal.png', 'Drawn as a real person (Ivan "Ironman" Stewart). Not used: the game does not depict or name real people. The finale reveal is built and gated, using fictional canon until the owner picks an original character and art.'))
+held.append(('BATCH12_FLASHBACK_YOWIE/scenes/flashback_1994.png', 'The 1994 crash shows a white #8 truck; canon is Hank\'s \'71 ute vs Rick Vance, and #8 is the rookie number. Audit also asked for brand-marking review. Not used yet (the 1994 storyline is still planned).'))
+held.append(('01_CHARACTER_MASTERS, 02_YOWIE_EXPRESSIONS, 03_YOWIE_PADDOCK full-body Yowie art', 'Reference only. The diagonal bandolier with silver boxes plus the all-brown fur body reads as Chewbacca, a protected character. Runtime uses head-only Yowie art; any full-body Yowie needs the bandolier replaced (a plain racing harness would do).'))
+
+# ---------------------------------------------------------------- broadcast HUD (Batch13) + rival UI (Batch08B)
+hud = {}
+for k in ['live_bug', 'ticker', 'lower_third', 'starting_grid', 'final_lap', 'race_complete', 'position', 'lap_timer',
+          'damage_bar', 'damage_bar_empty', 'penalty_bar', 'penalty_bar_empty', 'nitro_bar', 'nitro_bar_empty',
+          'flag_black', 'flag_yellow', 'flag_chequered', 'radio_bubble', 'btn_shunt', 'btn_shunt_pressed']:
+    hud[k] = save(rgba(f'BATCH13_BROADCAST_HUD/ui/{k}.png'), f'hud/{k}.png')
+ok('broadcast HUD: ' + ', '.join(hud), 'art/hud/*.png', 'BATCH13_BROADCAST_HUD/ui/*.png')
+badges = {k: save(rgba(f'BATCH08B_RIVALS/status/{k}.png'), f'ui/status_{k}.png') for k in ['mate', 'friendly', 'neutral', 'hostile', 'nemesis']}
+choices = {k: save(rgba(f'BATCH08B_RIVALS/choices/{k}.png'), f'ui/choice_{k}.png') for k in ['taunt', 'encourage', 'ignore']}
+ok('rival status badges + grid choice buttons', 'art/ui/*.png', 'BATCH08B_RIVALS/status/*.png, choices/*.png')
+held.append(('BATCH02_ASSETS (trucks, damage, effects, props, ui, tiles)', 'Early concept sheet cut-outs with opaque backgrounds (no transparency) at odd sizes; superseded by Batch03-08 and Batch13.'))
+held.append(('BATCH13 race_intro, race_results, standings rows, timing_row, driver_number, replay_bug, position', 'Available but not needed in this pass (results and standings are drawn as page UI).'))
+
+# ---------------------------------------------------------------- missing artwork
+missing += [
+    ('Portraits: Gazza, Hank (present day), Lou Tran, Chief Steward Pemberton, Barry Doolan, Biscuit, the Windbreakers', 'Game falls back to coloured initials.'),
+    ('Portraits: June and Dex on-model', 'Held back as off-model; initials used.'),
+    ('Mood sets for the six rivals, Marge and Rick (angry, happy, sad, smug, surprised)', 'Neutral is shown; reactions that should be angry are marked with a red frame as a labelled placeholder.'),
+    ('Angry radio heads for all rivals', 'Calm head plus red frame placeholder.'),
+    ('Rosa angry and sad', '"serious" used as a labelled stand-in.'),
+    ('Paddock standing sprites and idle animations', 'Only reference poses supplied; paddock uses portraits.'),
+    ('Duke event cards (envelope, roadhouse) and Hank racing-cam card', 'Held back as off-model; backgrounds plus portraits used.'),
+    ('Finale reveal art for an original (fictional) character', 'Reveal uses the Yowie portrait and Hank\'s fictional canon until replaced.'),
+]
+
+# ---------------------------------------------------------------- manifest.js
+manifest = {
+    'base': 'art/',
+    'trucks': {'src': 'trucks.png', 'w': 24, 'h': 14, 'stages': 4, 'rows': {t: i for i, t in enumerate(TRUCK_ROWS)}},
+    'debris': {'src': 'debris.png', 'size': 16, 'variants': 3, 'types': DEBRIS},
+    'fx': fx_manifest, 'wildlife': wild_manifest, 'pickups': pick,
+    'backdrops': bd, 'props': props, 'portraits': portraits, 'radio': radio,
+    'scenes': scenes, 'events': events, 'endings': endings, 'hud': hud, 'badges': badges, 'choices': choices,
+    'placeholders': {'rosa.angry': 'serious', 'rosa.sad': 'serious', 'radio.angry': 'calm + red frame', 'portrait.mood': 'neutral + frame tint'},
+}
+(OUT / 'manifest.js').write_text('// Generated by tools/curate_art.py. Do not edit by hand.\nwindow.A8_ART=' + json.dumps(manifest, separators=(',', ':')) + ';\n')
+
+# ---------------------------------------------------------------- report
+lines = ['# Art integration report', '', f'Generated by `tools/curate_art.py` from the AUSSIE8 master art library. {len(mapped)} runtime mappings, {len(held)} items held back, {len(missing)} gaps.', '',
+         '## Mapped into the game', '', '| Game asset | Runtime file | Source | Note |', '| --- | --- | --- | --- |']
+lines += [f'| {a} | `{b}` | `{c}` | {d} |' for a, b, c, d in mapped]
+lines += ['', '## Held back (not used at runtime)', '', '| Source | Why |', '| --- | --- |'] + [f'| `{a}` | {b} |' for a, b in held]
+lines += ['', '## Missing artwork', '', '| Needed | What the game does meanwhile |', '| --- | --- |'] + [f'| {a} | {b} |' for a, b in missing]
+(REPO / 'docs').mkdir(exist_ok=True)
+(REPO / 'docs' / 'ART_INTEGRATION_REPORT.md').write_text('\n'.join(lines) + '\n')
+size = sum(f.stat().st_size for f in OUT.rglob('*') if f.is_file())
+print(f'runtime files: {sum(1 for f in OUT.rglob("*") if f.is_file())}, {size/1e6:.2f} MB; mapped {len(mapped)}, held {len(held)}, missing {len(missing)}')
