@@ -447,6 +447,7 @@ async function loadArt(){
   for(const k in ARTM.props)J.push(loadImg('pr_'+k,ARTM.props[k]));
   for(const k in ARTM.radio)J.push(loadImg('rd_'+k,ARTM.radio[k]));
   for(const k in ARTM.hud)J.push(loadImg('hud_'+k,ARTM.hud[k]));
+  if(ARTM.announce)for(const k of ['final_lap','race_finished'])if(ARTM.announce[k])J.push(loadImg('an_'+k,ARTM.announce[k].src));
   if(ARTM.stadium){const S=ARTM.stadium;J.push(loadImg('st_crowd',S.crowd.src));S.bg.forEach((q,i)=>J.push(loadImg('st_bg'+i,q)));S.stands.forEach((q,i)=>J.push(loadImg('st_stand'+i,q)));for(const k in S.props)J.push(loadImg('st_'+k,S.props[k]))}
   await Promise.all(J);
   const tm=ARTM.trucks,ti=ART.img.trucks;
@@ -963,14 +964,20 @@ const BANNER_TEXT_BAKED=false;
 function banner(k,txt,y,sc=3){const im=ART.img['hud_'+k];if(!im)return;const w=im.width*sc,x=Math.round((W-w)/2);hudImg(k,x,y,sc);
   if(BANNER_TEXT_BAKED)return;ctx.fillStyle='#19152d';ctx.fillRect(x+2*sc,y+3*sc,w-4*sc,19*sc);
   ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='24px "Press Start 2P",monospace';ctx.fillStyle='#fbf8f2';ctx.fillText(txt,W/2,y+12.5*sc)}
+/* Batch17 announcements: native pixel scale (2x on screen), two frames alternating, centred over the racing
+   surface (between the grandstand strip and the bottom HUD). Returns false when the art is missing. */
+function announce(k,t){const im=ART.img['an_'+k],m=ARTM&&ARTM.announce;if(!im||!m)return false;
+  if(t>(m.dur[k]||2))return true;const a=m[k],fr=Math.floor(t*1000/m.ms)%a.n,top=80,bot=TOUCH?H-40:598,y=Math.round((top+bot)/2-a.h);
+  ctx.imageSmoothingEnabled=false;ctx.drawImage(im,fr*a.w,0,a.w,a.h,Math.round((W-a.w*2)/2),y,a.w*2,a.h*2);return true}
 function drawBroadcast(){
   const T=R.T,pl=R.pl,lap=clamp(Math.floor(pl.dist/T.L)+1,1,LAPS),y0=TOUCH?72:8;
   hudImg('live_bug',W-140,y0,2);
   if(R.phase==='count'||R.phase==='grid'){const bw=640,bx0=(W-bw)/2,by=H-(TOUCH?120:158);
     if(hudImg('lower_third',bx0,by,2)){ctx.textAlign='left';ctx.textBaseline='middle';ctx.font='18px "Press Start 2P",monospace';ctx.fillStyle='#fbf8f2';ctx.fillText(T.name.toUpperCase(),bx0+28,by+30);ctx.font='11px "Press Start 2P",monospace';ctx.fillStyle='#ffcd00';ctx.fillText('ROUND '+(G.race+1)+' OF '+SEASON+' · '+(T.fig?'FIGURE 8':'LOOP'),bx0+28,by+58)}
     hudImg('starting_grid',(W-400)/2,by-56,2)}
-  if(R.phase==='go'&&lap===LAPS&&!pl.fin){if(!R.finalShown){R.finalShown=R.time;barry('final')}if(R.time-R.finalShown<2.6)banner('final_lap','FINAL LAP',H/2-150)}
-  if(pl.fin&&R.done<3.5)banner('race_complete','RACE COMPLETE',H/2-150);
+  if(R.phase==='go'&&lap===LAPS&&!pl.fin&&!R.finalShown){R.finalShown=R.time;barry('final')}
+  if(pl.fin){if(!announce('race_finished',R.done)&&R.done<3.5)banner('race_complete','RACE COMPLETE',H/2-150)}   // finish supersedes final lap
+  else if(R.finalShown&&!announce('final_lap',R.time-R.finalShown)&&R.time-R.finalShown<2.6)banner('final_lap','FINAL LAP',H/2-150);
   /* meters: damage and the Stewards' patience */
   const mx=W-206,my=y0+48;
   if(ART.img.hud_damage_bar_empty){ctx.font='9px "Press Start 2P",monospace';ctx.textAlign='right';ctx.textBaseline='middle';

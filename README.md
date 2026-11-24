@@ -92,7 +92,7 @@ The game is `play/index.html`: plain JavaScript inside one block, drawn on a can
 Runtime art lives in `play/art/` and is listed in `play/art/manifest.js`. Both are generated, so don't edit them by hand. To rebuild them from the master art library (kept outside the repo, about 60 MB):
 
 ```
-python3 tools/curate_art.py /path/to/AUSSIE8_MASTER_ART_LIBRARY /path/to/AUSSIE8_BATCH15_STADIUM_CROWD
+python3 tools/curate_art.py /path/to/AUSSIE8_MASTER_ART_LIBRARY /path/to/AUSSIE8_BATCH15_STADIUM_CROWD /path/to/AUSSIE8_BATCH17_RACE_ANNOUNCEMENTS
 ```
 
 The stadium strip above each track is built from Batch 15 (crowd, bleachers, camera, banner) and the owner's Uluru painting in `tools/art_src/outback_stadium_sunset.png`, which is the backdrop on every course. The crowd is drawn live each frame and only reacts to the race; it never changes race rules. Reaction triggers, reach and cooldowns are in `CRE` in `play/index.html`.

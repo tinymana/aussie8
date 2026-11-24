@@ -23,12 +23,12 @@
           "text": "On phones the score bar at the top is see-through, so you can see the crowd behind it."
         },
         {
-          "tag": "fixed",
-          "text": "The pause screen text sat off to the left. It's centred now."
+          "tag": "new",
+          "text": "New animated FINAL LAP! and RACE FINISHED! announcements, centred over the track."
         },
         {
           "tag": "fixed",
-          "text": "The FINAL LAP and RACE COMPLETE banners now have their words centred."
+          "text": "The pause screen text sat off to the left. It's centred now."
         }
       ]
     },
