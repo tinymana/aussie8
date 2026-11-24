@@ -2,6 +2,33 @@
   "_howto": "Newest first. Add an entry at the top each time you push an update; the website and the in-game 'What's new' both read this file. tag: new | improved | fixed.",
   "notes": [
     {
+      "version": "0.7",
+      "date": "2026-11-24",
+      "title": "A crowd that reacts, and Uluru on every course",
+      "items": [
+        {
+          "tag": "new",
+          "text": "Packed grandstands above every track, with a live crowd in the style of NHL '94. Fans jump up for overtakes and lead changes, lean on the rail for close racing and wrecks, flash cameras at big jumps and kangaroos, boo when the Stewards come out, wave flags on the final lap and go wild when you win."
+        },
+        {
+          "tag": "new",
+          "text": "Reactions ripple out from where the action happened, and the section of crowd nearest the trucks gets on its feet. Every so often a Mexican wave rolls across the stands."
+        },
+        {
+          "tag": "improved",
+          "text": "Uluru at sunset is now the backdrop on all eight courses, framed between the two grandstands, with a Channel 8 camera and banner trackside."
+        },
+        {
+          "tag": "improved",
+          "text": "On phones the score bar at the top is see-through, so you can see the crowd behind it."
+        },
+        {
+          "tag": "fixed",
+          "text": "The pause screen text sat off to the left. It's centred now."
+        }
+      ]
+    },
+    {
       "version": "0.6",
       "date": "2026-11-24",
       "title": "The art library and Road Rash rivals",

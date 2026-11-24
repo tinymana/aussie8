@@ -4,7 +4,7 @@
 Only approved, reviewed assets are copied, under the game's own identifiers.
 Reference sheets, previews, source atlases and rejected art stay out of the build.
 
-    python3 tools/curate_art.py /path/to/extracted/AUSSIE8_MASTER_ART_LIBRARY
+    python3 tools/curate_art.py /path/to/AUSSIE8_MASTER_ART_LIBRARY [/path/to/AUSSIE8_BATCH15_STADIUM_CROWD]
 
 Writes:
     play/art/...                  runtime images (PNG for sprites, lossless WebP for scenes)
@@ -17,6 +17,7 @@ from PIL import Image
 import numpy as np
 
 LIB = Path(sys.argv[1]) if len(sys.argv) > 1 else Path('/home/claude/artlib/master')
+B15 = Path(sys.argv[2]) if len(sys.argv) > 2 else Path('/home/claude/artlib/batch15')  # AUSSIE8_BATCH15_STADIUM_CROWD
 P = LIB / 'packs'
 REPO = Path(__file__).resolve().parent.parent
 OUT = REPO / 'play' / 'art'
@@ -229,6 +230,37 @@ ok('rival status badges + grid choice buttons', 'art/ui/*.png', 'BATCH08B_RIVALS
 held.append(('BATCH02_ASSETS (trucks, damage, effects, props, ui, tiles)', 'Early concept sheet cut-outs with opaque backgrounds (no transparency) at odd sizes; superseded by Batch03-08 and Batch13.'))
 held.append(('BATCH13 race_intro, race_results, standings rows, timing_row, driver_number, replay_bug, position', 'Available but not needed in this pass (results and standings are drawn as page UI).'))
 
+# ---------------------------------------------------------------- stadium + crowd (Batch15)
+stadium = None
+if B15.exists():
+    ACTS = ['idle', 'sit', 'cheer', 'wave', 'flag', 'rail', 'photo', 'boo', 'victory']
+    atlas = Image.new('RGBA', (10 * 4 * len(ACTS), 12 * 6), (0, 0, 0, 0))
+    for f in range(6):
+        for ai, a in enumerate(ACTS):
+            for k in range(4):
+                im = Image.open(B15 / 'crowd' / f'fan_{f+1:02d}_{a}_{k:02d}.png').convert('RGBA')
+                atlas.paste(im, ((ai * 4 + k) * 10, f * 12))
+    stadium = {'crowd': {'src': save(atlas, 'stadium/crowd.png'), 'w': 10, 'h': 12, 'frames': 4, 'fans': 6, 'acts': ACTS, 'ms': 150}}
+    ok('stadium crowd: 6 fans x 9 actions x 4 frames', 'art/stadium/crowd.png', 'BATCH15 crowd/fan_*_*.png', 'packed into one atlas (rows = fans, columns = action x frame)')
+    # track order: Red Centre, Kakadu, Flinders, Coober Pedy, Nullarbor, Kimberley, Daintree, Outback Showdown
+    # Owner's call (Nov 2026): Uluru is the backdrop on every course. Source: tools/art_src/outback_stadium_sunset.png
+    # (2172x724). The band above its painted crowd (rows 110-291: lamps, clouds, the rock) is scaled to the 480x40 strip.
+    uluru = Image.open(REPO / 'tools' / 'art_src' / 'outback_stadium_sunset.png').convert('RGB')
+    k = uluru.width / 480
+    band = uluru.crop((0, 110, uluru.width, 110 + round(40 * k))).resize((480, 40), Image.LANCZOS)
+    stadium['bg'] = [save(band.convert('RGBA'), 'stadium/bg_uluru.png')]
+    stadium['lamps'] = [[40, 0, 36, 6], [418, 0, 36, 6]]   # floodlight heads in the painted sky, flashed on a win
+    ok('stadium sky: Uluru at sunset on all tracks (480x40)', 'art/stadium/bg_uluru.png', 'tools/art_src/outback_stadium_sunset.png (owner supplied)', 'crowd painted in the source is cropped off; the live sprite crowd stands in front')
+    held.append(('BATCH15 backgrounds/*.png (8 regional skies)', 'Superseded: the owner chose the Uluru backdrop for every course.'))
+    stadium['stands'] = [save(Image.open(B15 / 'stands' / f'bleacher_{i}.png').convert('RGBA'), f'stadium/bleacher_{i}.png') for i in range(1, 5)]
+    stadium['props'] = {k: save(Image.open(B15 / 'props' / f'{k}.png').convert('RGBA'), f'stadium/{k}.png') for k in ['camera', 'banner_blank']}
+    ok('stadium bleachers (4) + props (TV camera, banner)', 'art/stadium/*.png', 'BATCH15 stands/*.png, props/camera.png, banner_blank.png')
+    held.append(('BATCH15 props floodlight, flagpole, speaker', 'The Uluru painting already has floodlights and flags; the speaker reads as a grey lollipop among the fans.'))
+    held.append(('BATCH15 preview.png', 'Sample composite, not a runtime sprite (as the batch notes say).'))
+    missing.append(('Crowd "surprise" reaction frames', 'Wrecks use the rail lean then a cheer as the cartoon "ooh"; a dedicated surprise action would read better.'))
+else:
+    held.append(('BATCH15 stadium crowd', f'Not found at {B15}; the game keeps the Batch08 backdrop strip.'))
+
 # ---------------------------------------------------------------- missing artwork
 missing += [
     ('Portraits: Gazza, Hank (present day), Lou Tran, Chief Steward Pemberton, Barry Doolan, Biscuit, the Windbreakers', 'Game falls back to coloured initials.'),
@@ -248,7 +280,7 @@ manifest = {
     'debris': {'src': 'debris.png', 'size': 16, 'variants': 3, 'types': DEBRIS},
     'fx': fx_manifest, 'wildlife': wild_manifest, 'pickups': pick,
     'backdrops': bd, 'props': props, 'portraits': portraits, 'radio': radio,
-    'scenes': scenes, 'events': events, 'endings': endings, 'hud': hud, 'badges': badges, 'choices': choices,
+    'stadium': stadium, 'scenes': scenes, 'events': events, 'endings': endings, 'hud': hud, 'badges': badges, 'choices': choices,
     'placeholders': {'rosa.angry': 'serious', 'rosa.sad': 'serious', 'radio.angry': 'calm + red frame', 'portrait.mood': 'neutral + frame tint'},
 }
 (OUT / 'manifest.js').write_text('// Generated by tools/curate_art.py. Do not edit by hand.\nwindow.A8_ART=' + json.dumps(manifest, separators=(',', ':')) + ';\n')
