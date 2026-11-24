@@ -102,6 +102,26 @@ td.n{text-align:right;white-space:nowrap}
 #pad.m-stick .nos{width:120px;height:120px;right:20px;bottom:22px;font-size:12px}
 #pad.m-stick .brk{right:156px;bottom:34px}
 @media (orientation:landscape){#pad.m-stick .brk{right:40px;bottom:160px}}
+.shn{width:92px;height:92px;border-radius:14px;right:150px;bottom:146px;border-color:#ffcd00;color:#ffe39a;font-size:10px;background:rgba(20,10,34,.55) center/contain no-repeat;image-rendering:pixelated}
+.shn.art{background-image:url(art/hud/btn_shunt.png);color:transparent;border:0;box-shadow:none}
+.shn.art.on{background-image:url(art/hud/btn_shunt_pressed.png);transform:none}
+#pad.m-stick .shn{right:150px;bottom:150px}
+@media (orientation:landscape){#pad.m-stick .shn{right:30px;bottom:262px;width:84px;height:84px}}
+#pad.lefty .act .shn.art{transform:scaleX(-1)}
+#gridpop{position:absolute;left:50%;bottom:9%;transform:translateX(-50%);z-index:7;width:min(94%,600px);background:rgba(20,10,34,.94);border:3px solid var(--gold);border-radius:12px;padding:12px 14px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 14px;align-items:center;box-shadow:0 0 0 3px #000}
+#gridpop[hidden]{display:none}
+#gridpop .gpi{width:84px;height:84px;border-radius:8px;border:2px solid var(--line);image-rendering:pixelated;object-fit:cover;background:#1c1030;display:grid;place-items:center;font:800 32px Rubik,sans-serif}
+#gridpop b{font:12px/1.4 'Press Start 2P',monospace;color:var(--gold)}
+#gridpop small{display:block;color:var(--mute);font-size:13px}
+#gridpop p{margin:6px 0 0;font-size:16px}
+#gridpop .gpc{grid-column:1/-1;display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+#gridpop .gpc button{min-height:48px;min-width:120px;padding:0;border:0;background:none;cursor:pointer;font:600 15px Rubik,sans-serif;color:#fff}
+#gridpop .gpc button img{width:168px;height:42px;image-rendering:pixelated;display:block}
+#gridpop .gpc button.txt{background:var(--line);border-radius:8px;padding:10px 18px}
+.rivals .rv{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:10px;align-items:center;padding:5px 0}
+.rivals .rv img.pt,.rivals .rv .pt{width:44px;height:44px;border-radius:8px;image-rendering:pixelated;object-fit:cover;background:var(--c,#3e2a55);display:grid;place-items:center;font-weight:800;color:#1a0f1f}
+.rivals .rv img.bd{width:96px;height:24px;image-rendering:pixelated}
+.rivals .rv small{display:block;color:var(--mute);font-size:13px}
 #pad.lefty .act{transform:scaleX(-1)}#pad.lefty .act .pb,#pad.lefty .act .hint{transform:scaleX(-1)}#pad.lefty .act .pb.on{transform:scaleX(-1) scale(.9)}
 #pad.lefty .lr.l{left:auto;right:134px}#pad.lefty .lr.r{left:auto;right:18px}
 #stick{position:absolute;width:136px;height:136px;margin:-68px 0 0 -68px;border-radius:50%;border:3px solid rgba(255,255,255,.4);background:rgba(20,10,34,.35);display:none;pointer-events:none}
@@ -136,16 +156,17 @@ td.n{text-align:right;white-space:nowrap}
     <div class="screen title" id="screen">
       <canvas id="cv" width="960" height="640" aria-label="Race track"></canvas>
       <div class="ov" id="ov"></div>
+      <div id="gridpop" hidden></div>
       <div id="pad" hidden>
         <div class="zone steer"><span class="hint" id="hintL"></span><div id="stick"><i></i></div><span class="pb lr l" data-k="l">&#9664;</span><span class="pb lr r" data-k="r">&#9654;</span></div>
-        <div class="zone act"><span class="hint" id="hintR"></span><span class="pb brk" data-k="b">BRAKE</span><span class="pb nos" data-k="n">NITRO</span><span class="pb gas" data-k="g">GAS</span></div>
+        <div class="zone act"><span class="hint" id="hintR"></span><span class="pb brk" data-k="b">BRAKE</span><span class="pb nos" data-k="n">NITRO</span><span class="pb shn" data-k="s">SHUNT</span><span class="pb gas" data-k="g">GAS</span></div>
         <button id="pauseBtn" aria-label="Pause">II</button>
         <p class="rot">Turn your phone sideways for a bigger track</p>
       </div>
     </div>
     </div>
   </div>
-  <div class="foot"><span>Keyboard: arrows or WASD to drive · Space for nitro · P to pause · Phones: drag to steer</span><span>Progress saves in this browser</span></div>
+  <div class="foot"><span>Keyboard: arrows or WASD to drive · Space for nitro · E or X to shunt · P to pause · Phones: drag to steer</span><span>Progress saves in this browser</span></div>
 </div>
 <script src="art/manifest.js"></script>
 <script>
@@ -379,9 +400,27 @@ const CREW={
 };
 const TRUCKS={you:['#f2efe6','#a9a49a','#ffffff','#00843d','#ffcd00'],duke:['#d8232f','#8a1218','#ff6a6a','#fbf8f2'],earl:['#2f6fe0','#1a3d8a','#7aa8ff','#fbf8f2'],sal:['#3a3640','#141216','#6b6575','#ff7a1a'],
   shazza:['#ff7a1a','#a84a0a','#ffb070','#1d1b22'],thommo:['#7c3fd0','#45207a','#b48af0','#ffcd00'],tash:['#18b7b0','#0b6a66','#7fe6e0','#fbf8f2'],yowie:['#6b4428','#3d2614','#9a6a46','#c9a27a']};
+let STEW=[];{const r=rotSprites(truckArt('#f2f2ee','#a0a0a0','#ffffff','#1d4a72','#e63946'));STEW=[r,r]}
 const SPRITES={};for(const k in TRUCKS){const c=TRUCKS[k],r=rotSprites(truckArt(c[0],c[1],c[2],c[3],c[4]));SPRITES[k]=[r,r,r,r]}
 const RIVALS=[{id:'duke',name:'Duke Vance',tag:'DUKE',skill:14},{id:'shazza',name:'Shazza Kelly',tag:'SHAZ',skill:10},{id:'tash',name:'Tash Kowalski',tag:'TASH',skill:8},{id:'sal',name:'Sal Vitale',tag:'SAL',skill:7},{id:'thommo',name:'Thommo Price',tag:'THOM',skill:4},{id:'yowie',name:'The Yowie',tag:'YOWIE',skill:17},{id:'earl',name:'Big Earl',tag:'EARL',skill:0}];
 const NAMES={you:'You'},COLORS={you:'#f2efe6'};RIVALS.forEach(r=>{NAMES[r.id]=r.name;COLORS[r.id]=TRUCKS[r.id][0]});
+/* Road Rash layer: each rival's opinion of the player (-100..100) times their temperament
+   sets how they race you. Duke's opinion is the existing G.rival meter. */
+const NUM={duke:1,sal:2,shazza:3,tash:4,thommo:5,yowie:6,earl:7};   // truck numbers (canon: last season's finishing order)
+const TEMPER={shazza:1.4,duke:1.2,thommo:1.0,yowie:0.8,sal:0.8,tash:0.6,earl:0.5};
+const LEVELS=['nemesis','hostile','neutral','friendly','mate'];
+const opinion=id=>id==='duke'?G.rival:((G.opinion||{})[id]||0);
+function aggr(id,rage){const o=opinion(id),sc=o<0?o*(TEMPER[id]||1):o;let l=sc>=60?4:sc>=20?3:sc>-20?2:sc>-60?1:0;if(rage)l=Math.max(0,l-1);return l}
+const band=l=>l<=1?'low':l===2?'mid':'high';
+const LINES={
+ duke:{low:['Out of my way, rookie.','You\'re done, Eight.','Back of the field, rookie.'],mid:['Nice try. Not today.','Keep up, rookie.','Try to keep up.'],high:['Clean racing, mate.','Room enough for two.','Good luck out there.'],passed_low:['You\'ll pay for that.','Enjoy it. Won\'t last.'],passed_mid:['Lucky line.','Huh. Not bad.'],passed_high:['Go get \'em.'],hit:['You\'ll regret that!','That\'s war, Eight!','Dad\'s lawyers will love this.']},
+ shazza:{low:['Move it or wear it!','T-bone me and you\'re dead.','I see you, Rookie.'],mid:['Fair race. For now.','Watch your line.'],high:['Have a go, mate!','Push, push!'],passed_low:['Oi! I\'m coming back!'],passed_mid:['Cheeky.'],passed_high:['Good move!'],hit:['Oi! That\'s coming back!','Real brave, Rookie.','You\'ve had it now.']},
+ tash:{low:['Your line is costing you.','Predictable.'],mid:['Noted.','Interesting choice.'],high:['Draft me. Trust the data.'],passed_low:['Statistically unlikely.'],passed_mid:['Noted.'],passed_high:['Efficient.'],hit:['Unnecessary.','Logged. Remembered.','Data says: revenge.']},
+ sal:{low:['Kid, you\'re in my way.','Patience isn\'t your strength.'],mid:['Easy, kid.','Plenty of laps left.'],high:['Follow me through, kid.','The crossover rewards patience.'],passed_low:['Enjoy the view, kid.'],passed_mid:['Good, kid.'],passed_high:['Bravo!'],hit:['Ma che fai?','No espresso for you.','That\'s not racing, kid.']},
+ thommo:{low:['Chat\'s against you, bro.','Crash me! Content!'],mid:['Wave to the stream!','Say hi to chat!'],high:['Bro, we\'re cinema!','Squad goals, mate!'],passed_low:['Clip it! Wait, no!'],passed_mid:['That was sick.'],passed_high:['Highlight reel, bro!'],hit:['Bro! My sponsors!','Chat saw that!','Unfollowing you, bro.']},
+ yowie:{low:['*low growl*','*honks twice*','*points at you*'],mid:['*slow nod*','*growls*'],high:['*thumbs up*','*holds up a pie*'],passed_low:['*angry honk*'],passed_mid:['*growl*'],passed_high:['*nods*'],hit:['*ROAR*','*shakes fist*','*furious honking*']},
+ earl:{low:['Not past me, son.','Some things you earn.'],mid:['Steady on.','Easy does it.'],high:['Go on, I\'ll cover you.','Back in my day...'],passed_low:['Hmph.'],passed_mid:['Strewth.'],passed_high:['Good on ya.'],hit:['Strewth! Watch it!','I remember that.','Disgraceful.']}
+};
 const PTS=[10,8,6,5,4,3,2,1],PRIZE=[1200,900,700,550,420,320,220,140],XPP=[220,180,150,125,105,90,75,60];
 /* ---------- ART LIBRARY (play/art, generated by tools/curate_art.py) ---------- */
 function loadImg(key,path){return new Promise(res=>{if(!path)return res(null);const im=new Image();im.onload=()=>{ART.img[key]=im;res(im)};im.onerror=()=>{console.warn('Aussie 8: art missing',path);res(null)};im.src=artUrl(path)})}
@@ -399,6 +438,7 @@ async function loadArt(){
   await Promise.all(J);
   const tm=ARTM.trucks,ti=ART.img.trucks;
   if(ti)for(const id in tm.rows){const st=[];for(let s=0;s<tm.stages;s++)st.push(rotSprites(imgCanvas(ti,s*tm.w,tm.rows[id]*tm.h,tm.w,tm.h),true));SPRITES[id]=st}
+  if(ART.img.pk_stewards_red&&ART.img.pk_stewards_blue)STEW=[rotSprites(imgCanvas(ART.img.pk_stewards_red,0,0,24,14),true),rotSprites(imgCanvas(ART.img.pk_stewards_blue,0,0,24,14),true)];
   ART.ready=true;
   TRACKS.forEach(t=>{t.img=renderTrack(t)});
   if(mode!=='race')drawBg(bgKind);
@@ -413,13 +453,14 @@ const dstage=c=>c.dmgVis<DMG.stages[0]?0:c.dmgVis<DMG.stages[1]?1:c.dmgVis<DMG.s
 
 function fresh(){return{money:400,karma:0,race:0,xp:0,lvl:1,sp:1,stats:{hand:0,grit:0,nerve:0,charm:0},upg:{eng:0,tire:0,shk:0},nitro:3,
   crew:{rosa:{in:true,aff:10,met:true,left:null},dex:{in:false,aff:0,met:false,left:null},june:{in:false,aff:0,met:false,left:null}},
-  rival:0,flags:{},used:[],points:Object.fromEntries(['you',...RIVALS.map(r=>r.id)].map(k=>[k,0])),stage:'event'}}
+  rival:0,opinion:{shazza:0,tash:0,sal:0,thommo:0,yowie:0,earl:0},flags:{},used:[],points:Object.fromEntries(['you',...RIVALS.map(r=>r.id)].map(k=>[k,0])),stage:'event'}}
 let G=null,R=null,mode='title',curEv=null,lastRes=null;
 const save=()=>{try{localStorage.setItem(SAVE,JSON.stringify(G))}catch(e){}};
 function migrate(g){
   if(!g||!g.points)return g;
   if(g.points.gazza!=null&&g.points.yowie==null)g.points.yowie=g.points.gazza;   // the Yowie took Gazza's #6 seat
   delete g.points.gazza;RIVALS.forEach(r=>{if(g.points[r.id]==null)g.points[r.id]=0});
+  g.opinion=g.opinion||{};RIVALS.forEach(r=>{if(r.id!=='duke'&&g.opinion[r.id]==null)g.opinion[r.id]=0});
   return g;
 }
 const load=()=>{try{const s=localStorage.getItem(SAVE);return s?migrate(JSON.parse(s)):null}catch(e){return null}};
@@ -524,6 +565,7 @@ function apply(fx){
   if(fx.money){G.money=Math.max(0,G.money+fx.money);out.push([(fx.money>0?'+$':'−$')+Math.abs(fx.money),fx.money>0])}
   if(fx.karma){G.karma=clamp(G.karma+fx.karma,-100,100);out.push(['Karma '+(fx.karma>0?'+':'−')+Math.abs(fx.karma),fx.karma>0])}
   if(fx.rival){G.rival=clamp(G.rival+fx.rival,-100,100);out.push(['Duke '+(fx.rival>0?'+':'−')+Math.abs(fx.rival),fx.rival>0])}
+  if(fx.opinion)for(const id in fx.opinion){const d=fx.opinion[id];if(id==='duke')G.rival=clamp(G.rival+d,-100,100);else{G.opinion=G.opinion||{};G.opinion[id]=clamp((G.opinion[id]||0)+d,-100,100)}out.push([(NAMES[id]||id).replace('The ','').split(' ')[0]+' '+(d>0?'+':'−')+Math.abs(d),d>0])}
   if(fx.xp){gainXP(fx.xp);out.push(['+'+fx.xp+' XP',true])}
   if(fx.nitro){G.nitro=clamp(G.nitro+fx.nitro,0,9);out.push([(fx.nitro>0?'+':'−')+Math.abs(fx.nitro)+' nitro',fx.nitro>0])}
   if(fx.upg)for(const k in fx.upg){G.upg[k]=Math.min(5,G.upg[k]+fx.upg[k]);out.push(['Engine +1',true])}
@@ -546,7 +588,7 @@ function playerStats(){const u=G.upg,s=G.stats;return{max:206+u.eng*15,acc:245+u
 function mkCar(d,g,T,isP){
   const p=pointAt(T,g[0]);
   const c={id:d.id,name:d.name,tag:d.tag||'YOU',isP,crashT:0,spin:0,x:p.x-p.ty*g[1],y:p.y+p.tx*g[1],a:Math.atan2(p.ty,p.tx),vx:0,vy:0,z:0,vz:0,hint:null,s:0,dist:0,
-    lane:g[1],laneTo:g[1],laneT:rnd(1,3),dmg:0,dmgVis:0,nitro:1,bonus:0,nitroT:0,fin:false,ft:0,bumpCD:0,stuck:0,rev:0,rb:1,steerV:0};
+    lane:g[1],laneTo:g[1],laneT:rnd(1,3),dmg:0,dmgVis:0,rage:0,shuntCD:rnd(1,3),alongT:0,nitro:1,bonus:0,nitroT:0,fin:false,ft:0,bumpCD:0,stuck:0,rev:0,rb:1,steerV:0};
   const nr=nearest(T,c.x,c.y,null);c.hint=nr.i;c.s=nr.s;c.dist=nr.s>T.L/2?nr.s-T.L:nr.s;
   if(isP){c.st=playerStats();c.bonus=juneBonus();c.nitro=G.nitro+c.bonus}
   else{c.st={max:194+G.race*5.5+d.skill,acc:250+G.race*6,turn:3.4,grip:7.5};if(d.id==='duke'&&G.flags.dukeSab!==undefined)c.st.max*=0.86}
@@ -556,23 +598,85 @@ function startRace(){
   const T=trackFor(G.race),grid=[];for(let row=0;row<4;row++)for(const o of [-20,20])grid.push([T.L-40-row*56-(o>0?18:0),o]);
   const cars=[],slots=[0,1,2,3,4,6,7];RIVALS.forEach((r,i)=>cars.push(mkCar(r,grid[slots[i]],T,false)));
   const pl=mkCar({id:'you',name:'You',tag:'YOU'},grid[5],T,true);cars.push(pl);
-  R={T,cars,pl,phase:'count',t:3.2,time:0,order:[],pick:[],pickT:3,parts:[],floats:[],shake:0,cash:0,picks:0,done:0,paused:false,roo:null,rooT:rnd(6,10),crashes:0,fx:[],debris:[]};
+  R={T,cars,pl,phase:'count',t:3.2,time:0,order:[],pick:[],pickT:3,parts:[],floats:[],shake:0,cash:0,picks:0,done:0,paused:false,roo:null,rooT:rnd(6,10),crashes:0,fx:[],debris:[],opD:{},pen:0,ute:null,flags:0,fine:0,radio:null,radioCD:{},radioG:3,rankT:0,ranks:{}};
   R.layer=mkc(AW,AH);R.layer.getContext('2d').drawImage(T.img,0,0);
   setMode('race');if(document.activeElement)document.activeElement.blur();if(TOUCH)pad.classList.add('hints');
+  gridMoment();
 }
 function rank(){return R.cars.slice().sort((a,b)=>a.fin&&b.fin?R.order.indexOf(a)-R.order.indexOf(b):a.fin?-1:b.fin?1:b.dist-a.dist)}
+/* ---------- RIVAL INTERACTIONS ---------- */
+let shuntPress=false;
+const opDelta=(id,d)=>{if(!id||id==='you')return;R.opD[id]=(R.opD[id]||0)+d};
+const portraitUrl=(id,mood)=>{const P=ARTM&&ARTM.portraits[id];return P?artUrl(P[mood]||P.neutral):''};
+function gridMoment(){
+  const gp=document.getElementById('gridpop');
+  const pool=RIVALS.filter(r=>r.id!=='duke'||G.race>0),r=pool[(G.race*3+Math.floor(Math.random()*pool.length))%pool.length],l=aggr(r.id),L=LINES[r.id],ln=pick(L[band(l)]);
+  R.phase='grid';R.gridR=r.id;
+  const img=portraitUrl(r.id,'neutral'),btn=(k,t)=>ARTM&&ARTM.choices[k]?`<button data-grid="${k}" aria-label="${t}"><img src="${artUrl(ARTM.choices[k])}" alt="${t}"></button>`:`<button class="txt" data-grid="${k}">${t}</button>`;
+  gp.innerHTML=`${img?`<img class="gpi" src="${img}" alt="">`:`<span class="gpi" style="background:${COLORS[r.id]}">${r.name.replace('The ','')[0]}</span>`}<div><b>#${NUM[r.id]} ${r.name.toUpperCase()}</b><small>Beside you on the grid · ${LEVELS[l]}</small><p>“${ln}”</p></div>
+    <div class="gpc">${btn('taunt','Taunt')}${btn('encourage','Encourage')}${btn('ignore','Ignore')}</div>`;
+  gp.hidden=false;
+}
+function gridChoice(k){
+  if(!R||R.phase!=='grid')return;const id=R.gridR,c=R.cars.find(x=>x.id===id);
+  if(k==='taunt'){opDelta(id,-8);if(c)c.rage=999;R.gridNote=`You taunted ${NAMES[id]} on the grid.`}
+  else if(k==='encourage'){opDelta(id,6);R.gridNote=`You wished ${NAMES[id]} luck on the grid.`}
+  document.getElementById('gridpop').hidden=true;R.phase='count';
+}
+document.getElementById('gridpop').addEventListener('click',e=>{const b=e.target.closest('[data-grid]');if(b)gridChoice(b.dataset.grid)});
+function radio(id,kind){
+  if(!R||!LINES[id]||R.radioG>0||(R.radioCD[id]||0)>R.time)return;
+  const l=aggr(id,R.cars.find(c=>c.id===id)?.rage>0),b=band(l),pool=kind==='hit'?LINES[id].hit:kind==='passed'?LINES[id]['passed_'+b]:LINES[id][b];
+  R.radio={id,txt:pick(pool),t:2.6,angry:kind==='hit'||l<=1};R.radioCD[id]=R.time+8;R.radioG=2.5;
+}
+function doShunt(c){
+  if(c.shuntCD>0)return;c.shuntCD=c.isP?1.0:2.2;
+  let best=null,bd=1e9;for(const o of R.cars){if(o===c||Math.abs(o.z-c.z)>10)continue;const d=Math.hypot(o.x-c.x,o.y-c.y);if(d<46&&d<bd){bd=d;best=o}}
+  if(!best){c.shuntCD=0.4;return}
+  const fx=Math.cos(c.a),fy=Math.sin(c.a),rx=-fy,ry=fx,side=Math.sign((best.x-c.x)*rx+(best.y-c.y)*ry)||1,grit=c.isP?G.stats.grit:1,push=120+grit*12;
+  best.vx+=rx*side*push;best.vy+=ry*side*push;c.vx-=rx*side*35;c.vy-=ry*side*35;hurt(best,6);hurt(c,2);
+  const mx=(c.x+best.x)/2,my=(c.y+best.y)/2;if(!fxSpawn('shunt',mx,my,{fps:16,top:true}))burst(mx,my,'#ffe39a',8,140,2);
+  if(c.isP||best.isP){R.shake=Math.max(R.shake,4);buzz(25)}
+  if(c.isP){opDelta(best.id,-8);best.rage=6;R.pen+=14*(G.karma<-35?1.4:1);radio(best.id,'hit')}
+  else if(best.isP){radio(c.id,'low')}
+}
+function updRivals(dt){
+  R.radioG=Math.max(0,R.radioG-dt);if(R.radio){R.radio.t-=dt;if(R.radio.t<=0)R.radio=null}
+  const pl=R.pl;
+  for(const c of R.cars){if(c.isP)continue;c.shuntCD-=dt;if(c.rage>0&&c.rage<999)c.rage=Math.max(0,c.rage-dt);
+    const d=Math.hypot(c.x-pl.x,c.y-pl.y);if(d<52&&!pl.fin){c.alongT+=dt;if(c.alongT>0.8){radio(c.id,'along');c.alongT=-6}}else if(c.alongT>0)c.alongT=0}
+  R.rankT-=dt;if(R.rankT<=0&&R.phase==='go'){R.rankT=0.5;const rk=rank(),pi=rk.indexOf(pl);
+    for(const c of R.cars){if(c.isP)continue;const ci=rk.indexOf(c),was=R.ranks[c.id];if(was!=null&&was<R.ranks.you&&ci>pi)radio(c.id,'passed');R.ranks[c.id]=ci}R.ranks.you=pi}
+  /* the Stewards: dirty driving fills a meter; when full their ute hunts you down for a black flag */
+  R.pen=Math.max(0,R.pen-dt*1.5);
+  if(!R.ute&&R.pen>=100&&!pl.fin){const p=pointAt(R.T,pl.s-140);R.ute={s:pl.s-140,x:p.x,y:p.y,a:Math.atan2(p.ty,p.tx),t:0,off:0};R.floats.push({x:pl.x,y:pl.y-30,txt:'STEWARDS!',col:'#e63946',life:1.4});buzz([30,40,30])}
+  if(R.ute){const u=R.ute;u.t+=dt;const gap=(pl.dist%R.T.L+R.T.L)%R.T.L-((u.s%R.T.L)+R.T.L)%R.T.L,g2=((gap%R.T.L)+R.T.L)%R.T.L;
+    if(g2>60&&g2<R.T.L/2){u.s+=Math.max(260,Math.hypot(pl.vx,pl.vy)*1.25)*dt;const p=pointAt(R.T,u.s),pn=nearest(R.T,pl.x,pl.y,pl.hint);u.off+=(pn.d-u.off)*Math.min(1,dt*3);
+      const nx=p.x-p.ty*u.off,ny=p.y+p.tx*u.off;u.a=Math.atan2(ny-u.y,nx-u.x);u.x=nx;u.y=ny}
+    else{const dx=pl.x-u.x,dy=pl.y-u.y,d=Math.hypot(dx,dy)||1,sp=Math.max(220,Math.hypot(pl.vx,pl.vy)*1.2);u.a=Math.atan2(dy,dx);u.x+=dx/d*sp*dt;u.y+=dy/d*sp*dt;u.s=nearest(R.T,u.x,u.y,null).s}
+    if(Math.hypot(pl.x-u.x,pl.y-u.y)<32){R.flags++;R.fine+=100;pl.flagT=2.5;R.pen=0;R.ute=null;R.floats.push({x:pl.x,y:pl.y-30,txt:'BLACK FLAG!',col:'#fbf8f2',life:1.6});R.shake=Math.max(R.shake,4);buzz(80)}
+    else if(u.t>12){R.ute=null;R.pen=60}}
+  if(pl.flagT>0)pl.flagT-=dt;
+}
 function playerInput(){
   const l=K.ArrowLeft||K.KeyA||TS.l,r=K.ArrowRight||K.KeyD||TS.r,n=nitroPress;nitroPress=false;
   let gas=!!(K.ArrowUp||K.KeyW||TS.g),brake=!!(K.ArrowDown||K.KeyS||TS.b),steer=(r?1:0)-(l?1:0);
   if(TOUCH&&CTL.mode==='stick'){gas=gas||!brake;const st=TS.stick;if(st&&st.on&&st.mag>14)steer=clamp(wrapA(Math.atan2(st.dy,st.dx)-R.pl.a)*2.4,-1,1)}
-  return{gas,brake,steer,nitro:n};
+  const sh=shuntPress;shuntPress=false;
+  return{gas,brake,steer,nitro:n,shunt:sh};
 }
 function aiInput(c,dt){
   const T=R.T,fx=Math.cos(c.a),fy=Math.sin(c.a),fs=c.vx*fx+c.vy*fy;
   if(!c.isP){const gap=R.pl.dist-c.dist;c.rb=1+clamp(gap/1500,-0.07,0.1)}
   c.laneT-=dt;if(c.laneT<=0){c.laneT=rnd(1.5,3.5);c.laneTo=rnd(-18,18)}c.lane+=(c.laneTo-c.lane)*Math.min(1,dt);
   let off=c.lane;
-  if(c.id==='duke'&&G.rival<=-30&&!R.pl.fin&&Math.abs(R.pl.dist-c.dist)<90){off=clamp(nearest(T,R.pl.x,R.pl.y,R.pl.hint).d,-30,30)}
+  let wantShunt=false;
+  if(!c.isP&&!R.pl.fin){const lv=aggr(c.id,c.rage>0),gapd=R.pl.dist-c.dist,pd=Math.hypot(R.pl.x-c.x,R.pl.y-c.y);
+    const pOff=()=>clamp(nearest(T,R.pl.x,R.pl.y,R.pl.hint).d,-30,30);
+    if(lv===0&&Math.abs(gapd)<140)off=pOff();                                    // nemesis: hunts you
+    else if(lv===1&&gapd<0&&gapd>-90)off=pOff();                                  // hostile: blocks your line
+    else if(lv>=3&&pd<70){const po=pOff();off=po>0?-22:22}                         // friendly/mate: leaves room
+    if(pd<46&&c.shuntCD<=0&&(lv<=1||c.rage>0))wantShunt=Math.random()<(lv===0?0.9:0.5)}
   const p=pointAt(T,c.s+55+Math.max(0,fs)*0.35),tx=p.x-p.ty*off,ty=p.y+p.tx*off;
   const diff=wrapA(Math.atan2(ty-c.y,tx-c.x)-c.a);
   const q1=pointAt(T,c.s+40),q2=pointAt(T,c.s+160+Math.max(0,fs)*0.3);
@@ -583,7 +687,7 @@ function aiInput(c,dt){
   if(gas&&fs<25)c.stuck+=dt;else c.stuck=Math.max(0,c.stuck-dt);
   if(c.stuck>1.2){c.rev=0.8;c.stuck=0}
   if(c.rev>0){c.rev-=dt;return{gas:false,brake:true,steer:-steer,nitro:false}}
-  return{gas,brake,steer,nitro:!c.isP&&c.nitro>0&&curv<0.15&&Math.random()<dt*0.35};
+  return{gas,brake,steer,nitro:!c.isP&&c.nitro>0&&curv<0.15&&Math.random()<dt*0.35,shunt:wantShunt};
 }
 const NOINP={gas:false,brake:false,steer:0,nitro:false};
 function physics(c,inp,dt){
@@ -602,13 +706,14 @@ function physics(c,inp,dt){
       else{surf=Math.min(surf,0.7+grit*0.03);gm=Math.min(gm,0.45);if(Math.random()<dt*9&&!fxSpawn('water_splash',c.x,c.y,{fps:16}))burst(c.x,c.y,'#9fd3ee',3,90,2)}}}
   }
   if(c.nitroT>0)c.nitroT-=dt;
+  if(inp.shunt)doShunt(c);if(c.isP&&c.shuntCD>0)c.shuntCD-=dt;
   if(inp.nitro&&c.nitro>0&&c.nitroT<=0){c.nitro--;if(c.bonus>0)c.bonus--;c.nitroT=c.isP?1.2+G.stats.nerve*0.15:1.2;if(c.isP){R.shake=Math.max(R.shake,2);buzz(15)}}
   const boost=c.nitroT>0;
   c.steerV+=(inp.steer-c.steerV)*Math.min(1,dt*12);
   let fx=Math.cos(c.a),fy=Math.sin(c.a),fs=c.vx*fx+c.vy*fy;
   if(!air){let tf=clamp(fs/80,-1,1);if(inp.gas&&Math.abs(fs)<28)tf=Math.max(tf,0.4);c.a+=c.steerV*st.turn*tf*dt}
   fx=Math.cos(c.a);fy=Math.sin(c.a);fs=c.vx*fx+c.vy*fy;let ls=-c.vx*fy+c.vy*fx;
-  const maxS=st.max*surf*(boost?1.35:1)*c.rb,acc=st.acc*(boost?1.9:1);
+  const maxS=st.max*surf*(boost?1.35:1)*c.rb*(c.flagT>0?0.35:1),acc=st.acc*(boost?1.9:1);
   if(!air){
     if(inp.gas){if(fs<maxS)fs+=acc*dt}
     else if(inp.brake){if(fs>5)fs-=420*dt;else fs=Math.max(-90,fs-170*dt)}
@@ -658,6 +763,7 @@ function puff(x,y,col,n){for(let i=0;i<n;i++)R.parts.push({x,y,vx:rnd(-30,30),vy
 function burst(x,y,col,n,v,r){for(let i=0;i<n;i++){const a=rnd(0,7);R.parts.push({x,y,vx:Math.cos(a)*rnd(v/3,v),vy:Math.sin(a)*rnd(v/3,v),life:rnd(0.2,0.45),max:0.45,r,col})}}
 function crash(a,b,J){
   const k=clamp(J/160,0.6,1.3),mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+  {const pl=a.isP?a:b.isP?b:null,o=pl===a?b:a;if(pl){opDelta(o.id,-12);R.pen+=10*(G.karma<-35?1.4:1);o.rage=8;radio(o.id,'hit')}}
   for(const c of [a,b]){hurt(c,DMG.crash*k);c.crashT=0.7+0.4*k;c.spin=(Math.random()<.5?-1:1)*rnd(6,10)*k;c.vx*=0.7;c.vy*=0.7;if(c.isP)R.crashes++}
   burst(mx,my,'#ffe39a',14,220,2);burst(mx,my,TRUCKS[a.id][0],6,150,2);burst(mx,my,TRUCKS[b.id][0],6,150,2);burst(mx,my,'#1d1b22',6,120,2);puff(mx,my,R.T.dust,8);
   fxSpawn('crash',mx,my,{fps:18,top:true});spawnDebris(a,2+Math.floor(k*2),mx,my,true);spawnDebris(b,2+Math.floor(k*2),mx,my,false);
@@ -680,7 +786,9 @@ function updRace(dt){
   R.parts=R.parts.filter(p=>p.life>0);if(R.parts.length>600)R.parts.splice(0,R.parts.length-600);
   for(const f of R.floats){f.y-=30*dt;f.life-=dt}R.floats=R.floats.filter(f=>f.life>0);
   if(R.fx)updFx(dt);if(R.debris&&ART.img.debris)updDebris(dt);
+  if(R.phase==='grid')return;
   if(R.phase==='count'){R.t-=dt;if(R.t<=0){R.phase='go';pad.classList.remove('hints')}return}
+  updRivals(dt);
   R.time+=dt;
   R.pickT-=dt;
   if(R.pickT<=0&&R.pick.length<4){R.pickT=rnd(4,8);const p=pointAt(R.T,rnd(0,R.T.L)),o=rnd(-28,28);const q=Math.random();R.pick.push({type:q<0.5?'cash':q<0.88||!ART.img.pk_spanner?'nitro':'spanner',x:p.x-p.ty*o,y:p.y+p.tx*o,t:0})}
@@ -691,7 +799,7 @@ function updRace(dt){
     const a=cs[i],b=cs[j];if(Math.abs(a.z-b.z)>12)continue;
     const dx=b.x-a.x,dy=b.y-a.y,d2=dx*dx+dy*dy;
     if(d2<900&&d2>0.01){const d=Math.sqrt(d2),nx=dx/d,ny=dy/d,o=(30-d)/2;a.x-=nx*o;a.y-=ny*o;b.x+=nx*o;b.y+=ny*o;
-      const rv=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;if(rv<0){const J=-rv*0.85;a.vx-=nx*J;a.vy-=ny*J;b.vx+=nx*J;b.vy+=ny*J;if(J>30){hurt(a,J*DMG.bump);hurt(b,J*DMG.bump)}if((a.isP||b.isP)&&J>30)R.shake=Math.max(R.shake,2);
+      const rv=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;if(rv<0){const J=-rv*0.85;a.vx-=nx*J;a.vy-=ny*J;b.vx+=nx*J;b.vy+=ny*J;if(J>30){hurt(a,J*DMG.bump);hurt(b,J*DMG.bump);const pl=a.isP?a:b.isP?b:null,o=pl===a?b:a;if(pl&&o.crashT>0&&!(o.rammedT>R.time)){o.rammedT=R.time+2;opDelta(o.id,-20);R.pen+=25*(G.karma<-35?1.4:1);radio(o.id,'hit')}}if((a.isP||b.isP)&&J>30)R.shake=Math.max(R.shake,2);
         const hd=Math.abs(wrapA(a.a-b.a));if(J>60&&hd>0.55&&hd<2.6&&a.crashT<=0&&b.crashT<=0)crash(a,b,J)}}
   }
   for(const p of R.pick){p.t+=dt;for(const c of cs){if(p.got)break;if(c.z<10&&Math.hypot(c.x-p.x,c.y-p.y)<24){p.got=true;
@@ -724,6 +832,7 @@ function drawRace(){
     if(c.nitroT>0&&FXI('nitro')){const m=FXM('nitro'),fr=Math.floor(R.time*18)%m.n,b=A(c.x-Math.cos(c.a)*22,c.y-Math.sin(c.a)*22);bx.save();bx.translate(ri(b.x),ri(b.y-c.z*0.35));bx.rotate(c.a);bx.drawImage(FXI('nitro'),fr*32,0,32,32,-16,-16,32,32);bx.restore()}
     bx.drawImage(SPRITES[c.id][dstage(c)].spr[idx(c.a)],ri(a.x-15),ri(a.y-15-c.z*0.35))}
   if(R.fx)drawFx(true);
+  if(R.ute){const u=R.ute,a=A(u.x,u.y),S=STEW[Math.floor(R.time*6)%2];if(S){bx.drawImage(S.shadow[idx(u.a)],ri(a.x-13),ri(a.y-12));bx.drawImage(S.spr[idx(u.a)],ri(a.x-15),ri(a.y-15))}}
   bx.restore();
   ctx.imageSmoothingEnabled=false;ctx.drawImage(buf,0,0,W,H);
   ctx.save();ctx.translate(sx*2,sy*2+OY);ctx.textAlign='center';ctx.textBaseline='middle';
@@ -735,7 +844,17 @@ function drawRace(){
   const big=(txt,y,size,col)=>{ctx.font=size+'px "Press Start 2P",monospace';ctx.lineWidth=8;ctx.strokeStyle='#000';ctx.strokeText(txt,W/2,y);ctx.fillStyle='#00843d';ctx.fillText(txt,W/2+5,y+5);ctx.fillStyle=col;ctx.fillText(txt,W/2,y)};
   if(R.phase==='count'){big(T.name.toUpperCase(),H/2-80,20,'#fbf8f2');big('RACE '+(G.race+1)+' OF '+SEASON+(T.fig?' · FIGURE 8':' · LOOP'),H/2-50,12,'#ffc46b');big(String(Math.min(3,Math.ceil(R.t))),H/2+20,80,'#ffcd00')}
   else if(R.time<0.9)big('GO!',H/2,80,'#ffcd00');
+  drawRadio();
   if(R.paused){ctx.fillStyle='rgba(20,10,34,.72)';ctx.fillRect(0,0,W,H);big('PAUSED',H/2-16,36,'#fbf8f2');ctx.font='16px Rubik,sans-serif';ctx.fillStyle='#fbf8f2';ctx.fillText('Press P or tap to resume',W/2,H/2+34)}
+}
+function drawRadio(){
+  if(!R.radio)return;const r=R.radio,x=14,y=TOUCH?76:16,head=ART.img['rd_'+r.id],al=Math.min(1,r.t*3);
+  ctx.save();ctx.globalAlpha=al;ctx.font='12px "Press Start 2P",monospace';const tw=Math.max(ctx.measureText(r.txt).width,ctx.measureText(NAMES[r.id]).width)+28;
+  ctx.fillStyle='rgba(12,6,20,.9)';ctx.fillRect(x,y,76+tw,72);ctx.fillStyle=r.angry?'#e63946':'#ffcd00';ctx.fillRect(x,y,76+tw,3);
+  ctx.fillStyle=r.angry?'#e63946':'#ffcd00';ctx.fillRect(x+4,y+4,68,68);   /* red frame = "angry" placeholder: no angry radio art yet */
+  if(head){ctx.imageSmoothingEnabled=false;ctx.drawImage(head,x+6,y+6,64,64)}else{ctx.fillStyle=COLORS[r.id];ctx.fillRect(x+6,y+6,64,64)}
+  ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillStyle='#ffcd00';ctx.font='10px "Press Start 2P",monospace';ctx.fillText(NAMES[r.id].toUpperCase(),x+84,y+22);
+  ctx.fillStyle='#fbf8f2';ctx.font='12px "Press Start 2P",monospace';ctx.fillText(r.txt,x+84,y+48);ctx.restore();
 }
 function drawHUD(){
   const p=R.pl,T=R.T,rk=rank(),pos=rk.indexOf(p)+1,lap=clamp(Math.floor(p.dist/T.L)+1,1,LAPS),y0=602;
@@ -771,6 +890,10 @@ function endRace(){
     else{G.rival=clamp(G.rival+10,-100,100);notes.push('Duke tips his hat as you roll in behind him. A deal is a deal (Duke +10).')}
     delete G.flags.tookBribe}
   if(G.flags.dukeSab!==undefined){notes.push('Duke fought a loose steering rack all race. He doesn’t know why. Yet.');delete G.flags.dukeSab}
+  {const ch=[];for(const id in R.opD){const d=Math.round(R.opD[id]);if(!d)continue;if(id==='duke')G.rival=clamp(G.rival+d,-100,100);else G.opinion[id]=clamp((G.opinion[id]||0)+d,-100,100);ch.push(NAMES[id]+' '+(d>0?'+':'−')+Math.abs(d))}
+   if(R.gridNote)notes.push(R.gridNote);if(ch.length)notes.push('Rivals will remember this race: '+ch.join(', ')+'.');
+   for(const id in G.opinion)G.opinion[id]=Math.round(G.opinion[id]*0.9);
+   if(R.flags){G.money=Math.max(0,G.money-R.fine);notes.push(`The Stewards black-flagged you ${R.flags} time${R.flags>1?'s':''}: $${R.fine} fine.`)}}
   if(R.crashes)notes.push('You were in '+R.crashes+' crash'+(R.crashes>1?'es':'')+' this race.');
   if(dexMult()>1)notes.push('Dex squeezed an extra 20% out of the purse.');
   if(juneBonus())notes.push('June’s spotting earned you '+juneBonus()+' bonus nitro this race.');
@@ -809,7 +932,8 @@ const ctlUI=()=>TOUCH?`<div class="card" style="margin-top:14px"><h3>Phone contr
   <p class="muted" style="margin:0">${CTL.mode==='stick'?'Put your thumb down anywhere on the steering side and point where you want to go. Gas is automatic; hold BRAKE to slow or reverse, tap NITRO to boost.':'Big ◀ ▶ on the steering side. Rest your thumb on GAS and roll it left onto NITRO.'} Turn your phone sideways for the biggest track.</p></div>`:'';
 function applyCtl(){pad.className=(CTL.mode==='stick'?'m-stick':'m-buttons')+(CTL.lefty?' lefty':'');
   document.getElementById('hintL').textContent=CTL.mode==='stick'?'Drag to steer':'Hold to steer';
-  document.getElementById('hintR').textContent=CTL.mode==='stick'?'Gas is automatic. Tap NITRO':'Hold GAS, roll to NITRO';
+  document.getElementById('hintR').textContent=CTL.mode==='stick'?'Gas is automatic. Tap NITRO or SHUNT':'Hold GAS, roll to NITRO';
+  const sb=pad.querySelector('.shn');if(sb)sb.classList.toggle('art',!!(ARTM&&ARTM.hud.btn_shunt));
   try{localStorage.setItem('aussie8-ctl',JSON.stringify(CTL))}catch(e){}}
 function showMenu(){
   setMode('menu','title');const s=load();
@@ -821,6 +945,7 @@ function showMenu(){
     <div class="key"><b>Drive</b>Arrow keys or WASD. On phones, drag your thumb where you want to go, or switch to buttons below.</div>
     <div class="key"><b>Nitro</b>Space or Shift. Grab green N canisters on track for more.</div>
     <div class="key"><b>The crossover</b>Figure-8 tracks cross themselves. Time it badly and you get T-boned into a spin.</div>
+    <div class="key"><b>Shunt</b>E or X (or SHUNT on phones) bumps the truck beside you. Rivals remember, and so do the Stewards.</div>
     <div class="key"><b>Between races</b>Upgrade the truck, level your driver and make choices that stick.</div>
   </div><div id="whatsnew"></div>${ctlUI()}</div>`;
   renderWN();
@@ -871,6 +996,7 @@ function showGarage(){
     <h3 style="margin-top:20px">Season points</h3><table><tbody>${st.map((id,i)=>`<tr class="${id==='you'?'me':''}"><td>${i+1}</td><td><span class="dot" style="background:${COLORS[id]}"></span>${NAMES[id]}</td><td class="n">${G.points[id]}</td></tr>`).join('')}</tbody></table></div>
   </div>
   <div class="card" style="margin-top:12px"><h3>Crew</h3>${Object.keys(CREW).map(crewCard).join('')}</div>
+  <div class="card rivals" style="margin-top:12px"><h3>Rivals</h3>${RIVALS.map(r=>{const l=aggr(r.id),pu=portraitUrl(r.id,'neutral'),bd=ARTM&&ARTM.badges[LEVELS[l]];return `<div class="rv">${pu?`<img class="pt" src="${pu}" alt="">`:`<span class="pt" style="--c:${COLORS[r.id]}">${r.name.replace('The ','')[0]}</span>`}<div><b>#${NUM[r.id]} ${r.name}</b><small>Opinion of you: ${opinion(r.id)} · races you like a ${LEVELS[l]}</small></div>${bd?`<img class="bd" src="${artUrl(bd)}" alt="${LEVELS[l]}">`:`<span class="pill">${LEVELS[l]}</span>`}</div>`}).join('')}</div>
   ${ctlUI()}
   <div class="actions"><button class="btn" data-act="race">Race ${T.name}</button><button class="btn ghost" data-act="title">Title screen</button></div></div>`;
 }
@@ -931,6 +1057,8 @@ addEventListener('keydown',e=>{
   if(mode!=='race')return;
   if(GAMEKEYS.includes(e.code))e.preventDefault();
   if(!K[e.code]&&(e.code==='Space'||e.code==='ShiftLeft'||e.code==='ShiftRight'))nitroPress=true;
+  if(!K[e.code]&&(e.code==='KeyE'||e.code==='KeyX'))shuntPress=true;
+  if(R&&R.phase==='grid'){const m={Digit1:'taunt',Digit2:'encourage',Digit3:'ignore',Enter:'ignore'}[e.code];if(m){e.preventDefault();gridChoice(m)}}
   if(!K[e.code]&&(e.code==='KeyP'||e.code==='Escape'))R.paused=!R.paused;
   K[e.code]=true;
 });
@@ -951,7 +1079,7 @@ function keyAt(zone,x,y){
 function ptrUpdate(p,x,y){
   if(p.stick){const z=p.zone.getBoundingClientRect(),dx=x-p.ox,dy=y-p.oy,m=Math.hypot(dx,dy),k=m>58?58/m:1;
     TS.stick={on:true,dx,dy,mag:m};stickEl.firstChild.style.transform=`translate(${dx*k}px,${dy*k}px)`;return}
-  const k=keyAt(p.zone,x,y);if(k!==p.key){if(k==='n'){nitroPress=true}p.key=k;syncTS()}
+  const k=keyAt(p.zone,x,y);if(k!==p.key){if(k==='n'){nitroPress=true}if(k==='s'){shuntPress=true}p.key=k;syncTS()}
 }
 pad.addEventListener('pointerdown',e=>{
   if(e.target.id==='pauseBtn'){e.preventDefault();if(R)R.paused=!R.paused;return}
@@ -977,7 +1105,7 @@ function loop(now){
   requestAnimationFrame(loop);
 }
 showTitle();requestAnimationFrame(loop);
-window.__A8={get G(){return G},get R(){return R},TRACKS,TS,ART,SPRITES,DMG,spawnDebris};
+window.__A8={get G(){return G},get R(){return R},TRACKS,TS,ART,SPRITES,DMG,spawnDebris,gridChoice,doShunt,aggr};
 loadArt().catch(e=>console.warn('Aussie 8: art load failed',e));
 }
 </script>
