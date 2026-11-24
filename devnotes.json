@@ -25,6 +25,10 @@
         {
           "tag": "fixed",
           "text": "The pause screen text sat off to the left. It's centred now."
+        },
+        {
+          "tag": "fixed",
+          "text": "The FINAL LAP and RACE COMPLETE banners now have their words centred."
         }
       ]
     },
