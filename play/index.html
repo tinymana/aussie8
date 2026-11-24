@@ -25,7 +25,7 @@
 body{margin:0;background:radial-gradient(1100px 540px at 50% -10%,#4a2370,transparent 70%),var(--bg);color:var(--ink);font:16px/1.55 Rubik,system-ui,sans-serif;overflow-x:clip;min-height:100vh}
 .wrap{max-width:1180px;margin:0 auto;padding:clamp(12px,3vw,32px)}
 .marquee{display:flex;align-items:flex-end;justify-content:space-between;gap:8px 20px;flex-wrap:wrap;margin-bottom:14px}
-.logo{font-family:'Press Start 2P',monospace;font-size:clamp(20px,3.6vw,34px);color:var(--gold);text-shadow:3px 3px 0 var(--green),5px 5px 0 #000;line-height:1.25;margin:0}
+.logo{margin:0;line-height:0}.logo img{display:block;height:clamp(40px,6vw,64px);width:auto}
 .sub{color:var(--mute);font-size:14px;margin:0}
 .cab{background:linear-gradient(#2c1846,#160c24);border:3px solid #47306a;border-radius:22px;padding:clamp(6px,1.5vw,18px);box-shadow:0 30px 60px rgba(0,0,0,.55),inset 0 2px 0 rgba(255,255,255,.06)}
 .screen{position:relative;aspect-ratio:3/2;border-radius:12px;overflow:hidden;background:#000;box-shadow:0 0 0 2px #5a3a80,0 0 40px rgba(255,205,0,.08)}
@@ -160,7 +160,7 @@ td.n{text-align:right;white-space:nowrap}
 <body>
 <div class="wrap">
   <header class="marquee">
-    <h1 class="logo">AUSSIE 8</h1>
+    <h1 class="logo"><img src="wordmark.png" alt="Aussie 8" width="1000" height="307"></h1>
     <p class="sub">Outback trophy-truck racing. Every choice rides shotgun.</p>
   </header>
   <div class="cab">
