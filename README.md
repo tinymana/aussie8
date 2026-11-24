@@ -87,9 +87,19 @@ The game is `play/index.html`: plain JavaScript inside one block, drawn on a can
 - **Physics:** a simple arcade model. Speed is split into forward and sideways parts, and the sideways part is damped by grip, which is what makes the trucks slide. Cars push each other apart, and a hard enough hit at a sharp angle triggers a crash.
 - **Story:** `EVENTS` is plain data. Each choice has a tag (good, shady, neutral or gamble), its effects (money, karma, crew trust, rivalry, flags, XP, upgrades) and the text you see afterwards. Some events only appear when earlier choices have set flags, which is how payoffs and comebacks work.
 
+### Art
+
+Runtime art lives in `play/art/` and is listed in `play/art/manifest.js`. Both are generated, so don't edit them by hand. To rebuild them from the master art library (kept outside the repo, about 60 MB):
+
+```
+python3 tools/curate_art.py /path/to/AUSSIE8_MASTER_ART_LIBRARY
+```
+
+The script copies only reviewed assets under the game's own names, builds sprite strips and atlases, and writes `docs/ART_INTEGRATION_REPORT.md`, listing what was mapped, what was held back and why, and what art is still missing. If any art fails to load, the game falls back to its built-in pixel art.
+
 ### Tools
 
-`tools/figure8_tracks.py` generates the figure-8 layouts and checks them: exactly one crossing, enough space between the walls everywhere else, everything inside the arena, and no corner too tight to drive. It needs Pillow (`pip install pillow`). Running it writes `tracks.json` and a `tracks_preview.png` contact sheet.
+`tools/curate_art.py` builds the runtime art (above). `tools/figure8_tracks.py` generates the figure-8 layouts and checks them: exactly one crossing, enough space between the walls everywhere else, everything inside the arena, and no corner too tight to drive. It needs Pillow (`pip install pillow`). Running it writes `tracks.json` and a `tracks_preview.png` contact sheet.
 
 ## Credits
 
