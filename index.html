@@ -1,802 +1,104 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Aussie 8</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Rubik:wght@400;600;800&display=swap" rel="stylesheet">
-<style>
-/* VOICE: loud 32-bit arcade cabinet, outback stadium at dusk.
-   IDEA: a coin-op cabinet whose screen runs a pixel-art trophy-truck race.
-   PICTURE: the player's own title art, then the dithered red-dirt arena itself.
-   COLOUR and TYPE: dusk purple housing, green and gold, red ochre; Press Start 2P marquee + Rubik.
-   LAYOUT: marquee, 3:2 screen, touch controls under it; menus flow in one column inside the screen. */
-:root{color-scheme:dark;--bg:#140b22;--ink:#fbf3e4;--mute:#cdb9a6;--gold:#ffcd00;--green:#00843d;--lime:#5fd37e;--ochre:#d9763a;--bad:#ff5468;--good:#7fe08a;--line:#43295f}
-:root[data-theme=light],:root[data-theme=dark]{color-scheme:dark}
-*{box-sizing:border-box;min-width:0}
-body{margin:0;background:radial-gradient(1100px 540px at 50% -10%,#4a2370,transparent 70%),var(--bg);color:var(--ink);font:16px/1.55 Rubik,system-ui,sans-serif;overflow-x:clip;min-height:100vh}
-.wrap{max-width:1180px;margin:0 auto;padding:clamp(12px,3vw,32px)}
-.marquee{display:flex;align-items:flex-end;justify-content:space-between;gap:8px 20px;flex-wrap:wrap;margin-bottom:14px}
-.logo{font-family:'Press Start 2P',monospace;font-size:clamp(20px,3.6vw,34px);color:var(--gold);text-shadow:3px 3px 0 var(--green),5px 5px 0 #000;line-height:1.25;margin:0}
-.sub{color:var(--mute);font-size:14px;margin:0}
-.cab{background:linear-gradient(#2c1846,#160c24);border:3px solid #47306a;border-radius:22px;padding:clamp(6px,1.5vw,18px);box-shadow:0 30px 60px rgba(0,0,0,.55),inset 0 2px 0 rgba(255,255,255,.06)}
-.screen{position:relative;aspect-ratio:3/2;border-radius:12px;overflow:hidden;background:#000;box-shadow:0 0 0 2px #5a3a80,0 0 40px rgba(255,205,0,.08)}
-.screen canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;image-rendering:pixelated}
-.screen.menu{aspect-ratio:auto;min-height:min(80vh,640px)}
-.screen.menu canvas{object-fit:cover;filter:blur(4px) brightness(.22) saturate(1.1)}
-.ov{position:relative;z-index:2;padding:clamp(14px,3vw,36px);display:flex;justify-content:center}
-.ov[hidden]{display:none}
-.screen.title .ov{position:absolute;inset:0;padding:0}
-.start{position:absolute;inset:0;width:100%;height:100%;background:transparent;border:0;cursor:pointer;padding:0}
-.press{position:absolute;left:26.6%;top:88.4%;width:45.8%;height:7.2%;border:3px solid var(--gold);border-radius:6px;box-shadow:0 0 18px rgba(255,205,0,.8),inset 0 0 12px rgba(255,205,0,.5);animation:blink 1.1s steps(2,jump-none) infinite}
-@keyframes blink{50%{opacity:0}}
-.panel{width:100%;max-width:900px}
-h2{font:800 clamp(26px,3.6vw,40px)/1.05 Rubik,sans-serif;margin:0 0 12px;text-wrap:balance}
-h3{font:800 18px/1.2 Rubik,sans-serif;margin:0 0 10px}
-.kicker{color:var(--lime);font-size:14px;font-weight:600;margin:0 0 6px}
-.story{font-size:17px;max-width:66ch;margin:0 0 18px}
-.muted{color:var(--mute);font-size:14px}
-.btn{font:600 16px Rubik,sans-serif;min-height:48px;padding:12px 22px;border-radius:10px;border:2px solid var(--gold);background:var(--gold);color:#1a0f1f;cursor:pointer}
-.btn:hover{filter:brightness(1.08)}
-.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
-.btn:disabled{opacity:.4;cursor:not-allowed}
-.btn.sm{min-height:36px;padding:6px 12px;font-size:14px}
-button:focus-visible{outline:3px solid var(--lime);outline-offset:2px}
-.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
-.title-logo{font-family:'Press Start 2P',monospace;font-size:clamp(28px,6vw,60px);line-height:1.15;color:var(--gold);text-shadow:4px 4px 0 var(--green),7px 7px 0 #000;margin:6px 0 16px}
-.keys{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:10px;margin-top:22px}
-.key{background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:14px}
-.key b{display:block;color:var(--gold);font-size:13px}
-.choices{display:grid;gap:10px}
-.choice{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:center;text-align:left;font:16px/1.4 Rubik,sans-serif;color:var(--ink);background:rgba(255,255,255,.04);border:2px solid var(--line);border-radius:12px;padding:14px 16px;cursor:pointer;min-height:56px}
-.choice:hover:not(:disabled){border-color:var(--c,var(--lime));background:rgba(255,255,255,.07)}
-.choice:disabled{opacity:.45;cursor:not-allowed}
-.choice small{grid-column:2;color:var(--bad)}
-.tag{font-size:12px;font-weight:800;padding:3px 8px;border-radius:99px;background:var(--c);color:#1a0f1f;white-space:nowrap}
-.good{--c:var(--good)}.bad{--c:var(--bad)}.neutral{--c:#c0abd6}.risky{--c:var(--gold)}
-.riders{display:flex;gap:8px;align-items:center;margin:-6px 0 16px;flex-wrap:wrap}
-.face{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--c);color:#1a0f1f;font-weight:800;flex:none}
-.pills{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
-.pill{font-size:14px;font-weight:600;padding:4px 10px;border-radius:99px;border:1px solid var(--line);white-space:nowrap}
-.pill.up{color:var(--good);border-color:rgba(127,224,138,.4)}.pill.dn{color:var(--bad);border-color:rgba(255,84,104,.4)}
-.react{display:flex;gap:12px;align-items:flex-start;margin:0 0 10px}
-.react q{font-style:italic}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr));gap:12px}
-.card{background:rgba(22,11,34,.8);border:1px solid var(--line);border-radius:12px;padding:16px}
-.row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:10px;padding:7px 0}
-.row.two{grid-template-columns:minmax(0,1fr) auto}
-.row small{display:block;color:var(--mute);font-size:13px}
-.pips{display:flex;gap:3px}.pips i{width:12px;height:10px;border-radius:2px;background:#3e2a55}.pips i.on{background:var(--gold)}
-.meter{height:10px;border-radius:5px;background:linear-gradient(90deg,var(--bad),#6f5a80 50%,var(--good));position:relative;margin:8px 0 4px}
-.meter b{position:absolute;top:-4px;width:4px;height:18px;border-radius:2px;background:#fff;left:calc(var(--v) * 1% - 2px);box-shadow:0 0 6px #fff}
-.ends{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--mute)}
-.money{font:800 30px/1 Rubik,sans-serif;color:var(--gold);white-space:nowrap}
-.top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:14px}
-table{width:100%;border-collapse:collapse;font-size:15px}
-th,td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left}
-th{color:var(--mute);font-weight:600;font-size:13px}
-td.n{text-align:right;white-space:nowrap}
-.dot{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:8px;vertical-align:-1px;box-shadow:0 0 0 1px rgba(0,0,0,.5)}
-.me td{color:var(--gold);font-weight:600}
-.note{border-left:3px solid var(--gold);padding:8px 12px;background:rgba(255,205,0,.07);border-radius:0 8px 8px 0;margin:10px 0}
-#touch{display:none;justify-content:space-between;gap:10px;margin-top:10px;user-select:none;-webkit-user-select:none}
-#touch.on{display:flex}
-#touch div{display:flex;gap:8px}
-#touch button{font:800 15px Rubik,sans-serif;min-width:64px;height:64px;border-radius:14px;border:2px solid var(--line);background:#2e1b45;color:var(--ink);touch-action:none}
-#touch button.act{background:var(--gold);color:#1a0f1f;border-color:var(--gold)}
-#touch button[data-k=n]{background:var(--green);color:#fff;border-color:var(--green)}
-.foot{color:var(--mute);font-size:13px;margin-top:12px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
-@media(max-width:600px){.ov{padding:14px}.story{font-size:16px}#touch button{min-width:56px;height:58px}}
-@media(prefers-reduced-motion:reduce){.press{animation:none}}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <header class="marquee">
-    <h1 class="logo">AUSSIE 8</h1>
-    <p class="sub">Outback trophy-truck racing. Every choice rides shotgun.</p>
-  </header>
-  <div class="cab">
-    <div class="screen title" id="screen">
-      <canvas id="cv" width="960" height="640" aria-label="Race track"></canvas>
-      <div class="ov" id="ov"></div>
-    </div>
-    <div id="touch">
-      <div><button data-k="l" aria-label="Steer left">&#9664;</button><button data-k="r" aria-label="Steer right">&#9654;</button></div>
-      <div><button data-k="p" aria-label="Pause">II</button><button data-k="n">NITRO</button><button data-k="b">BRAKE</button><button data-k="g" class="act">GAS</button></div>
-    </div>
-  </div>
-  <div class="foot"><span>Arrows or WASD to drive · Space for nitro · P to pause</span><span>Progress saves in this browser</span></div>
-</div>
-<script>
-{
-const cv=document.getElementById('cv'),ctx=cv.getContext('2d'),W=960,H=640,AW=480,AH=320,OY=40;
-const ov=document.getElementById('ov'),scr=document.getElementById('screen'),touchEl=document.getElementById('touch');
-const buf=document.createElement('canvas');buf.width=AW;buf.height=AH;const bx=buf.getContext('2d');
-const titleImg=new Image();titleImg.src='title.jpg';
-const clamp=(v,a,b)=>v<a?a:v>b?b:v,rnd=(a,b)=>a+Math.random()*(b-a),pick=a=>a[Math.floor(Math.random()*a.length)];
-const wrapA=a=>{while(a>Math.PI)a-=Math.PI*2;while(a<-Math.PI)a+=Math.PI*2;return a};
-const seeded=s=>()=>(s=(s*16807)%2147483647)/2147483647;
-const ord=n=>n+(['st','nd','rd'][n-1]||'th');
-const fmtT=t=>Math.floor(t/60)+':'+(t%60).toFixed(1).padStart(4,'0');
-const mkc=(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c};
-const A=(x,y)=>({x:x/2,y:(y+OY)/2});
-const HW=44,WALL=57,WALLC=50,LAPS=4,SEASON=8,SAVE='aussie8-v2';
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Aussie 8: outback trophy-truck racing</title>
+    <meta name="description" content="A 32-bit trophy-truck racer with RPG choices. Eight trucks, eight red-dirt arenas, figure-8 crossovers and a crew who remember what you did. Play free in your browser." />
+    <meta property="og:title" content="Aussie 8" />
+    <meta property="og:description" content="Outback trophy-truck racing with RPG choices. Play free in your browser." />
+    <meta property="og:image" content="assets/title.webp" />
+    <meta name="theme-color" content="#2e1a4a" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <link rel="apple-touch-icon" href="assets/icon-192.png" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Rubik:wght@400;600;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="nav">
+      <a class="nav-logo" href="#top">AUSSIE 8</a>
+      <nav>
+        <a href="#features">Features</a>
+        <a href="#phones">Phones</a>
+        <a href="#notes">Dev notes</a>
+        <a class="btn small" href="play/">Play now</a>
+      </nav>
+    </header>
 
-/* ---------- PIXEL ART TOOLKIT ---------- */
-const PAL=['#0c0b0e','#1d1b22','#34313a','#55505c','#7b7581','#a8a2ac','#d6d1d4','#fbf8f2','#2a0f08','#4a1a0c','#6e2810','#8f3714','#a8431a','#c85d24','#d9763a','#e8955a','#f2b783','#f9d7ad','#3d2614','#5a3a22','#7a5236','#9a6a46','#b8a488','#c9b8a0','#d8c9b0','#e6d8c2','#13240f','#1f3a17','#2f5420','#45702b','#62903a','#8ab04e','#b9cf6a','#1c1030','#2e1a4a','#47286b','#64398a','#8a4f9e','#b8619b','#e0748a','#f59a78','#ffc46b','#ffe39a','#0f2a44','#1d4a72','#2f71a3','#58a2cf','#9fd3ee','#ffcd00','#00843d','#7a1018','#b8202c','#e63946','#5a2a24','#8a4f3a'].map(h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)]);
-const LUT=new Int16Array(32768).fill(-1),BAYER=[[0,8,2,10],[12,4,14,6],[3,11,1,9],[15,7,13,5]];
-function palIdx(r,g,b){const k=((r>>3)<<10)|((g>>3)<<5)|(b>>3);let v=LUT[k];if(v<0){let bd=1e9;for(let i=0;i<PAL.length;i++){const p=PAL[i],dr=p[0]-r,dg=p[1]-g,db=p[2]-b,d=2*dr*dr+4*dg*dg+3*db*db;if(d<bd){bd=d;v=i}}LUT[k]=v}return v}
-function quantize(g,w,h,spread){
-  const id=g.getImageData(0,0,w,h),d=id.data;
-  for(let y=0;y<h;y++)for(let x=0;x<w;x++){const o=(y*w+x)*4,t=(BAYER[y&3][x&3]/16-0.47)*spread;
-    const p=PAL[palIdx(clamp(d[o]+t,0,255)|0,clamp(d[o+1]+t,0,255)|0,clamp(d[o+2]+t,0,255)|0)];d[o]=p[0];d[o+1]=p[1];d[o+2]=p[2];d[o+3]=255}
-  g.putImageData(id,0,0);
-}
-function pix(rows,map){const c=mkc(rows[0].length,rows.length),g=c.getContext('2d');rows.forEach((r,y)=>[...r].forEach((ch,x)=>{if(map[ch]){g.fillStyle=map[ch];g.fillRect(x,y,1,1)}}));return c}
-function flipH(src){const c=mkc(src.width,src.height),g=c.getContext('2d');g.translate(src.width,0);g.scale(-1,1);g.drawImage(src,0,0);return c}
-const SPR={
-  nitro:pix(['..kkk..','..kwk..','.kkkkk.','kcwccck','kcwccck','kdddddk','kcwccck','kccccck','.kkkkk.'],{k:'#0c0b0e',c:'#3fd68a',w:'#e8fff0',d:'#00843d'}),
-  cash:pix(['..kkkk..','...kk...','..kyyk..','.kyyyyk.','kyydyyyk','kydddyyk','kyyydyyk','.kkkkkk.'],{k:'#2a0f08',y:'#ffcd00',d:'#8f3714'}),
-  flag:pix(['rwrbbbbbb','wwwbbbwbb','rwrbbbbbb','bbbbbbbwb','bwbbbwbbb','bbbbbbbbb'],{b:'#1d2f8a',w:'#fbf8f2',r:'#e63946'}),
-  roo:pix(['..........kk..','.........kbbk.','.........kbebk','........kbbbbk','.......kbbbkk.','......kbbbk...','....kkbbbbk...','...kbbbllbk...','..kbbbbllbk...','.kbbbbbbbbk...','kbbk.kbbbbk...','kbk..kbbkbk...','kk...kkkkkkk..'],{k:'#1d1b22',b:'#a8a2ac',l:'#fbf8f2',e:'#0c0b0e'})
-};
-SPR.rooL=flipH(SPR.roo);
+    <main id="top">
+      <section class="hero">
+        <img class="hero-art" src="assets/title.webp" alt="Aussie 8 title screen: a white number 8 trophy truck leads a red and a blue truck across red dirt, with Uluru, floodlights and Australian flags behind" />
+        <div class="hero-cta">
+          <a class="btn big" href="play/">▶ Play now</a>
+          <button class="btn big alt" id="play-here">Play here</button>
+          <p class="hero-sub">Free in your browser · Keyboard or touch · Saves on your device</p>
+          <p class="hero-version" id="latest-version"></p>
+        </div>
+      </section>
 
-/* truck sprites: 24x14 pixel art, rotated nearest-neighbour into 32 headings with a dark outline */
-function truckArt(body,dark,hi,sa,sb){
-  const c=mkc(24,14),g=c.getContext('2d'),R=(col,x,y,w,h)=>{g.fillStyle=col;g.fillRect(x,y,w,h)};
-  for(const [x,y] of [[3,0],[15,0],[3,11],[15,11]]){R('#141216',x,y,6,3);R('#4a4652',x+1,y===0?0:2,4,1);for(let i=0;i<6;i+=2)R('#2a2730',x+i,y+1,1,1)}
-  R(dark,1,2,22,10);R(body,1,2,22,9);R(hi,2,2,20,1);
-  R(dark,2,4,7,6);R('#141216',3,5,4,4);R('#4a4652',4,6,2,2);
-  if(sa){R(sa,1,6,22,1);R(sb||sa,1,7,22,1)}
-  R('#1d1b22',9,3,1,8);R(hi,10,3,5,8);if(sa){R(sa,10,6,5,1);R(sb||sa,10,7,5,1)}
-  R('#fbf8f2',11,4,3,2);
-  R('#ffe39a',15,3,1,1);R('#ffe39a',15,5,1,1);R('#ffe39a',15,8,1,1);R('#ffe39a',15,10,1,1);
-  R('#1d4a72',16,3,2,8);R('#9fd3ee',16,4,1,2);
-  R('#34313a',23,4,1,6);R('#ffe39a',23,3,1,2);R('#ffe39a',23,9,1,2);R('#e63946',1,3,1,1);R('#e63946',1,10,1,1);
-  return c;
-}
-function rotSprites(src){
-  const sw=src.width,sh=src.height,sd=src.getContext('2d').getImageData(0,0,sw,sh).data,N=32,S=30,out=[],sh2=[];
-  for(let k=0;k<N;k++){
-    const a=k/N*Math.PI*2,ca=Math.cos(a),sa=Math.sin(a),c=mkc(S,S),g=c.getContext('2d'),id=g.createImageData(S,S),d=id.data;
-    for(let y=0;y<S;y++)for(let x=0;x<S;x++){
-      const dx=x+0.5-S/2,dy=y+0.5-S/2,ix=Math.floor(dx*ca+dy*sa+sw/2),iy=Math.floor(-dx*sa+dy*ca+sh/2);
-      if(ix>=0&&iy>=0&&ix<sw&&iy<sh){const si=(iy*sw+ix)*4;if(sd[si+3]>0){const o=(y*S+x)*4;d[o]=sd[si];d[o+1]=sd[si+1];d[o+2]=sd[si+2];d[o+3]=255}}
-    }
-    const m=new Uint8Array(S*S);for(let i=0;i<S*S;i++)m[i]=d[i*4+3]?1:0;
-    for(let y=0;y<S;y++)for(let x=0;x<S;x++){const i=y*S+x;if(m[i])continue;
-      if((x>0&&m[i-1])||(x<S-1&&m[i+1])||(y>0&&m[i-S])||(y<S-1&&m[i+S])){d[i*4]=20;d[i*4+1]=10;d[i*4+2]=8;d[i*4+3]=255}}
-    g.putImageData(id,0,0);out.push(c);
-    const s=mkc(S,S),sg=s.getContext('2d'),sid=sg.createImageData(S,S);
-    for(let i=0;i<S*S;i++)if(d[i*4+3]){sid.data[i*4+3]=110}
-    sg.putImageData(sid,0,0);sh2.push(s);
-  }
-  return{spr:out,shadow:sh2};
-}
+      <section id="play" class="panel game-panel" hidden>
+        <div class="game-bar">
+          <strong>Aussie 8</strong>
+          <span class="spacer"></span>
+          <button class="btn small" id="fullscreen">⛶ Full screen</button>
+          <a class="btn small alt" href="play/">Open on its own page</a>
+          <button class="btn small alt" id="close-game">✕ Close</button>
+        </div>
+        <div class="game-frame"></div>
+        <p class="fineprint">Tip: click the game once so it can hear your keyboard. Arrows or WASD to drive, Space for nitro, P to pause.</p>
+      </section>
 
-/* ---------- TRACKS ---------- */
-const TRACKS=[
- {name:'Red Centre Bowl',ground:['#8f3714','#a8431a','#7a2e10'],dirt:'#d9763a',rut:'#a8431a',shoulder:'#b1471a',dust:'#e8955a',decor:'desert',seed:11,hz:['mud','bump','water','bump','mud','bump','mud'],pts:[[150,150],[480,110],[810,150],[860,300],[810,450],[600,480],[480,380],[360,480],[150,450],[100,300]]},
- {name:'Kakadu Swamp',ground:['#2f5420','#3d6328','#26451a'],dirt:'#a85a2a',rut:'#7a3a18',shoulder:'#6e3a18',dust:'#c88a5a',decor:'bush',seed:23,hz:['water','mud','bump','water','mud','water','bump'],pts:[[482,346],[588,434],[686,480],[767,489],[827,462],[848,397],[807,254],[846,166],[800,120],[729,111],[639,138],[536,203],[433,323],[349,408],[272,464],[207,476],[159,441],[131,368],[126,277],[143,192],[181,136],[237,124],[309,159],[391,232]]},
- {name:'Flinders Ridge',ground:['#5a2a24','#6e2810','#8a4f3a'],dirt:'#e0844a',rut:'#b8602a',shoulder:'#a24a22',dust:'#f2b783',decor:'rocks',seed:37,hz:['mud','bump','water','bump','mud','water','bump'],pts:[[110,320],[180,130],[340,120],[420,250],[520,120],[700,110],[850,180],[870,350],[760,490],[520,500],[300,500],[150,470]]},
- {name:'Coober Pedy Pits',ground:['#c9b8a0','#b8a488','#d8c9b0'],dirt:'#e2a76a',rut:'#c08450',shoulder:'#b89a70',dust:'#f2dcb8',decor:'mines',seed:51,hz:['mud','bump','water','bump','mud','bump','bump'],pts:[[505,364],[604,442],[694,423],[769,475],[825,468],[858,414],[864,240],[845,157],[800,120],[734,113],[650,135],[555,190],[455,364],[356,447],[266,484],[191,491],[135,469],[102,414],[96,240],[115,157],[160,122],[226,149],[310,175],[405,190]]},
- {name:'Nullarbor Flats',ground:['#9a6a46','#b8a488','#7a5236'],dirt:'#d9a06a',rut:'#a8743f',shoulder:'#a47a50',dust:'#e6d0b0',decor:'desert',seed:61,hz:['bump','bump','mud','bump','water','bump','bump'],pts:[[130,130],[400,110],[480,230],[620,130],[840,140],[870,330],[760,480],[520,480],[440,400],[320,480],[120,440],[190,290]]},
- {name:'Kimberley Gorge',ground:['#4a1a0c','#6e2810','#5a2a24'],dirt:'#e0844a',rut:'#a8431a',shoulder:'#8f3714',dust:'#f2b783',decor:'rocks',seed:73,hz:['water','bump','mud','water','bump','mud','bump'],pts:[[489,329],[571,411],[646,460],[709,471],[755,440],[782,374],[787,275],[771,193],[734,144],[679,133],[610,164],[530,230],[442,359],[338,446],[243,487],[164,495],[105,471],[71,411],[64,245],[84,158],[131,119],[201,153],[289,163],[389,193]]},
- {name:'Daintree Mudbath',ground:['#13240f','#1f3a17','#2f5420'],dirt:'#8f5a30',rut:'#5a3a22',shoulder:'#5a3a22',dust:'#b88a5a',decor:'bush',seed:89,hz:['mud','water','mud','bump','mud','water','mud'],pts:[[140,130],[500,100],[830,130],[870,300],[820,480],[620,500],[560,360],[420,330],[360,480],[160,490],[100,320]]},
- {name:'Outback Showdown',ground:['#7a2e10','#8f3714','#6e2810'],dirt:'#e8955a',rut:'#c85d24',shoulder:'#b1471a',dust:'#f2b783',decor:'desert',seed:97,hz:['mud','bump','water','bump','mud','bump','water'],pts:[[404,194],[308,135],[223,111],[156,119],[111,159],[91,245],[97,410],[130,468],[187,468],[263,443],[355,444],[454,359],[556,194],[652,145],[737,163],[804,126],[849,160],[853,245],[861,410],[830,469],[773,493],[697,485],[605,445],[506,359]]}
-];
-function pointAt(T,s){
-  const L=T.L,cum=T.cum,S=T.S,N=S.length;s=((s%L)+L)%L;let lo=0,hi=N-1;
-  while(lo<hi){const m=(lo+hi+1)>>1;if(cum[m]<=s)lo=m;else hi=m-1}
-  const a=S[lo],b=S[(lo+1)%N],len=((lo+1<N?cum[lo+1]:L)-cum[lo])||1,u=(s-cum[lo])/len,dx=b[0]-a[0],dy=b[1]-a[1],l=Math.hypot(dx,dy)||1;
-  return{x:a[0]+dx*u,y:a[1]+dy*u,tx:dx/l,ty:dy/l};
-}
-function nearest(T,x,y,hint){
-  const S=T.S,N=S.length;let best=1e18,bi=0,bu=0;
-  const from=hint==null?0:hint-25,to=hint==null?N-1:hint+25;
-  for(let k=from;k<=to;k++){
-    const i=((k%N)+N)%N,a=S[i],b=S[(i+1)%N],dx=b[0]-a[0],dy=b[1]-a[1],l2=dx*dx+dy*dy||1;
-    let u=((x-a[0])*dx+(y-a[1])*dy)/l2;u=u<0?0:u>1?1:u;
-    const ex=a[0]+dx*u-x,ey=a[1]+dy*u-y,d2=ex*ex+ey*ey;if(d2<best){best=d2;bi=i;bu=u}
-  }
-  const a=S[bi],b=S[(bi+1)%N],dx=b[0]-a[0],dy=b[1]-a[1],l=Math.hypot(dx,dy)||1,tx=dx/l,ty=dy/l;
-  const px=a[0]+dx*bu,py=a[1]+dy*bu,nx=-ty,ny=tx,ex=x-px,ey=y-py,dist=Math.sqrt(best);
-  const ux=dist>0.001?ex/dist:nx,uy=dist>0.001?ey/dist:ny;
-  return{i:bi,s:T.cum[bi]+bu*l,dist,d:(ex*nx+ey*ny)<0?-dist:dist,px,py,ux,uy,tx,ty};
-}
-function buildTrack(t){
-  const P=t.pts,n=P.length;let S=[];
-  for(let i=0;i<n;i++){
-    const p0=P[(i-1+n)%n],p1=P[i],p2=P[(i+1)%n],p3=P[(i+2)%n];
-    for(let k=0;k<24;k++){const u=k/24,u2=u*u,u3=u2*u;
-      const f=j=>0.5*(2*p1[j]+(-p0[j]+p2[j])*u+(2*p0[j]-5*p1[j]+4*p2[j]-p3[j])*u2+(-p0[j]+3*p1[j]-3*p2[j]+p3[j])*u3);
-      S.push([f(0),f(1)])}
-  }
-  const N=S.length,ang=i=>{const a=S[i],b=S[(i+1)%N];return Math.atan2(b[1]-a[1],b[0]-a[0])};
-  const c0=[0];for(let i=1;i<N;i++)c0.push(c0[i-1]+Math.hypot(S[i][0]-S[i-1][0],S[i][1]-S[i-1][1]));const L0=c0[N-1]+Math.hypot(S[0][0]-S[N-1][0],S[0][1]-S[N-1][1]);
-  const arc=(i,j)=>{const d=Math.abs(c0[i]-c0[j]);return Math.min(d,L0-d)},xi=[];
-  for(let i=0;i<N;i++)for(let j=i+1;j<N;j++)if(arc(i,j)>300&&Math.hypot(S[i][0]-S[j][0],S[i][1]-S[j][1])<14&&!xi.some(k=>arc(k,i)<80))xi.push(i,j);
-  let bi=0,bc=1e9;
-  for(let i=0;i<N;i++){
-    if(xi.some(k=>(c0[k]-c0[i]+L0)%L0<240||(c0[i]-c0[k]+L0)%L0<330))continue;
-    let c=0;for(let k=-16;k<16;k++)c+=Math.abs(wrapA(ang((i+k+1+N)%N)-ang((i+k+N)%N)));if(c<bc){bc=c;bi=i}}
-  S=S.slice(bi).concat(S.slice(0,bi));
-  const cum=[0];for(let i=1;i<N;i++)cum.push(cum[i-1]+Math.hypot(S[i][0]-S[i-1][0],S[i][1]-S[i-1][1]));
-  t.S=S;t.cum=cum;t.L=cum[N-1]+Math.hypot(S[0][0]-S[N-1][0],S[0][1]-S[N-1][1]);
-  t.cross=xi.map(k=>cum[(k-bi+N)%N]);const cp=xi.length?S[(xi[0]-bi+N)%N]:null;t.cx=cp&&{x:cp[0],y:cp[1]};t.fig=xi.length>0;
-  const r=seeded(t.seed);t.hz=[];
-  for(const type of t.types){
-    for(let tries=0;tries<40;tries++){
-      const s=280+r()*(t.L-500);if(t.hz.some(h=>Math.abs(h.s-s)<120)||t.cross.some(c=>Math.abs(c-s)<170))continue;
-      const p=pointAt(t,s),off=type==='bump'?0:r()*36-18;
-      t.hz.push({type,s,x:p.x-p.ty*off,y:p.y+p.tx*off,r:type==='bump'?0:24+r()*8,ang:Math.atan2(p.ty,p.tx)});break;
-    }
-  }
-  t.img=renderTrack(t);
-}
-function renderTrack(t){
-  const c=mkc(AW,AH),g=c.getContext('2d'),r=seeded(t.seed+7),pr=()=>r();
-  const inRoad=(ax,ay,m)=>nearest(t,ax*2,ay*2-OY,null).dist<m;
-  // ground
-  g.fillStyle=t.ground[0];g.fillRect(0,0,AW,AH);
-  for(let i=0;i<9000;i++){g.fillStyle=t.ground[1+Math.floor(pr()*2)];g.fillRect(Math.floor(pr()*AW),Math.floor(pr()*AH),1+Math.floor(pr()*2),1)}
-  // decor
-  for(let i=0;i<220;i++){
-    const x=pr()*AW,y=40+pr()*(AH-40);if(inRoad(x,y,WALL+16))continue;
-    const kind=t.decor;
-    if(kind==='bush'&&pr()<0.35||kind==='desert'&&pr()<0.08){const rr=4+pr()*4;g.fillStyle='rgba(10,20,5,.45)';g.beginPath();g.ellipse(x+3,y+3,rr,rr*.8,0,0,7);g.fill();
-      g.fillStyle='#1f3a17';g.beginPath();g.arc(x,y,rr,0,7);g.fill();g.fillStyle='#2f5420';g.beginPath();g.arc(x-1,y-1,rr*.75,0,7);g.fill();g.fillStyle='#45702b';g.beginPath();g.arc(x-2,y-2,rr*.4,0,7);g.fill()}
-    else if(kind==='mines'&&pr()<0.25){const rr=5+pr()*4;g.fillStyle='rgba(60,40,20,.35)';g.beginPath();g.ellipse(x+3,y+2,rr,rr*.7,0,0,7);g.fill();g.fillStyle='#e6d8c2';g.beginPath();g.arc(x,y,rr,0,7);g.fill();g.fillStyle='#b8a488';g.beginPath();g.arc(x+1.5,y+1.5,rr*.75,0,7);g.fill();g.fillStyle='#34313a';g.fillRect(Math.round(x),Math.round(y),2,2)}
-    else if(kind==='rocks'||pr()<0.3){g.fillStyle='#34313a';g.fillRect(Math.round(x)+1,Math.round(y)+1,3,2);g.fillStyle=kind==='mines'?'#a8a2ac':'#7a5236';g.fillRect(Math.round(x),Math.round(y),3,2);g.fillStyle='#d8c9b0';g.fillRect(Math.round(x),Math.round(y),1,1)}
-    else{g.fillStyle=kind==='bush'?'#62903a':'#8ab04e';for(let k=0;k<5;k++)g.fillRect(Math.round(x+pr()*4-2),Math.round(y+pr()*3-1),1,1);g.fillStyle='#b9cf6a';g.fillRect(Math.round(x),Math.round(y-1),1,1)}
-  }
-  // track surface
-  const path=()=>{g.beginPath();t.S.forEach((p,i)=>{const a=A(p[0],p[1]);i?g.lineTo(a.x,a.y):g.moveTo(a.x,a.y)});g.closePath()};
-  g.lineJoin='round';g.lineCap='round';
-  path();g.strokeStyle='rgba(0,0,0,.35)';g.lineWidth=WALL+8;g.stroke();
-  g.strokeStyle=t.shoulder;g.lineWidth=WALL;g.stroke();
-  g.strokeStyle=t.dirt;g.lineWidth=HW;g.stroke();
-  for(const off of [-11,-6,6,11]){g.beginPath();for(let s=0;s<=t.L;s+=8){const p=pointAt(t,s),a=A(p.x-p.ty*off*2,p.y+p.tx*off*2);s?g.lineTo(a.x,a.y):g.moveTo(a.x,a.y)}g.strokeStyle=t.rut;g.globalAlpha=.35;g.lineWidth=1.5;g.stroke();g.globalAlpha=1}
-  for(let i=0;i<2200;i++){const p=pointAt(t,pr()*t.L),o=(pr()*2-1)*HW,a=A(p.x-p.ty*o,p.y+p.tx*o);g.fillStyle=pr()<.5?t.rut:t.dust;g.fillRect(Math.floor(a.x),Math.floor(a.y),1,1)}
-  // hazards
-  for(const h of t.hz){
-    const a=A(h.x,h.y),rr=h.r/2;g.save();g.translate(a.x,a.y);g.rotate(h.ang);
-    if(h.type==='bump'){g.fillStyle='rgba(40,10,0,.45)';g.fillRect(1,-HW/2,4,HW);g.fillStyle=t.dust;g.fillRect(-3,-HW/2,4,HW);g.fillStyle='#f9d7ad';g.fillRect(-3,-HW/2,1,HW)}
-    else if(h.type==='mud'){g.fillStyle='#2a0f08';g.beginPath();g.ellipse(0,0,rr*1.2,rr*.9,0,0,7);g.fill();g.fillStyle='#4a1a0c';g.beginPath();g.ellipse(-1,-1,rr,rr*.7,0,0,7);g.fill();g.fillStyle='#6e2810';for(let k=0;k<4;k++){g.beginPath();g.arc((pr()-.5)*rr,(pr()-.5)*rr*.7,1.5+pr()*2,0,7);g.fill()}}
-    else{g.fillStyle='#0f2a44';g.beginPath();g.ellipse(0,0,rr*1.2,rr*.85,0,0,7);g.fill();g.fillStyle='#1d4a72';g.beginPath();g.ellipse(-1,-1,rr,rr*.65,0,0,7);g.fill();g.fillStyle='#2f71a3';g.beginPath();g.ellipse(-2,-2,rr*.6,rr*.35,0,0,7);g.fill()}
-    g.restore();
-  }
-  if(t.cx){const a=A(t.cx.x,t.cx.y);g.strokeStyle='rgba(255,205,0,.45)';g.lineWidth=2;g.setLineDash([3,3]);g.beginPath();g.arc(a.x,a.y,17,0,7);g.stroke();g.setLineDash([])}
-  // backdrop: dusk sky, Uluru, grandstands
-  const sky=g.createLinearGradient(0,0,0,38);sky.addColorStop(0,'#2e1a4a');sky.addColorStop(.45,'#8a4f9e');sky.addColorStop(.75,'#e0748a');sky.addColorStop(1,'#ffc46b');
-  g.fillStyle=sky;g.fillRect(0,0,AW,38);
-  g.fillStyle='#ffe39a';g.beginPath();g.arc(330,30,7,0,7);g.fill();
-  g.fillStyle='#8f3714';g.beginPath();g.moveTo(172,38);g.bezierCurveTo(182,16,200,13,240,13);g.bezierCurveTo(282,13,298,18,308,38);g.fill();
-  g.fillStyle='#6e2810';g.beginPath();g.moveTo(255,38);g.bezierCurveTo(268,22,285,17,290,17);g.bezierCurveTo(300,22,304,30,308,38);g.fill();
-  g.fillStyle='#c85d24';g.fillRect(200,15,48,1);g.fillStyle='#4a1a0c';for(const x of [200,214,231,262,279])g.fillRect(x,19,1,17);
-  g.fillStyle='#1f3a17';for(let x=0;x<AW;x+=3){const h=2+((x*7)%5);g.fillRect(x,36-h,3,h)}
-  for(const [x0,x1] of [[24,168],[312,456]]){g.fillStyle='#1c1030';g.fillRect(x0,22,x1-x0,16);g.fillStyle='#2e1a4a';for(let y=24;y<38;y+=4)g.fillRect(x0,y,x1-x0,1);
-    const cols=['#e63946','#ffcd00','#00843d','#58a2cf','#fbf8f2','#e8955a','#b8619b'];for(let x=x0+1;x<x1-1;x+=2)for(let y=22;y<37;y+=4)if(pr()<.8){g.fillStyle=cols[Math.floor(pr()*cols.length)];g.fillRect(x,y,1,2)}}
-  g.fillStyle='#d6d1d4';g.fillRect(0,38,AW,1);g.fillStyle='#7b7581';for(let x=0;x<AW;x+=6)g.fillRect(x,36,1,3);
-  // floodlight glow + vignette
-  for(const x of [12,468]){const gl=g.createRadialGradient(x,40,4,x,60,220);gl.addColorStop(0,'rgba(255,240,200,.35)');gl.addColorStop(1,'rgba(255,240,200,0)');g.fillStyle=gl;g.fillRect(0,0,AW,AH)}
-  const vg=g.createRadialGradient(AW/2,AH*.55,AH*.4,AW/2,AH*.55,AH);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(20,0,30,.45)');g.fillStyle=vg;g.fillRect(0,40,AW,AH-40);
-  quantize(g,AW,AH,22);
-  // crisp post-quantize details: light towers, flags, tyre walls, start line
-  for(const x of [10,466]){g.fillStyle='#34313a';g.fillRect(x+1,4,2,36);g.fillStyle='#1d1b22';g.fillRect(x-2,3,8,5);g.fillStyle='#fbf8f2';for(let i=0;i<3;i++){g.fillRect(x-1+i*2,4,1,1);g.fillRect(x-1+i*2,6,1,1)}g.fillStyle='#ffe39a';g.fillRect(x-1,5,6,1);g.drawImage(SPR.flag,x+3,9)}
-  const tyres=[];
-  for(let s=0;s<t.L;s+=9)for(const side of [-1,1]){const p=pointAt(t,s),o=side*(WALL+7),wx=p.x-p.ty*o,wy=p.y+p.tx*o;
-    if(nearest(t,wx,wy,null).dist<WALL+3)continue;const a=A(wx,wy);if(a.x<2||a.x>AW-3||a.y<39||a.y>AH-3)continue;tyres.push([Math.round(a.x),Math.round(a.y),(s/9|0)%4])}
-  tyres.sort((p,q)=>p[1]-q[1]);
-  for(const [x,y,k] of tyres){const outer=k===0?'#ffcd00':k===2?'#00843d':'#0c0b0e';
-    g.fillStyle='rgba(0,0,0,.4)';g.fillRect(x-1,y+1,5,3);g.fillStyle=outer;g.fillRect(x-2,y-1,4,4);g.fillRect(x-1,y-2,2,6);g.fillRect(x-3,y,6,2);
-    g.fillStyle='#1d1b22';g.fillRect(x-1,y,2,2);g.fillStyle=k%2?'#55505c':'#fbf8f2';g.fillRect(x-1,y-1,1,1)}
-  const p0=pointAt(t,0),a0=A(p0.x,p0.y);g.save();g.translate(a0.x,a0.y);g.rotate(Math.atan2(p0.ty,p0.tx));
-  for(let i=0;i<11;i++)for(let j=0;j<2;j++){g.fillStyle=(i+j)%2?'#0c0b0e':'#fbf8f2';g.fillRect(-2+j*2,-HW/2+i*4,2,4)}g.restore();
-  return c;
-}
-TRACKS.forEach(t=>{t.types=t.hz;buildTrack(t)});
-const trackFor=i=>TRACKS[((i%TRACKS.length)+TRACKS.length)%TRACKS.length];
+      <section id="features" class="features">
+        <h2 class="section-title">Eight trucks. One crossover.</h2>
+        <div class="feature-grid">
+          <article class="panel feature">
+            <img src="assets/shot_race.webp" alt="Eight pixel-art trucks racing around a red-dirt figure-8 with Uluru behind the grandstands" loading="lazy" />
+            <h3>Arcade truck racing</h3>
+            <p>Eight trophy trucks, four laps, mud, water, jump ridges and nitro. Grab cash bags and nitro cans, and watch for kangaroos hopping across the track.</p>
+          </article>
+          <article class="panel feature">
+            <img src="assets/shot_crash.webp" alt="Two trucks T-bone each other at the crossover of a figure-8 track, with CRASH! above them" loading="lazy" />
+            <h3>Figure-8 crossovers</h3>
+            <p>Half the season runs on figure-8s, where the field meets in the middle. Time it badly and a side-on hit spins you out in a shower of sparks.</p>
+          </article>
+          <article class="panel feature">
+            <img src="assets/shot_event.webp" alt="A story choice: help a stranded old racer, strip his carby for cash, or drive on" loading="lazy" />
+            <h3>Choices that stick</h3>
+            <p>Between races, help strangers or rob them, take Duke's bribe or leak it to Channel 8. Karma and your rival remember, and some choices come back races later.</p>
+          </article>
+          <article class="panel feature">
+            <img src="assets/shot_garage.webp" alt="The garage: truck upgrades, driver level and stats, karma and rivalry meters, and season points" loading="lazy" />
+            <h3>Garage and crew</h3>
+            <p>Level up your driver, upgrade the engine, tyres and shocks, and keep Rosa, Dex and June on side. Each one has a perk, and each one will walk if you push them too far.</p>
+          </article>
+        </div>
+      </section>
 
-/* ---------- CREW + STATE ---------- */
-const CREW={
- rosa:{name:'Rosa “Wrench” Delgado',short:'Rosa',role:'Mechanic',color:'#d9763a',likes:'Honesty, hard work, fixing what’s broken.',
-  perk:a=>a>=60?'Upgrades 15% cheaper · race-day grip tune':a>=25?'Upgrades 15% cheaper':'Perk unlocks at 25 trust',
-  up:['That’s the kind of driver I signed on for.','Huh. You’ve got a decent streak in you.','Good call. Engines run cleaner when the conscience does.'],
-  down:['I don’t fix what you choose to break.','That’s not who I thought you were.','Keep that up and find yourself another wrench.'],
-  leave:'Rosa wipes her hands on a rag, drops your spare keys on the bonnet and walks off without a word.'},
- dex:{name:'Dex Malone',short:'Dex',role:'Hustler',color:'#ffcd00',likes:'Easy money, big bets, bending rules.',
-  perk:a=>a>=25?'+20% prize money':'Perk unlocks at 25 trust',
-  up:['Now THAT’s business, partner.','Ha! You’re learning.','Money talks, and it likes you.'],
-  down:['Boy scout move. Costs us.','You’re leaving cash on the table, mate.','Nice guys finish fourth. Literally.'],
-  leave:'Dex tips his gold hat. “This act’s getting stale.” His car is gone by morning, along with the good coffee.'},
- june:{name:'June Okafor',short:'June',role:'Spotter',color:'#5fd37e',likes:'Kindness, loyalty, people who keep their word.',
-  perk:a=>a>=60?'+2 bonus nitro every race':a>=25?'+1 bonus nitro every race':'Perk unlocks at 25 trust',
-  up:['You really mean it? Okay. Okay!','That’s why I wanted to ride with you.','I’m writing that one down.'],
-  down:['…I thought you were one of the good ones.','Wow. Okay.','I didn’t sign up for this.'],
-  leave:'June leaves her clipboard on your seat. The last page just says: “Good luck.”'}
-};
-const TRUCKS={you:['#f2efe6','#a9a49a','#ffffff','#00843d','#ffcd00'],duke:['#d8232f','#8a1218','#ff6a6a','#fbf8f2'],earl:['#2f6fe0','#1a3d8a','#7aa8ff','#fbf8f2'],sal:['#3a3640','#141216','#6b6575','#ff7a1a'],
-  shazza:['#ff7a1a','#a84a0a','#ffb070','#1d1b22'],thommo:['#7c3fd0','#45207a','#b48af0','#ffcd00'],tash:['#18b7b0','#0b6a66','#7fe6e0','#fbf8f2'],gazza:['#f2c40c','#9a7a06','#fff07a','#1d1b22']};
-const SPRITES={};for(const k in TRUCKS){const c=TRUCKS[k];SPRITES[k]=rotSprites(truckArt(c[0],c[1],c[2],c[3],c[4]))}
-const RIVALS=[{id:'duke',name:'Duke Vance',tag:'DUKE',skill:14},{id:'shazza',name:'Shazza Kelly',tag:'SHAZ',skill:10},{id:'tash',name:'Tash Kowalski',tag:'TASH',skill:8},{id:'sal',name:'Sal Vitale',tag:'SAL',skill:7},{id:'thommo',name:'Thommo Price',tag:'THOM',skill:4},{id:'gazza',name:'Gazza Reid',tag:'GAZ',skill:2},{id:'earl',name:'Big Earl',tag:'EARL',skill:0}];
-const NAMES={you:'You'},COLORS={you:'#f2efe6'};RIVALS.forEach(r=>{NAMES[r.id]=r.name;COLORS[r.id]=TRUCKS[r.id][0]});
-const PTS=[10,8,6,5,4,3,2,1],PRIZE=[1200,900,700,550,420,320,220,140],XPP=[220,180,150,125,105,90,75,60];
-function fresh(){return{money:400,karma:0,race:0,xp:0,lvl:1,sp:1,stats:{hand:0,grit:0,nerve:0,charm:0},upg:{eng:0,tire:0,shk:0},nitro:3,
-  crew:{rosa:{in:true,aff:10,met:true,left:null},dex:{in:false,aff:0,met:false,left:null},june:{in:false,aff:0,met:false,left:null}},
-  rival:0,flags:{},used:[],points:Object.fromEntries(['you',...RIVALS.map(r=>r.id)].map(k=>[k,0])),stage:'event'}}
-let G=null,R=null,mode='title',curEv=null,lastRes=null;
-const save=()=>{try{localStorage.setItem(SAVE,JSON.stringify(G))}catch(e){}};
-const load=()=>{try{const s=localStorage.getItem(SAVE);return s?JSON.parse(s):null}catch(e){return null}};
-const inCrew=id=>G.crew[id].in;
-const trust=id=>G.crew[id].in?G.crew[id].aff:-999;
-const discount=()=>G.flags.rosaLoyal!==undefined&&inCrew('rosa')?0.75:trust('rosa')>=25?0.85:1;
-const juneBonus=()=>trust('june')>=60?2:trust('june')>=25?1:0;
-const dexMult=()=>trust('dex')>=25?1.2:1;
-const UPC=[300,500,800,1200,1700];
+      <section id="phones" class="phones">
+        <h2 class="section-title">Made for thumbs</h2>
+        <div class="panel phone-panel">
+          <img src="assets/shot_phone.webp" alt="Aussie 8 on a phone in landscape: a steering stick under the left thumb, BRAKE and NITRO under the right" loading="lazy" />
+          <div class="phone-copy">
+            <p>On phones the race goes fullscreen. Put your thumb down anywhere on the left and point where you want to go: gas is automatic, and NITRO sits right under your right thumb.</p>
+            <p>Prefer buttons? Switch to big ◀ ▶ with GAS and NITRO side by side, or flip everything for left-handed play. Add Aussie 8 to your home screen and it opens fullscreen like an app.</p>
+          </div>
+        </div>
+      </section>
 
-/* ---------- EVENTS ---------- */
-const EVENTS=[
- {id:'stranded',sched:true,title:'Smoke on the Stuart Highway',text:'Forty kilometres out of Coober Pedy, an old-timer named Hank Booker waves you down beside a ’71 ute pouring steam. He raced these red-dirt tracks before you were born. No phone, no water, and your first race starts tomorrow.',
-  choices:[
-   {t:'Tow Hank and his ute to town (−$150)',tag:'good',req:()=>G.money>=150,reqT:'Needs $150',fx:{money:-150,karma:10,aff:{rosa:10},flag:'helpedHank'},res:'Hank grips your hand at the roadhouse. “I won’t forget this, mate. Not ever.”'},
-   {t:'Strip his carby while he walks for help (+$300)',tag:'bad',fx:{money:300,karma:-15,aff:{rosa:-15},flag:'robbedHank'},res:'The carby fetches $300 at a wrecker’s yard. Rosa watches you count the notes and says nothing at all.'},
-   {t:'Toss him a water bottle and keep driving',tag:'neutral',fx:{karma:-2},res:'In the mirror Hank lifts the bottle in a small salute. Then he’s just a speck in the heat haze.'}]},
- {id:'june_intro',sched:true,title:'The rookie with the clipboard',text:'June Okafor, 22, just got dropped by a factory team for “attitude.” She charted every line you drove today, and her notes are better than your memory. She wants to spot for you. For free.',
-  choices:[
-   {t:'Sign her on as your spotter',tag:'good',fx:{join:'june',joinAff:15,karma:3,aff:{rosa:5}},res:'June nearly drops the clipboard. “You won’t regret this. Also, you brake way too early into turn three.”'},
-   {t:'Sign her, and quietly pocket her $250 sponsor bonus',tag:'bad',fx:{join:'june',joinAff:-10,money:250,karma:-12,aff:{rosa:-10}},res:'June signs without reading the fine print. She’ll read it eventually.'},
-   {t:'Tell her to go home',tag:'neutral',fx:{karma:-4},res:'June shrugs like she’s heard it before and walks toward Duke Vance’s trailer.'}]},
- {id:'dex_intro',sched:true,title:'A man in a gold suit',text:'Dex Malone slides into your roadhouse booth uninvited. He “manages talent,” can grease the stewards, move the betting line and get you paid twice for every race. He says all this loudly.',
-  choices:[
-   {t:'Bring Dex aboard. Every crew needs a hustler',tag:'bad',fx:{join:'dex',joinAff:15,karma:-5,aff:{rosa:-8,june:-6}},res:'Dex picks up your bill, then slides it back to you. “Partner, let’s talk percentages.”'},
-   {t:'Hire him, strictly legit: sponsors, no fixing',tag:'good',fx:{join:'dex',joinAff:0,karma:3},res:'Dex sighs like you broke his heart. “Legit. Sure. I can do legit.” He does not sound sure.'},
-   {t:'Report him to the track stewards (+$150 reward)',tag:'good',fx:{money:150,karma:8,aff:{rosa:6,june:6}},res:'The stewards walk Dex out the back. He winks at you on the way, which is somehow worse.'}]},
- {id:'duke_bribe',sched:true,title:'Duke’s envelope',text:'Duke Vance, last year’s champ, leans on your truck and drops a fat envelope on the bonnet. “Five hundred. You finish behind me next race. Nobody gets hurt.”',
-  choices:[
-   {t:'Take the envelope (+$500)',tag:'bad',fx:{money:500,karma:-20,rival:20,aff:{dex:10,rosa:-12,june:-10},flag:'tookBribe'},res:'Duke pats your cheek. “Smart.” The deal is for the next race. Cross the line ahead of him and he will remember.'},
-   {t:'Push it back across the bonnet',tag:'good',fx:{karma:5,rival:-10,aff:{rosa:5,june:5,dex:-4}},res:'Duke shrugs. “Your funeral.” He pockets the envelope like it never happened.'},
-   {t:'Record him and leak it to Channel 8 (+$250 tip money)',tag:'risky',fx:{money:250,karma:6,rival:-35,aff:{june:8,dex:4}},res:'Channel 8 runs it on the late news. Duke gets a fine, a lecture, and a reason to hate you personally.'}]},
- {id:'garage_night',when:()=>G.rival<=0,title:'An unlocked shed',text:'Past midnight in the pits. Duke’s shed door is up, his truck sits alone under a work light, and nobody is around. A spanner lies right there on the bench.',
-  choices:[
-   {t:'Loosen his steering tie-rod',tag:'bad',fx:{karma:-20,rival:-10,aff:{dex:12,rosa:-18,june:-12},flag:'dukeSab'},res:'Three quarter-turns. Nobody saw. Duke will be fighting his wheel all next race.'},
-   {t:'Fix the leaking brake line you spot, leave a note',tag:'good',fx:{karma:10,rival:25,aff:{rosa:10,june:6,dex:-5}},res:'The note says “No worries.” Next morning Duke stares at you across the pits for a long time.'},
-   {t:'Walk away',tag:'neutral',fx:{karma:2,aff:{rosa:3}},res:'You pull the door down so nobody else gets ideas.'}]},
- {id:'benefit',title:'Flying Doctor benefit night',text:'The speedway is raising money for the outback flying doctor service. The organiser, swamped, hands you the overflowing donation tin and asks you to carry it to the office.',
-  choices:[
-   {t:'Add $300 of your own',tag:'good',req:()=>G.money>=300,reqT:'Needs $300',fx:{money:-300,karma:12,xp:60,aff:{june:10,rosa:5,dex:-6}},res:'The organiser hugs you. The local paper snaps the photo. Fans chant “Aussie 8!” on the way out.'},
-   {t:'Sign autographs at the gate for an hour',tag:'good',fx:{karma:4,aff:{june:4}},res:'Your hand cramps. A grandad tells you he hasn’t laughed this hard since the ’80s.'},
-   {t:'Skim the tin on the way (+$280)',tag:'bad',fx:{money:280,karma:-25,aff:{rosa:-15,june:-20,dex:10}},res:'The tin is lighter when it reaches the office. Nobody counts. Someone always knows.'}]},
- {id:'casino',title:'Neon on the Gold Coast',text:'The circuit rolls into the Gold Coast. The crew hits the casino floor at Broadbeach, and Dex, if he’s around, is already eyeing a blackjack table with a hungry look.',
-  choices:[
-   {t:'Bet $200 on one hand',tag:'risky',req:()=>G.money>=200,reqT:'Needs $200',run:()=>Math.random()<0.5?{fx:{money:200,aff:{dex:5}},res:'Blackjack! You walk away $200 richer and grinning.'}:{fx:{money:-200,aff:{dex:3}},res:'Dealer shows twenty-one. $200 gone in eight seconds.'}},
-   {t:'Put half your bankroll on red',tag:'risky',req:()=>G.money>=100,reqT:'Needs $100',run:()=>{const b=Math.floor(G.money/2);return Math.random()<0.47?{fx:{money:b,aff:{dex:10,rosa:-5}},res:'Red! The whole table cheers. You’re up $'+b+'.'}:{fx:{money:-b,aff:{dex:6,rosa:-8}},res:'Black. $'+b+' gone. Rosa doesn’t say “told you so.” Out loud.'}}},
-   {t:'Skip the tables, shout the crew a steak dinner (−$120)',tag:'good',req:()=>G.money>=120,reqT:'Needs $120',fx:{money:-120,karma:3,aff:{rosa:8,june:8,dex:4}},res:'Best night of the season. Everyone tells stories until the staff start stacking chairs.'}]},
- {id:'rosa_shop',pri:1,when:()=>inCrew('rosa')&&G.crew.rosa.aff>=15&&G.race>=2,title:'Rosa’s old shop',text:'Rosa gets a call and goes quiet. The bank is repossessing the garage her father built in Broken Hill. She needs $600 by Friday or it’s gone.',
-  choices:[
-   {t:'Pay the $600',tag:'good',req:()=>G.money>=600,reqT:'Needs $600',fx:{money:-600,karma:10,aff:{rosa:30,dex:-5},flag:'rosaLoyal'},res:'Rosa can’t talk for a minute. Then: “Every upgrade from here on, I do at cost. Don’t argue.”'},
-   {t:'Lend her $300, payable later',tag:'neutral',req:()=>G.money>=300,reqT:'Needs $300',fx:{money:-300,aff:{rosa:8},flag:'rosaLoan'},res:'“I’ll pay you back with interest,” Rosa says, and you believe her.'},
-   {t:'“Business is business, Rosa.”',tag:'bad',fx:{aff:{rosa:-25,dex:6}},res:'Rosa nods slowly. She finishes the tune-up in silence.'}]},
- {id:'rosa_repay',pri:2,when:()=>G.flags.rosaLoan!==undefined&&G.race-G.flags.rosaLoan>=2&&inCrew('rosa'),title:'An envelope on the dash',text:'Rosa’s shop survived. There’s an envelope on your dashboard: $400, and a note in grease pencil. “Told you. Interest included.”',
-  choices:[
-   {t:'Take it with thanks',tag:'neutral',fx:{money:400,aff:{rosa:5},unflag:'rosaLoan'},res:'Rosa grins. “Pleasure doing business.”'},
-   {t:'Tell her to keep it for the shop',tag:'good',fx:{karma:6,aff:{rosa:20},unflag:'rosaLoan'},res:'Rosa tries to argue, fails, and tunes your carby twice as carefully as usual.'}]},
- {id:'dex_debt',pri:1,when:()=>inCrew('dex')&&G.race>=4,title:'Dex’s marker',text:'Two blokes in matching windbreakers corner Dex behind the grandstand. He owes $400 to people who don’t send reminder letters. Dex looks at you. For once, he isn’t smiling.',
-  choices:[
-   {t:'Pay his $400 marker',tag:'good',req:()=>G.money>=400,reqT:'Needs $400',fx:{money:-400,karma:5,aff:{dex:30,rosa:-3}},res:'Dex exhales. “I owe you. Like, actually owe you. That’s new for me.”'},
-   {t:'Stand beside him and talk them down (Charm 2+)',tag:'risky',run:()=>G.stats.charm>=2?{fx:{karma:4,aff:{dex:25,june:5}},res:'Ten minutes of smooth talk and a signed cap later, the windbreakers leave laughing. Dex stares at you in awe.'}:{fx:{money:-200,aff:{dex:10}},res:'They aren’t charmed. They take $200 from your wallet “for the inconvenience.” Dex still appreciates the effort.'}},
-   {t:'Point them to his motel room (+$300 finder’s fee)',tag:'bad',fx:{money:300,karma:-18,leave:'dex',aff:{rosa:-5,june:-10}},res:'The windbreakers pay in cash. Dex doesn’t show up to the next race. Or the one after.'}]},
- {id:'june_doubt',pri:1,when:()=>inCrew('june')&&G.race>=3,title:'Shaky hands',text:'June rolled a practice truck this morning. She’s fine, but her hands won’t stop shaking, and she’s talking about quitting before the next race.',
-  choices:[
-   {t:'Take her on a slow ride-along and talk it out',tag:'good',fx:{xp:40,aff:{june:20}},res:'Two laps at walking pace. By the end she’s calling out braking points again.'},
-   {t:'Give her your lucky nitro canister (−1 nitro)',tag:'good',req:()=>G.nitro>=1,reqT:'Needs 1 nitro',fx:{nitro:-1,karma:5,aff:{june:28}},res:'June clips it to her belt. “I’m never using this.” She never does.'},
-   {t:'“Toughen up or ship out.”',tag:'bad',fx:{aff:{june:-20,dex:6}},res:'June stays. She just stops talking to you between races.'}]},
- {id:'reporter',title:'Live on Channel 8',text:'A reporter shoves a microphone in your face after qualifying. “Duke Vance reckons you drive like his nan. Any response?”',
-  choices:[
-   {t:'Praise the whole field, Duke included',tag:'good',fx:{karma:5,rival:10,aff:{rosa:4}},res:'Duke hears it on the radio. He doesn’t say thanks, but he stops ramming you in practice.'},
-   {t:'Rubbish Duke for the cameras (+$200 sponsor bump)',tag:'bad',fx:{money:200,karma:-4,rival:-15,aff:{dex:8,june:-3}},res:'The clip goes everywhere. A meat pie company sends a sponsorship cheque. Duke sends a look.'},
-   {t:'Spend the airtime bragging about your crew',tag:'good',fx:{aff:{rosa:6,june:6,dex:6}},res:'Your crew watches the replay four times and pretends not to.'}]},
- {id:'hank_return',pri:2,when:()=>G.flags.helpedHank!==undefined&&G.race-G.flags.helpedHank>=3,title:'Hank rides again',text:'Hank Booker turns up in the pits with a crate. Inside: a hand-ported racing cam from his championship truck. “Been saving it for someone who deserved it.”',
-  choices:[
-   {t:'Accept it (free engine upgrade)',tag:'neutral',fx:{upg:{eng:1},karma:2,aff:{rosa:5},unflag:'helpedHank'},res:'Rosa installs it reverently. The truck idles like it’s growling.'},
-   {t:'Tell him to sell it. He needs the money more',tag:'good',fx:{karma:8,aff:{rosa:6,june:6},unflag:'helpedHank'},res:'Hank laughs until he coughs. “Just like I was at your age. Broke and stubborn.”'}]},
- {id:'hank_revenge',pri:2,when:()=>G.flags.robbedHank!==undefined&&G.race-G.flags.robbedHank>=3,title:'Loose wheel nuts',text:'Rosa catches it during the morning check: every wheel nut on your truck has been backed off a full turn. Scratched into the hub: a carburettor.',
-  choices:[
-   {t:'Find Hank, apologise and pay him back $300',tag:'good',req:()=>G.money>=300,reqT:'Needs $300',fx:{money:-300,karma:15,aff:{rosa:10,june:5},unflag:'robbedHank'},res:'Hank takes the cash and studies you for a long moment. “Took guts to come here.”'},
-   {t:'Find Hank and threaten him',tag:'bad',fx:{karma:-10,aff:{dex:6,rosa:-10,june:-8},unflag:'robbedHank'},res:'Hank doesn’t flinch. “I already got my message across, mate.”'},
-   {t:'Pay $250 for new hubs and forget it',tag:'neutral',req:()=>G.money>=250,reqT:'Needs $250',fx:{money:-250,unflag:'robbedHank'},res:'Rosa fits locking nuts. “Some debts collect themselves.”'}]},
- {id:'duke_diner',pri:1,when:()=>G.rival<=-30,title:'Duke at the roadhouse',text:'Duke Vance kicks the chair out from your table and sits down. “You’ve been making me look bad all season.” His knuckles are white around his coffee cup.',
-  choices:[
-   {t:'Offer a handshake and a fresh start (Charm 2+)',tag:'risky',run:()=>G.stats.charm>=2?{fx:{rival:35,karma:5},res:'A long pause. Then Duke shakes. “You’re all right, rookie. Still gonna beat you.”'}:{fx:{rival:-5},res:'Duke stares at your hand until you put it away.'}},
-   {t:'Throw your flat white in his face',tag:'bad',fx:{rival:-20,karma:-6,aff:{dex:6,june:-5,rosa:-4}},res:'The roadhouse goes silent. Duke wipes his face slowly. “See you on the track.”'},
-   {t:'Leave a tip and walk out',tag:'neutral',fx:{karma:1},res:'You hear him laugh behind you. It isn’t a friendly laugh.'}]},
- {id:'quiet',repeat:true,title:'Open road',text:'A quiet stretch of highway between tracks. The sun is going down orange over the desert and there’s nothing on the schedule till morning.',
-  choices:[
-   {t:'Run practice laps on a dry salt lake',tag:'neutral',fx:{xp:70},res:'You come back sunburnt and sharper.'},
-   {t:'Wash the truck with the crew and fire up the barbie',tag:'good',fx:{aff:{rosa:5,june:5,dex:5}},res:'Somebody brings a radio. Nobody talks about racing for once.'},
-   {t:'Sleep in a swag under the stars',tag:'neutral',fx:{karma:1},res:'Best sleep you’ve had in weeks.'}]}
-];
-const SCHED={0:'stranded',1:'june_intro',2:'dex_intro',4:'duke_bribe'};
-const TAGS={good:'Good',bad:'Shady',neutral:'Neutral',risky:'Gamble'};
-function nextEvent(){
-  const s=SCHED[G.race];if(s&&!G.used.includes(s))return EVENTS.find(e=>e.id===s);
-  const av=EVENTS.filter(e=>!e.sched&&!e.repeat&&!G.used.includes(e.id)&&(!e.when||e.when()));
-  if(!av.length)return EVENTS.find(e=>e.id==='quiet');
-  const top=Math.max(...av.map(e=>e.pri||0));return pick(av.filter(e=>(e.pri||0)===top));
-}
-function apply(fx){
-  const out=[],reacts=[],gone=[],joined=[];
-  if(fx.money){G.money=Math.max(0,G.money+fx.money);out.push([(fx.money>0?'+$':'−$')+Math.abs(fx.money),fx.money>0])}
-  if(fx.karma){G.karma=clamp(G.karma+fx.karma,-100,100);out.push(['Karma '+(fx.karma>0?'+':'−')+Math.abs(fx.karma),fx.karma>0])}
-  if(fx.rival){G.rival=clamp(G.rival+fx.rival,-100,100);out.push(['Duke '+(fx.rival>0?'+':'−')+Math.abs(fx.rival),fx.rival>0])}
-  if(fx.xp){gainXP(fx.xp);out.push(['+'+fx.xp+' XP',true])}
-  if(fx.nitro){G.nitro=clamp(G.nitro+fx.nitro,0,9);out.push([(fx.nitro>0?'+':'−')+Math.abs(fx.nitro)+' nitro',fx.nitro>0])}
-  if(fx.upg)for(const k in fx.upg){G.upg[k]=Math.min(5,G.upg[k]+fx.upg[k]);out.push(['Engine +1',true])}
-  if(fx.flag)G.flags[fx.flag]=G.race;
-  if(fx.unflag)delete G.flags[fx.unflag];
-  if(fx.join){const c=G.crew[fx.join];c.in=true;c.met=true;c.aff=fx.joinAff||0;joined.push(fx.join)}
-  if(fx.leave){const c=G.crew[fx.leave];if(c.in){c.in=false;c.left=G.race;gone.push(fx.leave)}}
-  if(fx.aff)for(const id in fx.aff){
-    if(!G.crew[id].in)continue;let d=fx.aff[id];if(d>0)d=Math.round(d*(1+G.stats.charm*0.1));
-    G.crew[id].aff=clamp(G.crew[id].aff+d,-100,100);reacts.push({id,d,line:pick(CREW[id][d>0?'up':'down'])});
-  }
-  for(const id in G.crew){const c=G.crew[id];if(c.in&&c.aff<=-40){c.in=false;c.left=G.race;gone.push(id)}}
-  return{out,reacts,gone,joined};
-}
-function gainXP(x){G.xp+=x;let up=0;while(G.xp>=G.lvl*250){G.xp-=G.lvl*250;G.lvl++;G.sp++;up++}return up}
+      <section id="notes" class="notes">
+        <h2 class="section-title">Dev notes</h2>
+        <p class="notes-sub">What changed, newest first.</p>
+        <div id="notes-list" class="notes-list"><p class="fineprint">Loading…</p></div>
+      </section>
+    </main>
 
-/* ---------- RACE ---------- */
-const K={},TS={};let nitroPress=false;
-function playerStats(){const u=G.upg,s=G.stats;return{max:206+u.eng*15,acc:245+u.shk*22,turn:3.1+s.hand*0.12,grip:6+u.tire*0.9+s.hand*0.25+(trust('rosa')>=60?0.8:0)}}
-function mkCar(d,g,T,isP){
-  const p=pointAt(T,g[0]);
-  const c={id:d.id,name:d.name,tag:d.tag||'YOU',isP,crashT:0,spin:0,x:p.x-p.ty*g[1],y:p.y+p.tx*g[1],a:Math.atan2(p.ty,p.tx),vx:0,vy:0,z:0,vz:0,hint:null,s:0,dist:0,
-    lane:g[1],laneTo:g[1],laneT:rnd(1,3),nitro:1,bonus:0,nitroT:0,fin:false,ft:0,bumpCD:0,stuck:0,rev:0,rb:1,steerV:0};
-  const nr=nearest(T,c.x,c.y,null);c.hint=nr.i;c.s=nr.s;c.dist=nr.s>T.L/2?nr.s-T.L:nr.s;
-  if(isP){c.st=playerStats();c.bonus=juneBonus();c.nitro=G.nitro+c.bonus}
-  else{c.st={max:194+G.race*5.5+d.skill,acc:250+G.race*6,turn:3.4,grip:7.5};if(d.id==='duke'&&G.flags.dukeSab!==undefined)c.st.max*=0.86}
-  return c;
-}
-function startRace(){
-  const T=trackFor(G.race),grid=[];for(let row=0;row<4;row++)for(const o of [-20,20])grid.push([T.L-40-row*56-(o>0?18:0),o]);
-  const cars=[],slots=[0,1,2,3,4,6,7];RIVALS.forEach((r,i)=>cars.push(mkCar(r,grid[slots[i]],T,false)));
-  const pl=mkCar({id:'you',name:'You',tag:'YOU'},grid[5],T,true);cars.push(pl);
-  R={T,cars,pl,phase:'count',t:3.2,time:0,order:[],pick:[],pickT:3,parts:[],floats:[],shake:0,cash:0,picks:0,done:0,paused:false,roo:null,rooT:rnd(6,10),crashes:0};
-  setMode('race');if(document.activeElement)document.activeElement.blur();
-}
-function rank(){return R.cars.slice().sort((a,b)=>a.fin&&b.fin?R.order.indexOf(a)-R.order.indexOf(b):a.fin?-1:b.fin?1:b.dist-a.dist)}
-function playerInput(){
-  const l=K.ArrowLeft||K.KeyA||TS.l,r=K.ArrowRight||K.KeyD||TS.r,n=nitroPress;nitroPress=false;
-  return{gas:!!(K.ArrowUp||K.KeyW||TS.g),brake:!!(K.ArrowDown||K.KeyS||TS.b),steer:(r?1:0)-(l?1:0),nitro:n};
-}
-function aiInput(c,dt){
-  const T=R.T,fx=Math.cos(c.a),fy=Math.sin(c.a),fs=c.vx*fx+c.vy*fy;
-  if(!c.isP){const gap=R.pl.dist-c.dist;c.rb=1+clamp(gap/1500,-0.07,0.1)}
-  c.laneT-=dt;if(c.laneT<=0){c.laneT=rnd(1.5,3.5);c.laneTo=rnd(-18,18)}c.lane+=(c.laneTo-c.lane)*Math.min(1,dt);
-  let off=c.lane;
-  if(c.id==='duke'&&G.rival<=-30&&!R.pl.fin&&Math.abs(R.pl.dist-c.dist)<90){off=clamp(nearest(T,R.pl.x,R.pl.y,R.pl.hint).d,-30,30)}
-  const p=pointAt(T,c.s+55+Math.max(0,fs)*0.35),tx=p.x-p.ty*off,ty=p.y+p.tx*off;
-  const diff=wrapA(Math.atan2(ty-c.y,tx-c.x)-c.a);
-  const q1=pointAt(T,c.s+40),q2=pointAt(T,c.s+160+Math.max(0,fs)*0.3);
-  const curv=Math.abs(wrapA(Math.atan2(q2.ty,q2.tx)-Math.atan2(q1.ty,q1.tx)));
-  const target=c.st.max*c.rb*(1-Math.min(0.5,curv*0.42));
-  let gas=fs<target,brake=fs>target+35,steer=clamp(diff*3,-1,1);
-  if(Math.abs(diff)>1.2&&fs>60)gas=false;
-  if(gas&&fs<25)c.stuck+=dt;else c.stuck=Math.max(0,c.stuck-dt);
-  if(c.stuck>1.2){c.rev=0.8;c.stuck=0}
-  if(c.rev>0){c.rev-=dt;return{gas:false,brake:true,steer:-steer,nitro:false}}
-  return{gas,brake,steer,nitro:!c.isP&&c.nitro>0&&curv<0.15&&Math.random()<dt*0.35};
-}
-const NOINP={gas:false,brake:false,steer:0,nitro:false};
-function physics(c,inp,dt){
-  const T=R.T,st=c.st,grit=c.isP?G.stats.grit:1;
-  if(c.crashT>0){c.crashT-=dt;inp=NOINP;c.a+=c.spin*dt;c.spin*=Math.max(0,1-2.2*dt);if(Math.random()<0.5)puff(c.x,c.y,'#55505c',1)}
-  let nr=nearest(T,c.x,c.y,c.hint);c.hint=nr.i;
-  let ds=nr.s-c.s;if(ds<-T.L/2)ds+=T.L;if(ds>T.L/2)ds-=T.L;c.dist+=ds;c.s=nr.s;
-  let surf=1,gm=1;const ad=nr.dist;
-  if(ad>HW){surf=0.6+grit*0.03;gm=0.8}
-  c.bumpCD-=dt;const air=c.z>0.5;
-  if(!air)for(const h of T.hz){
-    if(h.type==='bump'){let dd=Math.abs(c.s-h.s);if(dd>T.L/2)dd=T.L-dd;
-      if(dd<8&&ad<HW&&c.bumpCD<=0){const sp=Math.hypot(c.vx,c.vy);if(sp>90){c.vz=90+sp*0.42;c.z=1;c.bumpCD=0.6}}}
-    else{const dx=c.x-h.x,dy=c.y-h.y;if(dx*dx+dy*dy<h.r*h.r){
-      if(h.type==='mud'){surf=Math.min(surf,0.48+grit*0.04);gm=Math.min(gm,0.75);if(Math.random()<0.4)puff(c.x,c.y,'#4a1a0c',2)}
-      else{surf=Math.min(surf,0.7+grit*0.03);gm=Math.min(gm,0.45);if(Math.random()<0.6)burst(c.x,c.y,'#9fd3ee',3,90,2)}}}
-  }
-  if(c.nitroT>0)c.nitroT-=dt;
-  if(inp.nitro&&c.nitro>0&&c.nitroT<=0){c.nitro--;if(c.bonus>0)c.bonus--;c.nitroT=c.isP?1.2+G.stats.nerve*0.15:1.2;if(c.isP)R.shake=Math.max(R.shake,2)}
-  const boost=c.nitroT>0;
-  c.steerV+=(inp.steer-c.steerV)*Math.min(1,dt*12);
-  let fx=Math.cos(c.a),fy=Math.sin(c.a),fs=c.vx*fx+c.vy*fy;
-  if(!air)c.a+=c.steerV*st.turn*clamp(fs/80,-1,1)*dt;
-  fx=Math.cos(c.a);fy=Math.sin(c.a);fs=c.vx*fx+c.vy*fy;let ls=-c.vx*fy+c.vy*fx;
-  const maxS=st.max*surf*(boost?1.35:1)*c.rb,acc=st.acc*(boost?1.9:1);
-  if(!air){
-    if(inp.gas){if(fs<maxS)fs+=acc*dt}
-    else if(inp.brake){if(fs>5)fs-=420*dt;else fs=Math.max(-90,fs-170*dt)}
-    else fs-=fs*1.0*dt;
-    if(fs>maxS)fs-=(fs-maxS)*3*dt;
-    ls*=Math.max(0,1-st.grip*gm*(c.crashT>0?0.25:1)*dt);
-  }
-  c.vx=fx*fs-fy*ls;c.vy=fy*fs+fx*ls;
-  c.x+=c.vx*dt;c.y+=c.vy*dt;
-  if(c.z>0||c.vz>0){c.vz-=720*dt;c.z+=c.vz*dt;
-    if(c.z<=0){c.z=0;if(c.vz<-120){const k=c.isP?0.86+G.upg.shk*0.025:0.9;c.vx*=k;c.vy*=k;puff(c.x,c.y,T.dust,8);if(c.isP)R.shake=Math.max(R.shake,3)}c.vz=0}}
-  nr=nearest(T,c.x,c.y,c.hint);
-  if(nr.dist>WALLC){c.x=nr.px+nr.ux*WALLC;c.y=nr.py+nr.uy*WALLC;const vn=c.vx*nr.ux+c.vy*nr.uy;
-    if(vn>0){c.vx-=nr.ux*vn*1.5;c.vy-=nr.uy*vn*1.5;const k=0.88+grit*0.015;c.vx*=k;c.vy*=k;if(vn>60){burst(c.x,c.y,'#ffe39a',6,160,2);if(c.isP)R.shake=Math.max(R.shake,vn/40)}}}
-  const sp=Math.hypot(c.vx,c.vy);
-  if(sp>60&&c.z<1&&Math.random()<sp/240)puff(c.x-fx*20,c.y-fy*20,ad>HW?T.shoulder:T.dust,1);
-  if(boost)for(let i=0;i<2;i++)R.parts.push({x:c.x-fx*24,y:c.y-fy*24-c.z*0.7,vx:-fx*120+rnd(-25,25),vy:-fy*120+rnd(-25,25),life:0.25,max:0.25,r:rnd(3,6),col:pick(['#ffc46b','#e63946','#ffe39a'])});
-  if(!c.fin&&c.dist>=LAPS*T.L){c.fin=true;c.ft=R.time;R.order.push(c);if(c.isP)R.floats.push({x:c.x,y:c.y-24,txt:'FINISH!',col:'#ffcd00',life:1.5})}
-}
-function puff(x,y,col,n){for(let i=0;i<n;i++)R.parts.push({x,y,vx:rnd(-30,30),vy:rnd(-30,30),life:rnd(0.4,0.9),max:0.9,r:rnd(3,7),col,grow:1})}
-function burst(x,y,col,n,v,r){for(let i=0;i<n;i++){const a=rnd(0,7);R.parts.push({x,y,vx:Math.cos(a)*rnd(v/3,v),vy:Math.sin(a)*rnd(v/3,v),life:rnd(0.2,0.45),max:0.45,r,col})}}
-function crash(a,b,J){
-  const k=clamp(J/160,0.6,1.3),mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
-  for(const c of [a,b]){c.crashT=0.7+0.4*k;c.spin=(Math.random()<.5?-1:1)*rnd(6,10)*k;c.vx*=0.7;c.vy*=0.7;if(c.isP)R.crashes++}
-  burst(mx,my,'#ffe39a',14,220,2);burst(mx,my,TRUCKS[a.id][0],6,150,2);burst(mx,my,TRUCKS[b.id][0],6,150,2);burst(mx,my,'#1d1b22',6,120,2);puff(mx,my,R.T.dust,8);
-  const pl=a.isP||b.isP;if(pl)R.shake=Math.max(R.shake,7);
-  R.floats.push({x:mx,y:my-24,txt:'CRASH!',col:pl?'#e63946':'#fbf8f2',life:1.1});
-}
-function updRoo(dt){
-  const T=R.T;
-  if(!R.roo){R.rooT-=dt;if(R.rooT<=0){const p=pointAt(T,R.pl.s+rnd(260,480)),side=Math.random()<.5?-1:1,nx=-p.ty,ny=p.tx,o=(WALL+20)*side;
-    R.roo={x:p.x+nx*o,y:p.y+ny*o,vx:-nx*side*80,vy:-ny*side*80,t:0,trav:0,hit:{},big:0}}return}
-  const r=R.roo;r.t+=dt;r.big=Math.max(0,r.big-dt);r.x+=r.vx*dt;r.y+=r.vy*dt;r.trav+=Math.hypot(r.vx,r.vy)*dt;
-  r.h=Math.abs(Math.sin(r.t*7))*(r.big>0?16:7);
-  for(const c of R.cars){if(r.hit[c.id]||c.z>5||r.h>4)continue;if(Math.hypot(c.x-r.x,c.y-r.y)<24){r.hit[c.id]=1;c.vx*=0.5;c.vy*=0.5;c.a+=rnd(-0.5,0.5);r.vx*=1.8;r.vy*=1.8;r.big=0.8;puff(r.x,r.y,T.dust,6);
-    if(c.isP){R.shake=Math.max(R.shake,3);R.floats.push({x:r.x,y:r.y-20,txt:'BOING!',col:'#ffcd00',life:1})}}}
-  if(r.trav>2*(WALL+20)+40){R.roo=null;R.rooT=rnd(9,15)}
-}
-function updRace(dt){
-  R.shake=Math.max(0,R.shake-dt*18);
-  for(const p of R.parts){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=0.94;p.vy*=0.94;p.life-=dt;if(p.grow)p.r+=dt*8}
-  R.parts=R.parts.filter(p=>p.life>0);if(R.parts.length>600)R.parts.splice(0,R.parts.length-600);
-  for(const f of R.floats){f.y-=30*dt;f.life-=dt}R.floats=R.floats.filter(f=>f.life>0);
-  if(R.phase==='count'){R.t-=dt;if(R.t<=0)R.phase='go';return}
-  R.time+=dt;
-  R.pickT-=dt;
-  if(R.pickT<=0&&R.pick.length<4){R.pickT=rnd(4,8);const p=pointAt(R.T,rnd(0,R.T.L)),o=rnd(-28,28);R.pick.push({type:Math.random()<0.55?'cash':'nitro',x:p.x-p.ty*o,y:p.y+p.tx*o,t:0})}
-  for(const c of R.cars)physics(c,c.isP&&!c.fin&&!c.auto?playerInput():aiInput(c,dt),dt);
-  updRoo(dt);
-  const cs=R.cars;
-  for(let i=0;i<cs.length;i++)for(let j=i+1;j<cs.length;j++){
-    const a=cs[i],b=cs[j];if(Math.abs(a.z-b.z)>12)continue;
-    const dx=b.x-a.x,dy=b.y-a.y,d2=dx*dx+dy*dy;
-    if(d2<900&&d2>0.01){const d=Math.sqrt(d2),nx=dx/d,ny=dy/d,o=(30-d)/2;a.x-=nx*o;a.y-=ny*o;b.x+=nx*o;b.y+=ny*o;
-      const rv=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;if(rv<0){const J=-rv*0.85;a.vx-=nx*J;a.vy-=ny*J;b.vx+=nx*J;b.vy+=ny*J;if((a.isP||b.isP)&&J>30)R.shake=Math.max(R.shake,2);
-        const hd=Math.abs(wrapA(a.a-b.a));if(J>60&&hd>0.55&&hd<2.6&&a.crashT<=0&&b.crashT<=0)crash(a,b,J)}}
-  }
-  for(const p of R.pick){p.t+=dt;for(const c of cs){if(p.got)break;if(c.z<10&&Math.hypot(c.x-p.x,c.y-p.y)<24){p.got=true;
-    if(p.type==='nitro'){c.nitro=Math.min(9,c.nitro+1);if(c.isP){R.picks++;R.floats.push({x:p.x,y:p.y,txt:'+NITRO',col:'#5fd37e',life:1})}}
-    else if(c.isP){const amt=Math.round(rnd(40,120)*(1+G.race*0.12));R.cash+=amt;R.picks++;R.floats.push({x:p.x,y:p.y,txt:'+$'+amt,col:'#ffcd00',life:1})}
-    burst(p.x,p.y,p.type==='nitro'?'#5fd37e':'#ffcd00',10,120,2)}}}
-  R.pick=R.pick.filter(p=>!p.got);
-  if(R.pl.fin){R.done+=dt;if(R.done>4||cs.every(c=>c.fin))endRace()}
-}
-const ri=Math.round;
-function drawRace(){
-  const T=R.T;let sx=0,sy=0;
-  if(R.shake>0&&!R.paused){sx=ri(rnd(-R.shake,R.shake)/2);sy=ri(rnd(-R.shake,R.shake)/2)}
-  bx.fillStyle='#000';bx.fillRect(0,0,AW,AH);bx.drawImage(T.img,sx,sy);
-  bx.save();bx.translate(sx,sy);
-  for(const p of R.pick){const a=A(p.x,p.y),s=SPR[p.type],b=ri(Math.sin(p.t*5)*1.5);bx.fillStyle='rgba(0,0,0,.4)';bx.fillRect(ri(a.x-3),ri(a.y+3),7,2);bx.drawImage(s,ri(a.x-s.width/2),ri(a.y-s.height/2-2+b))}
-  for(const p of R.parts){if(p.grow)continue;const a=A(p.x,p.y),z=Math.max(1,ri(p.r/2.5));bx.globalAlpha=clamp(p.life/p.max,0,1);bx.fillStyle=p.col;bx.fillRect(ri(a.x-z/2),ri(a.y-z/2),z,z)}
-  for(const p of R.parts){if(!p.grow)continue;const a=A(p.x,p.y),z=Math.max(1,ri(p.r/2));bx.globalAlpha=clamp(p.life/p.max,0,1)*0.75;bx.fillStyle=p.col;bx.fillRect(ri(a.x-z/2),ri(a.y-z/2),z,z)}
-  bx.globalAlpha=1;
-  const idx=a=>((ri(((a%(Math.PI*2))+Math.PI*2)%(Math.PI*2)/(Math.PI*2)*32))%32);
-  for(const c of R.cars){const a=A(c.x,c.y),S=SPRITES[c.id];bx.drawImage(S.shadow[idx(c.a)],ri(a.x-15+2+c.z*0.2),ri(a.y-15+3+c.z*0.25))}
-  if(R.roo){const r=R.roo,a=A(r.x,r.y),s=r.vx*1+r.vy*0<0?SPR.rooL:SPR.roo;bx.fillStyle='rgba(0,0,0,.4)';bx.fillRect(ri(a.x-4),ri(a.y+4),9,2);bx.drawImage(s,ri(a.x-7),ri(a.y-10-r.h/2))}
-  for(const c of R.cars.slice().sort((p,q)=>p.y+p.z*3-(q.y+q.z*3))){const a=A(c.x,c.y);bx.drawImage(SPRITES[c.id].spr[idx(c.a)],ri(a.x-15),ri(a.y-15-c.z*0.35))}
-  bx.restore();
-  ctx.imageSmoothingEnabled=false;ctx.drawImage(buf,0,0,W,H);
-  ctx.save();ctx.translate(sx*2,sy*2+OY);ctx.textAlign='center';ctx.textBaseline='middle';
-  if(R.phase==='count'){const p=R.pl;ctx.fillStyle='#ffcd00';ctx.font='12px "Press Start 2P",monospace';ctx.fillText('YOU',p.x,p.y-38);ctx.beginPath();ctx.moveTo(p.x-6,p.y-30);ctx.lineTo(p.x+6,p.y-30);ctx.lineTo(p.x,p.y-24);ctx.fill()}
-  for(const f of R.floats){ctx.globalAlpha=clamp(f.life,0,1);ctx.font='14px "Press Start 2P",monospace';ctx.fillStyle='#000';ctx.fillText(f.txt,f.x+2,f.y+2);ctx.fillStyle=f.col;ctx.fillText(f.txt,f.x,f.y)}
-  ctx.globalAlpha=1;ctx.restore();
-  drawHUD();
-  ctx.textAlign='center';ctx.textBaseline='middle';
-  const big=(txt,y,size,col)=>{ctx.font=size+'px "Press Start 2P",monospace';ctx.lineWidth=8;ctx.strokeStyle='#000';ctx.strokeText(txt,W/2,y);ctx.fillStyle='#00843d';ctx.fillText(txt,W/2+5,y+5);ctx.fillStyle=col;ctx.fillText(txt,W/2,y)};
-  if(R.phase==='count'){big(T.name.toUpperCase(),H/2-80,20,'#fbf8f2');big('RACE '+(G.race+1)+' OF '+SEASON+(T.fig?' · FIGURE 8':' · LOOP'),H/2-50,12,'#ffc46b');big(String(Math.min(3,Math.ceil(R.t))),H/2+20,80,'#ffcd00')}
-  else if(R.time<0.9)big('GO!',H/2,80,'#ffcd00');
-  if(R.paused){ctx.fillStyle='rgba(20,10,34,.72)';ctx.fillRect(0,0,W,H);big('PAUSED',H/2-16,36,'#fbf8f2');ctx.font='16px Rubik,sans-serif';ctx.fillStyle='#fbf8f2';ctx.fillText('Press P or tap to resume',W/2,H/2+34)}
-}
-function drawHUD(){
-  const p=R.pl,T=R.T,rk=rank(),pos=rk.indexOf(p)+1,lap=clamp(Math.floor(p.dist/T.L)+1,1,LAPS),y0=602;
-  ctx.fillStyle='#1c1030';ctx.fillRect(0,y0,W,H-y0);ctx.fillStyle='#ffcd00';ctx.fillRect(0,y0,W,3);ctx.fillStyle='#00843d';ctx.fillRect(0,y0+3,W,2);
-  const cy=y0+21;ctx.textBaseline='middle';ctx.textAlign='left';ctx.font='12px "Press Start 2P",monospace';
-  ctx.fillStyle='#fbf8f2';ctx.fillText('LAP '+lap+'/'+LAPS,14,cy);
-  ctx.fillStyle=pos===1?'#ffcd00':'#fbf8f2';ctx.fillText(ord(pos).toUpperCase(),136,cy);
-  ctx.fillStyle='#5fd37e';ctx.fillText('NOS',212,cy);
-  for(let i=0;i<Math.min(9,p.nitro);i++){ctx.fillStyle=i<p.bonus?'#b9f5c8':'#00a84e';ctx.fillRect(256+i*11,cy-8,7,16);ctx.fillStyle='#e8fff0';ctx.fillRect(257+i*11,cy-7,2,6)}
-  ctx.fillStyle='#ffcd00';ctx.fillText('$'+R.cash,368,cy);
-  ctx.fillStyle='#cdb9a6';ctx.fillText(fmtT(R.time),446,cy);
-  ctx.textAlign='center';ctx.font='10px "Press Start 2P",monospace';
-  rk.forEach((c,i)=>{const x=566+i*48;if(c.isP){ctx.fillStyle='#ffcd00';ctx.fillRect(x-3,cy-13,46,26)}ctx.fillStyle='#000';ctx.fillRect(x-1,cy-11,42,22);ctx.fillStyle=COLORS[c.id];ctx.fillRect(x,cy-10,12,20);ctx.fillStyle=c.isP?'#ffcd00':'#e6d8c2';ctx.fillText(String(i+1),x+26,cy+1)});
-  ctx.textAlign='left';
-}
-function endRace(){
-  const rk=rank(),pi=rk.indexOf(R.pl);
-  rk.forEach((c,i)=>{G.points[c.id]=(G.points[c.id]||0)+PTS[i]});
-  const won=Math.round(PRIZE[pi]*(1+G.race*0.1)*dexMult()/10)*10,xp=XPP[pi]+R.picks*10;
-  G.money+=won+R.cash;const lv=gainXP(xp);
-  G.nitro=clamp(R.pl.nitro-R.pl.bonus,0,9);
-  const notes=[];
-  if(G.flags.tookBribe!==undefined){const di=rk.findIndex(c=>c.id==='duke');
-    if(pi<di){G.rival=clamp(G.rival-40,-100,100);notes.push('You took Duke’s money and beat him anyway. He wants blood now (Duke −40).')}
-    else{G.rival=clamp(G.rival+10,-100,100);notes.push('Duke tips his hat as you roll in behind him. A deal is a deal (Duke +10).')}
-    delete G.flags.tookBribe}
-  if(G.flags.dukeSab!==undefined){notes.push('Duke fought a loose steering rack all race. He doesn’t know why. Yet.');delete G.flags.dukeSab}
-  if(R.crashes)notes.push('You were in '+R.crashes+' crash'+(R.crashes>1?'es':'')+' this race.');
-  if(dexMult()>1)notes.push('Dex squeezed an extra 20% out of the purse.');
-  if(juneBonus())notes.push('June’s spotting earned you '+juneBonus()+' bonus nitro this race.');
-  const T=R.T;G.race++;G.stage=G.race>=SEASON?'end':'event';save();
-  lastRes={rk:rk.map(c=>({id:c.id,ft:c.fin?c.ft:null})),pi,won,cash:R.cash,xp,lv,notes,track:T.name};
-  setMode('menu');showResults();
-}
+    <footer class="footer">
+      <p>Aussie 8 is an indie game. All money, teams and drivers in it are fictional.</p>
+      <p><a href="https://github.com/tinymana/aussie8">Source on GitHub</a></p>
+    </footer>
 
-/* ---------- SCREENS ---------- */
-function drawBg(kind){
-  ctx.imageSmoothingEnabled=false;
-  if(kind==='title'){if(titleImg.complete&&titleImg.naturalWidth){ctx.imageSmoothingEnabled=true;ctx.drawImage(titleImg,0,0,W,H)}else{ctx.fillStyle='#2e1a4a';ctx.fillRect(0,0,W,H)}}
-  else ctx.drawImage(trackFor(G?G.race:0).img,0,0,W,H);
-}
-let bgKind='title';
-titleImg.onload=()=>{if(mode!=='race')drawBg(bgKind)};
-function setMode(m,bg){
-  mode=m;scr.classList.toggle('menu',m==='menu');scr.classList.toggle('title',m==='title');ov.hidden=m==='race';
-  touchEl.classList.toggle('on',m==='race'&&matchMedia('(pointer:coarse)').matches);
-  if(m!=='race'){bgKind=bg||(m==='title'?'title':'track');drawBg(bgKind);scr.scrollIntoView({block:'nearest'})}
-}
-const face=id=>`<span class="face" style="--c:${CREW[id].color}" title="${CREW[id].short}">${CREW[id].short[0]}</span>`;
-const pips=(n,max=5)=>`<span class="pips">${Array.from({length:max},(_,i)=>`<i class="${i<n?'on':''}"></i>`).join('')}</span>`;
-function showTitle(){
-  setMode('title');
-  ov.innerHTML=`<button class="start" data-act="menu" aria-label="Press start"><span class="press"></span></button>`;
-}
-function showMenu(){
-  setMode('menu','title');const s=load();
-  ov.innerHTML=`<div class="panel"><p class="kicker">One season · eight trucks · four loops and four figure-8s</p>
-  <div class="title-logo">AUSSIE 8</div>
-  <p class="story">Eight trophy trucks and eight red-dirt arenas from the Red Centre to the Daintree. Half are flat-out loops; the other half are figure-8s with a crossover where everybody meets. Then live with what you do between races. Help strangers or rob them, take the bribe or leak it. Your crew remembers every call, and they’ll walk if you push them too far.</p>
-  <div class="actions">${s&&s.race<SEASON?`<button class="btn" data-act="cont">Continue season (race ${s.race+1} of ${SEASON})</button><button class="btn ghost" data-act="new">New season</button>`:`<button class="btn" data-act="new">Start season</button>`}</div>
-  <div class="keys">
-    <div class="key"><b>Drive</b>Arrow keys or WASD. On phones, use the buttons under the screen.</div>
-    <div class="key"><b>Nitro</b>Space or Shift. Grab green N canisters on track for more.</div>
-    <div class="key"><b>The crossover</b>Figure-8 tracks cross themselves. Time it badly and you get T-boned into a spin.</div>
-    <div class="key"><b>Between races</b>Upgrade the truck, level your driver and make choices that stick.</div>
-  </div></div>`;
-}
-function showEvent(ev){
-  curEv=ev;G.stage='event';
-  const crewNow=Object.keys(CREW).filter(inCrew);
-  ov.innerHTML=`<div class="panel"><p class="kicker">${G.race===0?'Before the season':'After race '+G.race+' of '+SEASON}</p>
-  <h2>${ev.title}</h2><p class="story">${ev.text}</p>
-  ${crewNow.length?`<div class="riders">${crewNow.map(face).join('')}<span class="muted">Your crew is watching.</span></div>`:''}
-  <div class="choices">${ev.choices.map((c,i)=>{const ok=!c.req||c.req();return`<button class="choice ${c.tag}" data-act="ch:${i}" ${ok?'':'disabled'}><span class="tag">${TAGS[c.tag]}</span><span>${c.t}</span>${ok?'':`<small>${c.reqT}</small>`}</button>`}).join('')}</div></div>`;
-}
-function choose(i){
-  const ev=curEv,c=ev.choices[i];if(c.req&&!c.req())return;
-  if(!ev.repeat&&!G.used.includes(ev.id))G.used.push(ev.id);
-  const r=c.run?c.run():{fx:c.fx||{},res:c.res},o=apply(r.fx);G.stage='garage';save();
-  ov.innerHTML=`<div class="panel"><p class="kicker">${ev.title}</p><h2>${r.res}</h2>
-  ${o.out.length?`<div class="pills">${o.out.map(([t,up])=>`<span class="pill ${up?'up':'dn'}">${t}</span>`).join('')}</div>`:''}
-  ${o.joined.map(id=>`<div class="react">${face(id)}<div><b>${CREW[id].name}</b> joined your crew as ${CREW[id].role.toLowerCase()}.<br><span class="muted">Likes: ${CREW[id].likes}</span></div></div>`).join('')}
-  ${o.reacts.map(x=>`<div class="react">${face(x.id)}<div><b>${CREW[x.id].short}</b> <span class="pill ${x.d>0?'up':'dn'}">${x.d>0?'+':'−'}${Math.abs(x.d)} trust</span><br><q>${x.line}</q></div></div>`).join('')}
-  ${o.gone.map(id=>`<div class="note"><b>${CREW[id].short} has left your crew.</b> ${CREW[id].leave}</div>`).join('')}
-  <div class="actions"><button class="btn" data-act="garage">To the garage</button></div></div>`;
-}
-function standings(){return Object.keys(G.points).sort((a,b)=>G.points[b]-G.points[a]||(a==='you'?-1:1))}
-function showGarage(){
-  G.stage='garage';save();setMode('menu');const d=discount(),T=trackFor(G.race),st=standings();
-  const statRow=(k,label,desc)=>`<div class="row"><div><b>${label}</b><small>${desc}</small></div>${pips(G.stats[k])}<button class="btn sm ghost" data-act="stat:${k}" ${G.sp>0&&G.stats[k]<5?'':'disabled'} aria-label="Raise ${label}">+1</button></div>`;
-  const upRow=(k,label,desc)=>{const l=G.upg[k],cost=l<5?Math.round(UPC[l]*d/10)*10:0;return`<div class="row"><div><b>${label}</b><small>${desc}</small></div>${pips(l)}<button class="btn sm" data-act="upg:${k}" ${l<5&&G.money>=cost?'':'disabled'}>${l<5?'$'+cost:'Max'}</button></div>`};
-  const ncost=Math.round(150*d/10)*10;
-  const crewCard=id=>{const c=G.crew[id],C=CREW[id];const status=c.in?'In your crew':c.left!==null?'Left after race '+c.left:c.met?'Not in crew':'Not met yet';
-    return`<div class="react">${face(id)}<div style="flex:1"><b>${C.name}</b> <span class="muted">· ${C.role} · ${status}</span>
-    ${c.met||c.in?`<div class="meter" style="--v:${(c.aff+100)/2}"><b></b></div><div class="ends"><span>Trust ${c.aff}</span><span>${c.in?C.perk(c.aff):'No perk'}</span></div>`:`<div class="muted">Likes: ${C.likes}</div>`}</div></div>`};
-  ov.innerHTML=`<div class="panel">
-  <div class="top"><div><p class="kicker">The garage · next up race ${G.race+1} of ${SEASON} · ${T.fig?'figure-8, watch the crossover':'regular loop'}</p><h2>${T.name}</h2></div><div class="money">$${G.money.toLocaleString()}</div></div>
-  <div class="grid">
-   <div class="card"><h3>Truck</h3>
-    ${upRow('eng','Engine','Top speed')}${upRow('tire','Tyres','Corner grip')}${upRow('shk','Shocks','Acceleration, softer landings')}
-    <div class="row two"><div><b>Nitro</b><small>${G.nitro} of 9 canisters</small></div><button class="btn sm" data-act="nitro" ${G.nitro<9&&G.money>=ncost?'':'disabled'}>+1 for $${ncost}</button></div>
-    ${d<1?`<p class="muted">Rosa’s discount: ${Math.round((1-d)*100)}% off.</p>`:''}</div>
-   <div class="card"><h3>Driver · level ${G.lvl}</h3>
-    <div class="meter" style="--v:${G.xp/(G.lvl*250)*100};background:#3e2a55"><b style="background:var(--gold);box-shadow:0 0 6px var(--gold)"></b></div>
-    <p class="muted" style="margin:0 0 6px">${G.xp} / ${G.lvl*250} XP · ${G.sp} skill point${G.sp===1?'':'s'} to spend</p>
-    ${statRow('hand','Handling','Sharper steering and grip')}${statRow('grit','Grit','Lose less speed to walls, mud, rough')}${statRow('nerve','Nerve','Longer nitro bursts')}${statRow('charm','Charm','Trust grows faster; smooth-talk options')}</div>
-   <div class="card"><h3>Reputation</h3>
-    <div class="meter" style="--v:${(G.karma+100)/2}"><b></b></div><div class="ends"><span>Outlaw</span><span>Karma ${G.karma}</span><span>Saint</span></div>
-    <div class="meter" style="--v:${(G.rival+100)/2};margin-top:16px"><b></b></div><div class="ends"><span>Nemesis</span><span>Duke ${G.rival}</span><span>Mate</span></div>
-    ${G.rival<=-30?'<p class="muted">Duke will try to ram you on track.</p>':''}
-    <h3 style="margin-top:20px">Season points</h3><table><tbody>${st.map((id,i)=>`<tr class="${id==='you'?'me':''}"><td>${i+1}</td><td><span class="dot" style="background:${COLORS[id]}"></span>${NAMES[id]}</td><td class="n">${G.points[id]}</td></tr>`).join('')}</tbody></table></div>
-  </div>
-  <div class="card" style="margin-top:12px"><h3>Crew</h3>${Object.keys(CREW).map(crewCard).join('')}</div>
-  <div class="actions"><button class="btn" data-act="race">Race ${T.name}</button><button class="btn ghost" data-act="title">Title screen</button></div></div>`;
-}
-function showResults(){
-  const r=lastRes;
-  ov.innerHTML=`<div class="panel"><p class="kicker">${r.track} · race ${G.race} of ${SEASON}</p><h2>${r.pi===0?'Chequered flag. You win!':'You finished '+ord(r.pi+1)}</h2>
-  <table><thead><tr><th>Pos</th><th>Driver</th><th class="n">Time</th><th class="n">Points</th></tr></thead><tbody>
-  ${r.rk.map((c,i)=>`<tr class="${c.id==='you'?'me':''}"><td>${ord(i+1)}</td><td><span class="dot" style="background:${COLORS[c.id]}"></span>${NAMES[c.id]}</td><td class="n">${c.ft!=null?fmtT(c.ft):'—'}</td><td class="n">+${PTS[i]}</td></tr>`).join('')}</tbody></table>
-  <div class="pills" style="margin-top:14px"><span class="pill up">Purse +$${r.won}</span><span class="pill up">Pickups +$${r.cash}</span><span class="pill up">+${r.xp} XP</span>${r.lv?`<span class="pill up">Level up! +${r.lv} skill point</span>`:''}</div>
-  ${r.notes.map(n=>`<div class="note">${n}</div>`).join('')}
-  <div class="actions"><button class="btn" data-act="after">${G.race>=SEASON?'See how your season ends':'Continue'}</button></div></div>`;
-}
-function showEnding(){
-  setMode('menu','title');
-  const st=standings(),champ=st[0]==='you',k=G.karma;
-  const title=champ?(k>=35?'The People’s Champion':k<=-35?'Crowned in red dirt':'Champion, no halo'):(k>=35?'Hero of the outback':k<=-35?'Run out of town':'Just another driver');
-  const lines=[];
-  lines.push(champ?`You take the title with ${G.points.you} points.`:`You finish the season ${ord(st.indexOf('you')+1)} in points. ${NAMES[st[0]]} takes the title.`);
-  lines.push(k>=35?'Fans line the fences to shake your hand. Kids paint a big 8 on their bikes.':k<=-35?'You have the money, but every pit crew locks its toolbox when you walk by.':'Some folks cheer you, some boo. Most just want to see you race.');
-  const c=G.crew;
-  lines.push(c.rosa.in?(c.rosa.aff>=60?'Rosa opens a garage in Broken Hill. Your truck goes on the hoist first, free of charge, forever.':'Rosa signs on for next season. She says it’s for the pay. It isn’t only that.'):'Rosa runs a shop two states away now. She doesn’t take your calls.');
-  if(c.dex.met)lines.push(c.dex.in?(c.dex.aff>=60?'Dex parlays your season into a sponsorship deal with too many zeros. You get half. Probably.':'Dex moves on to a bigger hustle but sends a postcard from Darwin.'):'Dex is last seen selling “official” jackets with your face on them.');
-  if(c.june.met)lines.push(c.june.in?(c.june.aff>=60?'June gets a factory seat next year. In her first interview she thanks one person: you.':'June keeps spotting for you, clipboard and all.'):'June drives for Duke’s team now. She’s fast. She doesn’t wave.');
-  else lines.push('Somewhere, a rookie named June found someone else to believe in.');
-  lines.push(G.rival>=30?'Duke Vance shouts you a beer at the presentation night. Somewhere along the way, a rival became a mate.':G.rival<=-30?'Duke Vance swears he’ll put you in the tyre wall next season. You believe him.':'Duke Vance nods at you across the presentation night. Respect, maybe.');
-  ov.innerHTML=`<div class="panel"><p class="kicker">Season over</p><div class="title-logo" style="font-size:clamp(20px,4.4vw,40px)">${title.toUpperCase()}</div>
-  ${lines.map(l=>`<p class="story" style="margin-bottom:10px">${l}</p>`).join('')}
-  <div class="pills" style="margin-top:12px"><span class="pill">Karma ${k}</span><span class="pill">Duke ${G.rival}</span><span class="pill">Level ${G.lvl}</span><span class="pill">$${G.money.toLocaleString()}</span></div>
-  <div class="actions"><button class="btn" data-act="new">Start a new season</button><button class="btn ghost" data-act="title">Title screen</button></div></div>`;
-}
-function resume(){
-  if(!G)return showMenu();
-  if(G.stage==='end'||G.race>=SEASON)return showEnding();
-  if(G.stage==='event'){setMode('menu');return showEvent(nextEvent())}
-  showGarage();
-}
-ov.addEventListener('click',e=>{
-  const b=e.target.closest('[data-act]');if(!b||b.disabled)return;const a=b.dataset.act;
-  if(a==='menu')showMenu();
-  else if(a==='new'){G=fresh();save();setMode('menu');showEvent(nextEvent())}
-  else if(a==='cont'){G=load();resume()}
-  else if(a==='title')showTitle();
-  else if(a.startsWith('ch:'))choose(+a.slice(3));
-  else if(a==='garage')showGarage();
-  else if(a.startsWith('stat:')){const k=a.slice(5);if(G.sp>0&&G.stats[k]<5){G.stats[k]++;G.sp--;showGarage()}}
-  else if(a.startsWith('upg:')){const k=a.slice(4),l=G.upg[k],cost=Math.round(UPC[l]*discount()/10)*10;if(l<5&&G.money>=cost){G.money-=cost;G.upg[k]++;showGarage()}}
-  else if(a==='nitro'){const cost=Math.round(150*discount()/10)*10;if(G.nitro<9&&G.money>=cost){G.money-=cost;G.nitro++;showGarage()}}
-  else if(a==='race')startRace();
-  else if(a==='after'){G.race>=SEASON?showEnding():(setMode('menu'),showEvent(nextEvent()))}
-});
-
-/* ---------- INPUT + LOOP ---------- */
-const GAMEKEYS=['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'];
-addEventListener('keydown',e=>{
-  if(mode==='title'&&(e.code==='Enter'||e.code==='Space')){e.preventDefault();showMenu();return}
-  if(mode!=='race')return;
-  if(GAMEKEYS.includes(e.code))e.preventDefault();
-  if(!K[e.code]&&(e.code==='Space'||e.code==='ShiftLeft'||e.code==='ShiftRight'))nitroPress=true;
-  if(!K[e.code]&&(e.code==='KeyP'||e.code==='Escape'))R.paused=!R.paused;
-  K[e.code]=true;
-});
-addEventListener('keyup',e=>{K[e.code]=false});
-addEventListener('blur',()=>{for(const k in K)K[k]=false;if(mode==='race'&&R)R.paused=true});
-document.addEventListener('visibilitychange',()=>{if(document.hidden&&mode==='race'&&R)R.paused=true});
-cv.addEventListener('pointerdown',()=>{if(mode==='race'&&R&&R.paused)R.paused=false});
-touchEl.querySelectorAll('button').forEach(b=>{
-  const k=b.dataset.k;
-  const on=e=>{e.preventDefault();if(k==='n')nitroPress=true;else if(k==='p'){if(R)R.paused=!R.paused}else TS[k]=true;try{b.setPointerCapture(e.pointerId)}catch(_){}};
-  const off=e=>{e.preventDefault();TS[k]=false};
-  b.addEventListener('pointerdown',on);b.addEventListener('pointerup',off);b.addEventListener('pointercancel',off);b.addEventListener('lostpointercapture',off);
-  b.addEventListener('contextmenu',e=>e.preventDefault());
-});
-let last=performance.now();
-function loop(now){
-  const dt=Math.min(0.033,(now-last)/1000);last=now;
-  if(mode==='race'&&R){if(!R.paused)updRace(dt);if(mode==='race')drawRace()}
-  requestAnimationFrame(loop);
-}
-showTitle();requestAnimationFrame(loop);
-window.__A8={get G(){return G},get R(){return R},TRACKS};
-}
-</script>
-</body>
+    <script src="main.js" defer></script>
+  </body>
 </html>

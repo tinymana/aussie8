@@ -4,20 +4,64 @@ Outback trophy-truck racing in the browser, with RPG upgrades and a crew who rem
 
 Eight trucks, eight red-dirt arenas from the Red Centre to the Daintree. Half are flat-out loops; the other half are figure-8s with a crossover where the field meets and side-on hits send trucks spinning. Between races you upgrade the truck, level up your driver and make good or shady choices that change how your crew and your rival feel about you. Push someone too far and they walk.
 
-## Play
+## Site layout
 
-Open `index.html` in a browser. It has no build step and no dependencies apart from two Google Fonts.
+```
+index.html            Landing page: hero, features, phone controls, dev notes
+style.css, main.js    Landing page styles and script (main.js renders the dev notes)
+devnotes.json         Changelog. The landing page AND the in-game "What's new" both read it
+manifest.webmanifest  "Add to Home Screen": opens /play/ fullscreen in landscape
+_headers              Cache rules for Netlify / Cloudflare Pages
+favicon.png, assets/  Icons, title art and screenshots
+play/index.html       The game (single file, no build step)
+play/title.jpg        Title screen art
+tools/                Track generator
+```
 
-To play it online, turn on GitHub Pages for this repo (Settings → Pages → deploy from the `main` branch, root folder). `index.html` loads `title.jpg` by relative path, so keep them together.
+## Hosting
 
-| Key | Action |
+The site is fully static, with no build step.
+
+- **Netlify:** import the repo, leave the build command empty and set the publish directory to `/`. Every push to `main` deploys, and pull requests get preview links. Netlify picks up `_headers` automatically.
+- **GitHub Pages:** Settings → Pages → deploy from `main`, root folder.
+
+`devnotes.json` is loaded with `fetch`, so open the site through a web server, not by double-clicking `index.html`. For a quick local server, run `python3 -m http.server` and visit `http://localhost:8000/`.
+
+## Posting dev notes
+
+Add an entry to the **top** of `notes` in `devnotes.json` whenever you push an update:
+
+```json
+{
+  "version": "0.6",
+  "date": "2026-12-01",
+  "title": "Short headline",
+  "items": [
+    { "tag": "new", "text": "Something added." },
+    { "tag": "improved", "text": "Something better." },
+    { "tag": "fixed", "text": "Something that was broken." }
+  ]
+}
+```
+
+The landing page shows every entry, newest first, and marks the top one Latest. The game's menu shows the top entry as "What's new".
+
+## Controls
+
+| Keyboard | Action |
 |---|---|
 | Arrow keys / WASD | Drive |
 | Space / Shift | Nitro |
 | P / Esc | Pause |
 | Enter | Start, from the title screen |
 
-On touch devices, buttons appear under the screen during races. Progress saves to the browser's `localStorage` under the key `aussie8-v2`.
+**Phones:** races go fullscreen, with the controls beside the track.
+
+- **Drag to steer** (the default): put your thumb down anywhere on the left and point where you want to go. Gas is automatic, NITRO is under your right thumb, and BRAKE is beside it.
+- **Buttons:** big ◀ ▶, with GAS and NITRO side by side so you can roll your thumb across.
+- **Left-handed:** swaps the steering and pedal sides.
+
+You can change these on the game's menu and in the garage. Progress saves to the browser's `localStorage` (`aussie8-v2`; control settings are saved under `aussie8-ctl`).
 
 ## What's in the game
 
@@ -35,7 +79,7 @@ On touch devices, buttons appear under the screen during races. Progress saves t
 
 ## How it's built
 
-Everything lives in `index.html`: plain JavaScript inside one block, drawn on a canvas.
+The game is `play/index.html`: plain JavaScript inside one block, drawn on a canvas.
 
 - **Pixel renderer:** the race is drawn on a 480×320 buffer, then scaled up 2× with nearest-neighbour filtering. Each track is painted once at load, reduced to a fixed palette of about 55 colours with 4×4 Bayer dithering, and then the crisp details are added on top: tyre walls, light towers and flags.
 - **Truck sprites:** each truck is a 24×14 pixel-art image. It's rotated with nearest-neighbour sampling into 32 headings, and a 1px outline and a shadow are added to each.

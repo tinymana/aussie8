@@ -1,0 +1,15 @@
+{
+  "name": "Aussie 8",
+  "short_name": "Aussie 8",
+  "description": "Outback trophy-truck racing with RPG choices.",
+  "start_url": "/play/",
+  "scope": "/",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#140b22",
+  "theme_color": "#2e1a4a",
+  "icons": [
+    { "src": "/assets/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/assets/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

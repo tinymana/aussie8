@@ -1,0 +1,64 @@
+{
+  "_howto": "Newest first. Add an entry at the top each time you push an update; the website and the in-game 'What's new' both read this file. tag: new | improved | fixed.",
+  "notes": [
+    {
+      "version": "0.5",
+      "date": "2026-11-24",
+      "title": "Phone controls",
+      "items": [
+        { "tag": "new", "text": "Races go fullscreen on phones, with the controls in the space beside the track so your thumbs don't cover the action." },
+        { "tag": "new", "text": "Drag to steer: put your thumb down anywhere on the left and point where you want the truck to go. Gas is automatic." },
+        { "tag": "new", "text": "Buttons mode for players who prefer it: big ◀ ▶ on the left, and GAS with NITRO right beside it so you can roll your thumb across." },
+        { "tag": "new", "text": "Left-handed option that swaps the steering and pedal sides." },
+        { "tag": "improved", "text": "NITRO is bigger and sits right under your thumb. BRAKE moves into the side margin in landscape." },
+        { "tag": "improved", "text": "Larger lap, position and nitro readouts on phones, plus vibration on crashes where the phone supports it." },
+        { "tag": "fixed", "text": "Trucks can now pivot away from a wall while you're on the gas instead of getting pinned." },
+        { "tag": "new", "text": "Aussie 8 has a home page, with these dev notes and a What's new panel in the game." }
+      ]
+    },
+    {
+      "version": "0.4",
+      "date": "2026-11-24",
+      "title": "Loops and figure-8s",
+      "items": [
+        { "tag": "improved", "text": "The season now alternates four regular loops with four figure-8s, finishing on the Outback Showdown figure-8." },
+        { "tag": "new", "text": "The countdown and the garage tell you whether the next track is a loop or a figure-8." }
+      ]
+    },
+    {
+      "version": "0.3",
+      "date": "2026-11-23",
+      "title": "Eight trucks, figure-8 crossovers",
+      "items": [
+        { "tag": "new", "text": "Eight trucks per race. New rivals: Shazza Kelly, Tash Kowalski, Thommo Price and Gazza Reid." },
+        { "tag": "new", "text": "Eight unique tracks, each checked so the only place the two halves meet is the crossover." },
+        { "tag": "new", "text": "Crashes: a hard side-on hit spins both trucks out with sparks, flying paint and screen shake." },
+        { "tag": "improved", "text": "Points and prize money now pay all eight places: 10, 8, 6, 5, 4, 3, 2, 1." },
+        { "tag": "improved", "text": "The scoreboard shows all eight positions, with yours outlined in gold." }
+      ]
+    },
+    {
+      "version": "0.2",
+      "date": "2026-11-23",
+      "title": "Aussie 8 and the 32-bit look",
+      "items": [
+        { "tag": "new", "text": "The game is now Aussie 8, with a new arcade title screen." },
+        { "tag": "new", "text": "32-bit pixel art: hand-made truck sprites in 32 directions, dithered red-dirt tracks, tyre walls in green and gold, and Uluru at dusk behind the grandstands." },
+        { "tag": "new", "text": "Kangaroos hop across the track. Clip one and you lose speed; the roo just bounces away." },
+        { "tag": "improved", "text": "The story moves to the outback: Coober Pedy, Broken Hill, the Gold Coast, utes, roadhouses and a meat pie sponsor." }
+      ]
+    },
+    {
+      "version": "0.1",
+      "date": "2026-11-19",
+      "title": "First playable",
+      "items": [
+        { "tag": "new", "text": "Arcade off-road racing with nitro, mud, water, jumps and cash pickups. First released as Backroad Stakes." },
+        { "tag": "new", "text": "RPG garage: driver levels, four stats and truck upgrades." },
+        { "tag": "new", "text": "Good, shady and gamble choices between races, a karma meter and a rival who remembers what you did." },
+        { "tag": "new", "text": "A crew of three with trust meters and perks. Push someone too far and they walk." },
+        { "tag": "new", "text": "Six endings, depending on the title result, your karma, your crew and your rival." }
+      ]
+    }
+  ]
+}
