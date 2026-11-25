@@ -316,12 +316,26 @@ function buildTrack(t){
 const PROPSET={desert:['desert_scrub','saltbush','rock_small','rock_cluster','desert_scrub'],bush:['paperbark_canopy','rainforest_canopy','saltbush','paperbark_canopy'],rocks:['rock_cluster','rock_small','boab_canopy','desert_scrub'],mines:['mine_mound','rock_small','mine_mound','saltbush']};
 const TRACKSIDE=['tyre_stack','hay_bale','barrel','traffic_cone'];
 function placeProps(g,t){
-  const r=seeded(t.seed+99),set=PROPSET[t.decor]||PROPSET.desert;let n=0;
+  const r=seeded(t.seed+99),set=PROPSET[t.decor]||PROPSET.desert,E=ARTM&&ARTM.env,taken=[];let n=0;
+  const dW=(ax,ay)=>nearest(t,ax*2,ay*2-OY,null).dist,clear=(ax,ay,m)=>taken.every(([x,y,q])=>Math.hypot(x-ax,y-ay)>m+q);
+  const shadow=(x,y,w)=>{g.fillStyle='rgba(0,0,0,.3)';g.beginPath();g.ellipse(x,y,w/2,Math.max(1.5,w/6),0,0,Math.PI*2);g.fill()};
+  // set pieces (environments sheet): 2-3 per track on open ground outside the walls, decorative only
+  if(E){const big=Object.keys(E.structures).filter(k=>ART.img['ev_'+k]),r2=seeded(t.seed+313),want=2+(t.seed%2),used=new Set();
+    for(let i=0;i<500&&used.size<want&&used.size<big.length;i++){
+      const k=big[Math.floor(r2()*big.length)];if(used.has(k))continue;const im=ART.img['ev_'+k],w=im.width,h=im.height;
+      const ax=8+w/2+r2()*(AW-16-w),ay=44+h+r2()*(AH-66-h);   // base stays above the bottom HUD bar
+      if(![[0,0],[-w/2,0],[w/2,0],[0,-h],[-w/2,-h/2],[w/2,-h/2]].every(([dx,dy])=>dW(ax+dx,ay+dy)>WALL+26))continue;
+      if(!clear(ax,ay-h/2,Math.max(w,h)/2+10))continue;
+      shadow(Math.round(ax),Math.round(ay),w*.9);g.drawImage(im,Math.round(ax-w/2),Math.round(ay-h));taken.push([ax,ay-h/2,Math.max(w,h)/2]);used.add(k)}}
+  const side=E?Object.keys(E.trackside).filter(k=>ART.img['ev_'+k]):[];
   for(let i=0;i<260&&n<16;i++){
-    const ax=10+r()*(AW-20),ay=48+r()*(AH-48-30),d=nearest(t,ax*2,ay*2-OY,null).dist;
-    if(d<WALL+40)continue;
-    const k=d<WALL+62&&r()<0.6?TRACKSIDE[Math.floor(r()*TRACKSIDE.length)]:set[Math.floor(r()*set.length)],im=ART.img['pr_'+k];
-    if(im){g.drawImage(im,Math.round(ax-16),Math.round(ay-16));n++}
+    const ax=10+r()*(AW-20),ay=48+r()*(AH-48-30),d=dW(ax,ay);
+    if(d<WALL+40||!clear(ax,ay,12))continue;
+    if(d<WALL+62&&r()<0.6){   // trackside: Batch08 top-down pieces mixed with the side-on ones
+      if(side.length&&r()<0.65){const im=ART.img['ev_'+side[Math.floor(r()*side.length)]];shadow(Math.round(ax),Math.round(ay+im.height/2-1),im.width);g.drawImage(im,Math.round(ax-im.width/2),Math.round(ay-im.height/2));taken.push([ax,ay,8]);n++;continue}
+      const im=ART.img['pr_'+TRACKSIDE[Math.floor(r()*TRACKSIDE.length)]];if(im){g.drawImage(im,Math.round(ax-16),Math.round(ay-16));taken.push([ax,ay,8]);n++}continue}
+    const im=ART.img['pr_'+set[Math.floor(r()*set.length)]];
+    if(im){g.drawImage(im,Math.round(ax-16),Math.round(ay-16));taken.push([ax,ay,8]);n++}
   }
 }
 function renderTrack(t){
@@ -447,6 +461,7 @@ async function loadArt(){
   for(const k in ARTM.props)J.push(loadImg('pr_'+k,ARTM.props[k]));
   for(const k in ARTM.radio)J.push(loadImg('rd_'+k,ARTM.radio[k]));
   for(const k in ARTM.hud)J.push(loadImg('hud_'+k,ARTM.hud[k]));
+  if(ARTM.env)for(const grp of ['trackside','structures'])for(const k in ARTM.env[grp])J.push(loadImg('ev_'+k,ARTM.env[grp][k]));
   if(ARTM.announce)for(const k of ['final_lap','race_finished'])if(ARTM.announce[k])J.push(loadImg('an_'+k,ARTM.announce[k].src));
   if(ARTM.stadium){const S=ARTM.stadium;J.push(loadImg('st_crowd',S.crowd.src));S.bg.forEach((q,i)=>J.push(loadImg('st_bg'+i,q)));S.stands.forEach((q,i)=>J.push(loadImg('st_stand'+i,q)));for(const k in S.props)J.push(loadImg('st_'+k,S.props[k]))}
   await Promise.all(J);

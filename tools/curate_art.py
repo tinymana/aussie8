@@ -273,6 +273,44 @@ if B17.exists():
     ok('race announcements: FINAL LAP!, RACE FINISHED! (2 frames each)', 'art/announce/*.png', 'BATCH17 final_lap_0*.png, race_finished_0*.png', 'replace the Batch13 final_lap / race_complete banners (those stay as a fallback)')
     held.append(('BATCH17 preview.png', 'Sample sheet, not a runtime sprite.'))
 
+# ---------------------------------------------------------------- environments sheet (owner, Nov 2026)
+# tools/art_src/batch06_environments_sheet.png is a composite sheet, so each sprite is cut out by its box and
+# connected parts, scaled to game size and given hard pixel edges. Boxes are in sheet pixels (1536x1024).
+ENV = REPO / 'tools' / 'art_src' / 'batch06_environments_sheet.png'
+env = None
+if ENV.exists():
+    from scipy import ndimage
+    ea = np.array(Image.open(ENV).convert('RGBA'))
+    elab, _ = ndimage.label(ea[:, :, 3] > 40, structure=np.ones((3, 3)))
+    def cut(box, h, minpart=150):
+        x0, y0, x1, y1 = box
+        sub = elab[y0:y1, x0:x1]
+        ids = [i for i in np.unique(sub) if i and (sub == i).sum() >= minpart]
+        c = ea[y0:y1, x0:x1].copy(); c[~np.isin(sub, ids), 3] = 0
+        c = Image.fromarray(c); c = c.crop(c.getchannel('A').getbbox())
+        s = np.array(c.resize((max(1, round(c.width * h / c.height)), h), Image.LANCZOS))
+        s[:, :, 3] = np.where(s[:, :, 3] > 110, 255, 0)
+        return Image.fromarray(s)
+    SIDE = {'barrier_red': ((19, 342, 135, 405), 11), 'barrier_concrete': ((150, 345, 248, 402), 10),
+            'tyres_red': ((272, 332, 339, 406), 13), 'tyres_white': ((361, 332, 428, 406), 13), 'tyres_black': ((449, 332, 515, 406), 13),
+            'hay_bale_side': ((536, 335, 630, 403), 11), 'drum_red': ((654, 325, 710, 406), 14), 'drum_rust': ((734, 326, 788, 404), 14),
+            'cone_side': ((807, 329, 861, 402), 13)}
+    BIG = {'tower': ((832, 851, 991, 987), 40), 'gazebo': ((1380, 860, 1517, 987), 30), 'floodlight_tall': ((1191, 842, 1257, 987), 40),
+           'flag_au': ((1009, 861, 1073, 987), 32), 'camera_crane': ((1088, 865, 1173, 987), 32), 'roo_sign': ((673, 881, 785, 1001), 20)}
+    env = {'trackside': {k: save(cut(b, h), f'env/{k}.png') for k, (b, h) in SIDE.items()},
+           'structures': {k: save(cut(b, h, 2000 if k == 'gazebo' else 150), f'env/{k}.png') for k, (b, h) in BIG.items()}}
+    ok('trackside props, side-on (barriers, tyre stacks x3, hay bale, drums x2, cone)', 'art/env/*.png', 'tools/art_src/batch06_environments_sheet.png', 'mixed in with the Batch08 top-down trackside props')
+    ok('set pieces (race tower, gazebo, floodlight, flag, camera crane, roo sign)', 'art/env/*.png', 'tools/art_src/batch06_environments_sheet.png', '2-3 per track, outside the walls; decorative only')
+    pick['nitro'] = save(cut((1301, 336, 1341, 400), 12), 'pickups/nitro.png')
+    pick['spanner'] = save(cut((1219, 334, 1280, 396), 11), 'pickups/spanner.png')
+    ok('pickup:nitro, pickup:spanner (replace Batch07)', 'art/pickups/{nitro,spanner}.png', 'environments sheet: lightning bolt, wrench')
+    held.append(('Environments sheet: Castrol, Shell, Dunlop and XXXX billboards', 'Real company trademarks; not used. The roo sign is used.'))
+    held.append(('Environments sheet: AUSSIE 8 billboard and sheet logo', 'Blue/red logo differs from the gold/green wordmark used on the site; not used until the owner picks one.'))
+    held.append(('Environments sheet: track tiles, tyre-mark/dust/mud/gravel overlays', 'Tracks are drawn procedurally as dirt and the game already has dust/mud effects; asphalt tiles do not fit.'))
+    held.append(('Environments sheet: 16x24 crowd and bleacher sections', 'Single frames; the animated Batch 15 crowd is used instead.'))
+    held.append(('Environments sheet: daytime Uluru parallax', 'The owner chose the sunset Uluru for every course; could be a daytime variant.'))
+    held.append(('Environments sheet: jerry can, crossed tools, first-aid kit, bollard, rope and chain fences, windsock', 'No matching pickup or slot yet; the windsock lost its sock in the cut.'))
+
 # ---------------------------------------------------------------- missing artwork
 missing += [
     ('Portraits: Gazza, Hank (present day), Lou Tran, Chief Steward Pemberton, Barry Doolan, Biscuit, the Windbreakers', 'Game falls back to coloured initials.'),
@@ -292,7 +330,7 @@ manifest = {
     'debris': {'src': 'debris.png', 'size': 16, 'variants': 3, 'types': DEBRIS},
     'fx': fx_manifest, 'wildlife': wild_manifest, 'pickups': pick,
     'backdrops': bd, 'props': props, 'portraits': portraits, 'radio': radio,
-    'stadium': stadium, 'announce': announce, 'scenes': scenes, 'events': events, 'endings': endings, 'hud': hud, 'badges': badges, 'choices': choices,
+    'stadium': stadium, 'announce': announce, 'env': env, 'scenes': scenes, 'events': events, 'endings': endings, 'hud': hud, 'badges': badges, 'choices': choices,
     'placeholders': {'rosa.angry': 'serious', 'rosa.sad': 'serious', 'radio.angry': 'calm + red frame', 'portrait.mood': 'neutral + frame tint'},
 }
 (OUT / 'manifest.js').write_text('// Generated by tools/curate_art.py. Do not edit by hand.\nwindow.A8_ART=' + json.dumps(manifest, separators=(',', ':')) + ';\n')

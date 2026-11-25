@@ -2,6 +2,25 @@
   "_howto": "Newest first. Add an entry at the top each time you push an update; the website and the in-game 'What's new' both read this file. tag: new | improved | fixed.",
   "notes": [
     {
+      "version": "0.8",
+      "date": "2026-11-25",
+      "title": "Race-day dressing",
+      "items": [
+        {
+          "tag": "new",
+          "text": "Every track now has race-day set pieces outside the walls: a race-control tower, gazebos, floodlight towers, Aussie flags, a TV camera crane and roo warning signs."
+        },
+        {
+          "tag": "improved",
+          "text": "More trackside clutter: barrier blocks, red, white and black tyre stacks, hay bales, oil drums and cones."
+        },
+        {
+          "tag": "improved",
+          "text": "New, bigger nitro (lightning bolt) and repair (spanner) pickups that are easier to spot."
+        }
+      ]
+    },
+    {
       "version": "0.7",
       "date": "2026-11-24",
       "title": "A crowd that reacts, and Uluru on every course",
