@@ -9,7 +9,8 @@
  * Times are checked, not trusted: a lap must be slower than the fastest truck could physically go on that track,
  * and its ghost path has to match the time it claims and never move faster than a truck can.
  *
- * Deploy: this file is deployed as-is (no bundling).
+ * Deploy: the live function is a one-line loader that imports this file from a pinned commit on GitHub
+ * (import "https://raw.githubusercontent.com/tinymana/aussie8/<sha>/supabase/functions/aussie8/index.ts").
  */
 // @ts-expect-error Deno resolves npm: specifiers at runtime.
 import postgres from 'npm:postgres@3.4.5';
@@ -29,6 +30,12 @@ const MAX_SPEED = 400;
 /** Ghosts are sampled every 100 ms as [x, y, angle x 100]. */
 const GHOST_STEP_MS = 100;
 const BOARD_SIZE = 20;
+/** Weekly challenge: week 0 starts Monday 2026-11-23 00:00 UTC; each week features one track. */
+const WEEK0 = Date.UTC(2026, 10, 23);
+const WEEK_MS = 7 * 24 * 3600 * 1000;
+const MAX_SAVE_BYTES = 300_000;
+function currentWeek(): number { return Math.max(0, Math.floor((Date.now() - WEEK0) / WEEK_MS)); }
+function weekTrack(week: number): number { return (week * 3 + 1) % TRACKS; }
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -199,6 +206,84 @@ async function ghost(body: Body): Promise<Row> {
   return { name: rows[0].name, lap_ms: rows[0].lap_ms, step_ms: GHOST_STEP_MS, ghost: rows[0].ghost };
 }
 
+// ------------------------------------------------------------ cloud saves
+async function saveGet(body: Body): Promise<Row> {
+  const d = await auth(body);
+  const rows: Row[] = await sql`select data, version, updated_at from aussie8.saves where driver_id = ${d.id}`;
+  return rows.length ? { save: rows[0] } : { save: null };
+}
+async function savePut(body: Body): Promise<Row> {
+  const d = await auth(body);
+  const data = body['data'];
+  if (!data || typeof data !== 'object' || Array.isArray(data)) throw new ApiError('bad_request', 'Save data is malformed.');
+  if (JSON.stringify(data).length > MAX_SAVE_BYTES) throw new ApiError('too_big', 'That save is too big to store.');
+  const version = int(body, 'version', 0, 1_000_000_000);
+  const rows: Row[] = await sql`
+    insert into aussie8.saves (driver_id, data, version) values (${d.id}, ${sql.json(data as Record<string, unknown>)}, ${version})
+    on conflict (driver_id) do update set data = excluded.data, version = excluded.version, updated_at = now()
+    returning version, updated_at`;
+  return rows[0];
+}
+
+// ------------------------------------------------------------ weekly challenge
+/** Award gold, silver and bronze for every finished week that has not been closed yet. */
+async function closeWeeks(cur: number): Promise<void> {
+  await sql`
+    with open_weeks as (
+      select distinct week from aussie8.weekly_laps where week < ${cur} and week not in (select week from aussie8.weeks_closed)),
+    ranked as (
+      select l.week, l.driver_id, l.track, l.lap_ms, row_number() over (partition by l.week order by l.lap_ms, l.achieved_at) as rn
+      from aussie8.weekly_laps l join open_weeks w on w.week = l.week)
+    insert into aussie8.medals (week, driver_id, place, track, lap_ms)
+    select week, driver_id, rn, track, lap_ms from ranked where rn <= 3 on conflict do nothing`;
+  await sql`insert into aussie8.weeks_closed (week) select distinct week from aussie8.weekly_laps where week < ${cur} on conflict do nothing`;
+}
+async function weekly(body: Body): Promise<Row> {
+  const week = currentWeek(), track = weekTrack(week);
+  await closeWeeks(week);
+  const board: Row[] = await sql`
+    select d.id, d.name, w.lap_ms as ms from aussie8.weekly_laps w join aussie8.drivers d on d.id = w.driver_id
+    where w.week = ${week} order by w.lap_ms, w.achieved_at limit ${BOARD_SIZE}`;
+  const last: Row[] = week > 0 ? await sql`
+    select d.name, m.place, m.lap_ms as ms, m.track from aussie8.medals m join aussie8.drivers d on d.id = m.driver_id
+    where m.week = ${week - 1} order by m.place` : [];
+  let medals: Row | null = null;
+  if (typeof body['token'] === 'string') {
+    try {
+      const d = await auth(body);
+      const mine: Row[] = await sql`select week, place, track, lap_ms as ms from aussie8.medals where driver_id = ${d.id} order by week desc`;
+      medals = { list: mine, gold: mine.filter((m) => m.place === 1).length, silver: mine.filter((m) => m.place === 2).length, bronze: mine.filter((m) => m.place === 3).length };
+    } catch (_) { medals = null; }
+  }
+  return { week, track, ends_at: new Date(WEEK0 + (week + 1) * WEEK_MS).toISOString(), board, last_week: { week: week - 1, track: week > 0 ? weekTrack(week - 1) : null, podium: last }, medals };
+}
+async function submitWeekly(body: Body): Promise<Row> {
+  const d = await auth(body);
+  const week = currentWeek(), track = weekTrack(week);
+  if (int(body, 'track', 0, TRACKS - 1) !== track) throw new ApiError('wrong_track', 'That isn’t this week’s track.');
+  const lapMs = int(body, 'lap_ms', 1, 600000);
+  if (lapMs < minLapMs(track)) throw new ApiError('too_fast', 'That lap is faster than a truck can go.', 422);
+  const ghost = checkGhost(body['ghost'], lapMs);
+  const rows: Row[] = await sql`
+    insert into aussie8.weekly_laps (week, driver_id, track, lap_ms, ghost) values (${week}, ${d.id}, ${track}, ${lapMs}, ${sql.json(ghost)})
+    on conflict (week, driver_id) do update set lap_ms = excluded.lap_ms, ghost = excluded.ghost, achieved_at = now()
+      where aussie8.weekly_laps.lap_ms > excluded.lap_ms
+    returning lap_ms`;
+  const best: Row[] = await sql`select lap_ms from aussie8.weekly_laps where week = ${week} and driver_id = ${d.id}`;
+  const rank: Row[] = await sql`select count(*)::int + 1 as rank from aussie8.weekly_laps where week = ${week} and lap_ms < ${best[0].lap_ms}`;
+  return { improved: rows.length > 0, best_ms: best[0].lap_ms, rank: rank[0].rank, week };
+}
+async function weeklyGhost(body: Body): Promise<Row> {
+  const week = currentWeek();
+  const id = str(body, 'driver_id');
+  if (!/^[0-9a-f-]{36}$/.test(id)) throw new ApiError('bad_request', 'Unknown driver.');
+  const rows: Row[] = await sql`
+    select d.name, w.lap_ms, w.ghost from aussie8.weekly_laps w join aussie8.drivers d on d.id = w.driver_id
+    where w.week = ${week} and w.driver_id = ${id}`;
+  if (rows.length === 0) throw new ApiError('no_ghost', 'No ghost for that driver this week.', 404);
+  return { name: rows[0].name, lap_ms: rows[0].lap_ms, step_ms: GHOST_STEP_MS, ghost: rows[0].ghost };
+}
+
 async function signout(body: Body): Promise<Row> {
   await sql`delete from aussie8.sessions where token_hash = ${await sha256(str(body, 'token'))}`;
   return { ok: true };
@@ -206,6 +291,7 @@ async function signout(body: Body): Promise<Row> {
 
 const ACTIONS: Record<string, (b: Body) => Promise<Row>> = {
   enter, me: async (b) => ({ driver: await auth(b) }), submit_lap: submitLap, submit_race: submitRace, board, ghost, signout,
+  save_get: saveGet, save_put: savePut, weekly, submit_weekly: submitWeekly, weekly_ghost: weeklyGhost,
 };
 
 Deno.serve(async (req) => {
