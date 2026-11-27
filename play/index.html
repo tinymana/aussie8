@@ -1713,11 +1713,25 @@ function showMenu(){
   </div><div id="whatsnew"></div>${ctlUI()}<p class="dedication">Dedicated to Ivan “Ironman” Stewart and <i>Super Off Road</i>, the arcade classic that inspired Aussie 8.</p></div>`;
   renderWN();
 }
+/* repeatable paddock banter: every rival is always around for a word (shown after the story conversations) */
+const BANTER_HOOK={duke:'Polishing a factory truck under the floodlights.',shazza:'Kicking tyres, looking for trouble.',tash:'Reading telemetry by torchlight.',sal:'Fixing his own carby. Again.',thommo:'Filming himself eating a pie.',earl:'Lighting the barbie, slow as you like.'};
+RIVALS.forEach(r=>{if(r.id==='yowie')return;EVENTS.push({id:'banter_'+r.id,who:r.id,repeat:true,pri:-1,get mood(){const l=aggr(r.id);return l<=1?'angry':l>=3?'happy':'neutral'},hook:BANTER_HOOK[r.id]||'Hanging around their truck.',title:r.name,
+  get text(){const l=aggr(r.id),ln=pick(LINES[r.id][band(l)]);return`${r.name} looks up as you wander past. “${ln}” Around here that counts as a conversation. (${LEVELS[l]})`},
+  choices:[
+   {t:'Pay them a compliment',tag:'good',run:()=>({fx:r.id==='duke'?{rival:4}:{opinion:{[r.id]:4}},res:pick(['A grudging nod.','“Yeah, well. You’re not bad either.”','They almost smile.'])})},
+   {t:'Bet them $50 you finish ahead',tag:'risky',req:()=>G.money>=50,reqT:'Needs $50',run:()=>{G.flags.rivalBet={id:r.id,stake:50,race:G.race};return{fx:{money:-50},res:'You shake on it. Fifty bucks and your pride.'}}},
+   {t:'Trash talk',tag:'bad',run:()=>({fx:Object.assign({xp:10},r.id==='duke'?{rival:-6}:{opinion:{[r.id]:-6}}),res:pick(['“Say that on the track.”','They laugh, but their knuckles go white.','“Noted,” they say, like a threat.'])})}]})});
+EVENTS.push({id:'banter_yowie',who:'yowie',repeat:true,pri:-1,hook:'Sitting on his tailgate. Watching.',title:'The Yowie',
+  text:'The Yowie looks up from his tailgate. A low growl. He points at the crossover, then at you, then back at the crossover.',
+  choices:[
+   {t:'Nod slowly back',tag:'good',fx:{opinion:{yowie:4}},res:'A slow nod in return. Somehow that feels like a deal.'},
+   {t:'Offer him a pie from the van ($5)',tag:'good',fx:{money:-5,opinion:{yowie:8}},res:'He takes it with great dignity and eats it through the helmet. You don’t ask how.'},
+   {t:'Pull a face at him',tag:'bad',fx:{opinion:{yowie:-6}},res:'He growls. A real one. Biscuit barks from inside the cab.'}]});
 /* ---------- THE PADDOCK: between races, 4 to 6 characters standing around and three evening conversations ---------- */
 const PAD_SLOTS=3;
 function padLeft(){if(!G.pad||G.pad.race!==G.race)G.pad={race:G.race,left:PAD_SLOTS};return G.pad.left}
 function padTalks(){const by={};
-  for(const e of EVENTS){if(!e.who||G.used.includes(e.id)||(e.when&&!e.when()))continue;const cur=by[e.who];if(!cur||(e.pri||0)>(cur.pri||0))by[e.who]=e}
+  for(const e of EVENTS){if(!e.who||G.used.includes(e.id)||(e.repeat&&G.pad&&G.pad.race===G.race&&(G.pad.done||[]).includes(e.id))||(e.when&&!e.when()))continue;const cur=by[e.who];if(!cur||(e.pri||0)>(cur.pri||0))by[e.who]=e}
   return Object.values(by).sort((a,b)=>(b.pri||0)-(a.pri||0)).slice(0,6)}
 function showPaddock(){
   const talks=padTalks();if(padLeft()<=0||!talks.length)return showGarage();
@@ -1741,7 +1755,7 @@ function showEvent(ev){
 function choose(i){
   const ev=curEv,c=ev.choices[i];if(c.req&&!c.req())return;
   if(!ev.repeat&&!G.used.includes(ev.id))G.used.push(ev.id);
-  if(ev.who){padLeft();G.pad.left--}
+  if(ev.who){padLeft();G.pad.left--;(G.pad.done=G.pad.done||[]).push(ev.id)}
   const r=c.run?c.run():{fx:c.fx||{},res:c.res},o=apply(r.fx);G.stage='garage';save();
   ov.innerHTML=`<div class="panel"><p class="kicker">${ev.title}</p><h2>${r.res}</h2>
   ${o.out.length?`<div class="pills">${o.out.map(([t,up])=>`<span class="pill ${up?'up':'dn'}">${t}</span>`).join('')}</div>`:''}
@@ -1805,6 +1819,13 @@ function showEnding(){
   if(c.dex.met)lines.push(c.dex.in?(c.dex.aff>=60?'Dex parlays your season into a sponsorship deal with too many zeros. You get half. Probably.':'Dex moves on to a bigger hustle but sends a postcard from Darwin.'):'Dex is last seen selling “official” jackets with your face on them.');
   if(c.june.met)lines.push(c.june.in?(c.june.aff>=60?'June gets a factory seat next year. In her first interview she thanks one person: you.':'June keeps spotting for you, clipboard and all.'):'June drives for Duke’s team now. She’s fast. She doesn’t wave.');
   else lines.push('Somewhere, a rookie named June found someone else to believe in.');
+  {const f=G.flags;
+   if(f.truthLou!==undefined)lines.push('Lou Tran’s story runs for a week. Vance Motors issues a statement, then a recall, then an apology to Hank Booker. Channel 8 renames the crossover Hank’s Corner, officially.');
+   else if(f.truthDuke!==undefined)lines.push('Duke never tells anyone what you gave him. But at the presentation he stands up and dedicates his season to Hank Booker, and his father leaves early.');
+   else if(f.truthYowie!==undefined)lines.push('The 1994 medal hangs on a nail in your trailer. You never ask the Yowie about it. You don’t have to.');
+   else if(f.rackSold!==undefined)lines.push('Somewhere in a Vance Motors warehouse, a bent steering rack sits in a locked crate. You bought a lot of tyres with that money.');
+   else if(f.rack!==undefined||f.earlSecret!==undefined)lines.push('You never tell anyone what you know about ’94. Some nights, at the crossover, you wonder if you should have.');
+   if(f.gazzaMate!==undefined)lines.push('Gazza’s bore pump runs again. He never pays back the hundred and fifty, but every year a box of fur hats turns up on your doorstep.');}
   lines.push(G.rival>=30?'Duke Vance shouts you a beer at the presentation night. Somewhere along the way, a rival became a mate.':G.rival<=-30?'Duke Vance swears he’ll put you in the tyre wall next season. You believe him.':'Duke Vance nods at you across the presentation night. Respect, maybe.');
   if(G.flags.yowieRevealed!==undefined)lines.push(`The Yowie's fur helmet hangs behind the bar at the Coober Pedy pub now. ${REVEAL.name} tells anyone who asks that you were the only one who could catch him.`);
   else if(G.flags.yowieBeaten===undefined)lines.push('Nobody beat the Yowie this year. He walks out of the presentation night with a pie in each hand, still masked.');
