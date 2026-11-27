@@ -2,6 +2,25 @@
   "_howto": "Newest first. Add an entry at the top each time you push an update; the website and the in-game 'What's new' both read this file. tag: new | improved | fixed.",
   "notes": [
     {
+      "version": "2.3",
+      "date": "2026-11-27",
+      "title": "Talk back",
+      "items": [
+        {
+          "tag": "new",
+          "text": "Talk back! When a rival gets on the radio, press T (LB on a controller, or tap the TALK button on phones) to answer. Sledge them for $15 and a roar from the crowd, but they'll come hunting you. If they're a mate, it's friendly banter instead."
+        },
+        {
+          "tag": "new",
+          "text": "Rivals hold grudges. Ram someone, mouth off at them, or finish right next to them, and they'll bring it up next race: \"Still sore about Kakadu, rookie.\""
+        },
+        {
+          "tag": "improved",
+          "text": "Barry Doolan's commentary now shows up as a Channel 8 TV lower-third, with his face, a name tab and a LIVE tag."
+        }
+      ]
+    },
+    {
       "version": "2.2",
       "date": "2026-11-27",
       "title": "On the radio",

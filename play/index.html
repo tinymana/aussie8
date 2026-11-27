@@ -111,6 +111,10 @@ td.n{text-align:right;white-space:nowrap}
 @media (orientation:portrait){#pad.m-stick .brk{right:20px;bottom:156px;width:80px;height:80px}#pad.m-stick .shn{right:104px;bottom:160px;width:68px;height:68px}
  #pad.m-buttons .gas{right:14px;bottom:20px;width:110px;height:110px}#pad.m-buttons .nos{right:14px;bottom:140px;width:88px;height:88px}#pad.m-buttons .brk{right:14px;bottom:238px;width:72px;height:72px}#pad.m-buttons .shn{right:104px;bottom:148px;width:68px;height:68px}}
 #pad.lefty .act .shn.art{transform:scaleX(-1)}
+.tlk{display:none;right:150px;bottom:252px;width:92px;height:44px;border-radius:12px;border-color:#00c35a;color:#b9f5c8;font-size:10px;background:rgba(0,70,34,.7)}
+#pad.talk .tlk{display:grid;animation:tlkp .45s infinite alternate}@keyframes tlkp{to{border-color:#ffcd00;color:#ffe39a}}
+@media (orientation:portrait){#pad.m-stick .tlk{right:104px;bottom:236px;width:68px;height:40px}#pad.m-buttons .tlk{right:104px;bottom:224px;width:68px;height:40px}}
+@media (orientation:landscape){#pad.m-stick .tlk{right:12px;bottom:226px;width:64px;height:40px}}
 #gridpop{position:absolute;left:50%;bottom:9%;transform:translateX(-50%);z-index:7;width:min(94%,600px);background:rgba(20,10,34,.94);border:3px solid var(--gold);border-radius:12px;padding:12px 14px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 14px;align-items:center;box-shadow:0 0 0 3px #000}
 #gridpop[hidden]{display:none}
 #gridpop .gpi{width:84px;height:84px;border-radius:8px;border:2px solid var(--line);image-rendering:pixelated;object-fit:cover;background:#1c1030;display:grid;place-items:center;font:800 32px Rubik,sans-serif}
@@ -203,7 +207,7 @@ table.board .btn{padding:4px 8px;font-size:11px}
       <div id="gridpop" hidden></div>
       <div id="pad" hidden>
         <div class="zone steer"><span class="hint" id="hintL"></span><div id="stick"><i></i></div><span class="pb lr l" data-k="l">&#9664;</span><span class="pb lr r" data-k="r">&#9654;</span></div>
-        <div class="zone act"><span class="hint" id="hintR"></span><span class="pb brk" data-k="b">BRAKE</span><span class="pb nos" data-k="n">NITRO</span><span class="pb shn" data-k="s">SHUNT</span><span class="pb gas" data-k="g">GAS</span></div>
+        <div class="zone act"><span class="hint" id="hintR"></span><span class="pb brk" data-k="b">BRAKE</span><span class="pb nos" data-k="n">NITRO</span><span class="pb shn" data-k="s">SHUNT</span><span class="pb tlk" data-k="t">TALK</span><span class="pb gas" data-k="g">GAS</span></div>
         <button id="pauseBtn" aria-label="Pause">II</button>
         <p class="rot">Turn your phone sideways for a bigger track</p>
       </div>
@@ -827,7 +831,7 @@ function startRace(){
   const cars=[];let pl=null;
   order.forEach((id,i)=>{if(id==='you'){pl=mkCar({id:'you',name:'You',tag:'YOU'},grid[i],T,true);cars.push(pl)}else{const r=RIVALS.find(x=>x.id===id);if(r)cars.push(mkCar(r,grid[i],T,false))}});
   if(!pl){pl=mkCar({id:'you',name:'You',tag:'YOU'},grid[7],T,true);cars.push(pl)}
-  R=newRace(T,cars,pl);preloadHeads([...cars.filter(c=>!c.isP).map(c=>c.id),'june','rosa','gazza']);
+  R=newRace(T,cars,pl);preloadHeads([...cars.filter(c=>!c.isP).map(c=>c.id),'june','rosa','gazza']);radioHead('barry','portrait');
   {const fl=G.flags;   // paddock deals that follow you onto the grid
    if(fl.penStart){R.pen=fl.penStart;delete fl.penStart;R.radio={id:'pemberton',txt:`You start on ${R.pen} penalty points, #8. Keep it clean.`,t:4,angry:true,prio:3,t0:0};R.radioG=4}
    if(fl.stewardsBought!==undefined&&G.race<fl.stewardsBought)R.penMult=0.5;
@@ -860,6 +864,54 @@ function gridChoice(k){
   document.getElementById('gridpop').hidden=true;R.phase='count';
 }
 document.getElementById('gridpop').addEventListener('click',e=>{const b=e.target.closest('[data-grid]');if(b)gridChoice(b.dataset.grid)});
+/* ---------- TALK BACK: answer a rival on the radio ---------- */
+const YOU_LINES={taunt:['Is that all you got?','Mirrors, mate. Use \'em.','My nan drives faster!','See you at the finish. Behind me.','Come on then!','Cry about it.','Nice truck. Shame about the driver.','Talk is cheap. Drive.'],
+ banter:['Race ya to the pub!','Save some for the rest of us!','Good stoush, mate!','Keep it close, keep it clean.','Loser shouts the pies!']};
+const COMEBACK={
+ duke:{taunt:['You did NOT just say that.','Dad! Did you hear that?!','I\'m putting you in the wall.'],banter:['Ha! You\'re buying, rookie.','Alright, alright. Race on.']},
+ shazza:{taunt:['Oh, it is ON now!','Say that to me face!','You\'re wearing my bullbar!'],banter:['Ha! Cheeky. I like it.','You\'re on, Rookie!']},
+ tash:{taunt:['Emotional input detected.','Your heart rate is showing.','Adding that to your file.'],banter:['Acceptable banter.','Ha. Logged as funny.']},
+ sal:{taunt:['Easy, kid. Words cost.','I\'ve been sledged by better.','Mouth\'s faster than the truck, kid.'],banter:['Ha! Good one, kid.','First round\'s on me, kid.']},
+ thommo:{taunt:['Chat, did you HEAR that?!','Beef! We\'ve got beef!','Ratio\'d! Wait... me?'],banter:['Chat loves you, bro!','Collab after the race?']},
+ yowie:{taunt:['*furious honking*','*rips off a mirror*','*bellowing roar*'],banter:['*delighted hoot*','*offers you a pie*']},
+ earl:{taunt:['Watch your mouth, son.','I\'ve got boots older than you.','Cheeky young pup.'],banter:['Ha! Good on ya, son.','You\'re all right, son.']}
+};
+/* the grudge: what each rival remembers from your last race together. {t} is the track */
+const MEMLINES={
+ duke:{hit:['Still sore about {t}, rookie.','You owe me a bumper from {t}.'],taunt:['Remember your mouth at {t}? I do.'],lost:['{t} again? Same result, rookie.'],beat:['{t} was a fluke. Watch.','No miracles today, rookie.']},
+ shazza:{hit:['{t}. You. Me. Payback.','Still got your paint on me from {t}!'],taunt:['Mouthy at {t}. Brave up now.'],lost:['Beat you at {t}. Gonna do it again.'],beat:['{t} was a one-off, Rookie!']},
+ tash:{hit:['Contact at {t}: logged.','I reviewed {t}. Frame by frame.'],taunt:['Your {t} comments: archived.'],lost:['{t} data says I win.'],beat:['Updated my model since {t}.']},
+ sal:{hit:['Haven\'t forgotten {t}, kid.','{t}. Not your finest, kid.'],taunt:['Heard you at {t}. Prove it.'],lost:['Same lesson as {t}, kid.'],beat:['Good drive at {t}. Again?']},
+ thommo:{hit:['The {t} clip got 2 million views, bro!','Rematch from {t}! For content!'],taunt:['Chat\'s still mad about {t}!'],lost:['{t} highlights: me winning!'],beat:['Revenge arc from {t}, bro!']},
+ yowie:{hit:['*growls, remembering {t}*','*points: {t}*'],taunt:['*mimics your {t} sledge*'],lost:['*holds up {t} trophy*'],beat:['*cracks knuckles: {t}*']},
+ earl:{hit:['Still feel {t} in me back, son.','{t}. I remember, son.'],taunt:['Mouthy at {t}. Let\'s see it.'],lost:['Taught you at {t}. Again?'],beat:['{t} was yours. Not today.']}
+};
+const shortTrack=n=>/Showdown/.test(n)?'the Showdown':n.split(' ').length>2?n.split(' ').slice(0,2).join(' '):n.split(' ')[0];
+let talkPress=false;
+function memo(id){R.memo=R.memo||{};return R.memo[id]||(R.memo[id]={hit:0,taunt:0})}
+function talkBack(){
+  const t=R.talk;R.talk=null;if(!t||!R.pl)return;const c=R.cars.find(x=>x.id===t.id);if(!c)return;
+  const lv=band(aggr(t.id,c.rage>0)),friendly=lv==='high',k=friendly?'banter':'taunt';
+  R.radioG=0;say('you',pick(YOU_LINES[k]),{prio:4,cd:0,gap:1.4,t:2});
+  if(friendly)opDelta(t.id,2);else{opDelta(t.id,-Math.max(1,4-G.stats.charm));c.rage=Math.max(c.rage,6);memo(t.id).taunt++;R.cash+=15;R.floats.push({x:R.pl.x,y:R.pl.y-30,txt:'SLEDGE! +$15',col:'#ffcd00',life:1.2});crowdEvent('ram',R.pl.x/2)}
+  R.talkN=(R.talkN||0)+1;
+  (R.chat||{q:[]}).q.push({at:R.time+1.5,fn:()=>{R.radioCD[t.id]=0;R.radioG=0;say(t.id,pick(COMEBACK[t.id]?.[k]||['...']),{prio:4,angry:!friendly,mood:friendly?'happy':'angry',gap:2.2})}});
+  if(!friendly&&Math.random()<.5)(R.chat||{q:[]}).q.push({at:R.time+3.9,fn:()=>barry('sledge')});
+}
+function rememberRace(rk){   // called from endRace: each rival keeps one grudge from today
+  const pi=rk.indexOf(R.pl),t=R.T.name;G.mem=G.mem||{};
+  rk.forEach((c,i)=>{if(c.isP)return;const m=R.memo&&R.memo[c.id];let k=null;
+    if(m&&m.hit)k='hit';else if(m&&m.taunt)k='taunt';else if(Math.abs(i-pi)===1)k=i<pi?'lost':'beat';
+    if(k)G.mem[c.id]={k,t,race:G.race};else delete G.mem[c.id]});
+}
+function grudgeCall(){   // early in the next race, one rival brings it up
+  const fl=G.mem;if(!fl||R.net||R.tt)return;
+  const ids=R.cars.filter(c=>!c.isP&&fl[c.id]&&fl[c.id].race===G.race-1&&MEMLINES[c.id]).map(c=>c.id);if(!ids.length)return;
+  const pri={hit:3,taunt:2,lost:1,beat:1},id=ids.sort((a,b)=>pri[fl[b].k]-pri[fl[a].k]||Math.random()-.5)[0],m=fl[id];
+  const line=pick(MEMLINES[id][m.k]).replace('{t}',shortTrack(m.t));
+  if(say(id,line,{prio:1,angry:m.k!=='beat',mood:m.k==='beat'?'surprised':m.k==='lost'?'smug':'angry'})){R.talk={id,until:R.time+3.4};
+    if(m.k==='hit'||m.k==='taunt')(R.chat||{q:[]}).q.push({at:R.time+3.8,fn:()=>barry('grudge:'+id+':'+m.t)})}
+}
 /* ---------- ROAD RASH RADIO: rivals, crew and the bookie pop up mid-race ---------- */
 /* extra rival lines by situation. Arrays, or {low,mid,high} by how much they like you */
 const XLINES={
@@ -917,6 +969,7 @@ const PM=new Set();
 function radioHead(id,mood){   // mood portrait if the art exists, else the pixel radio head, else the neutral portrait
   const P=ARTM&&ARTM.portraits&&ARTM.portraits[id];
   const lazy=k=>{if(!ART.img[k]&&!PM.has(k)){PM.add(k);const path=P&&(k.endsWith('_n')?P.neutral:P[k.split('|')[1]]);if(path)loadImg(k,path)}return ART.img[k]};
+  if(mood==='portrait')return P?lazy('pm|neutral|'+id+'|_n'):ART.img['rd_'+id];
   if(mood&&P&&P[mood]&&P[mood]!==P.neutral){const im=lazy('pm|'+mood+'|'+id);if(im)return im}
   return ART.img['rd_'+id]||(P?lazy('pm|neutral|'+id+'|_n'):null);
 }
@@ -941,6 +994,8 @@ function updChatter(dt){
   const pl=R.pl;if(!pl||R.phase!=='go'||R.tt)return;const C=R.chat||(R.chat={crash:{},dmg:0,roo:null,last:0,final:false,top3:null,lead:false,nitro:pl.nitro,banter:6,rk:{},rkYou:null,q:[]});
   const T=R.T,rk=rank(),pi=rk.indexOf(pl),lap=Math.floor(pl.dist/T.L)+1,ai=c=>!c.isP&&!c.human&&!c.uid;
   C.banter-=dt;
+  if(R.talk&&R.time>R.talk.until)R.talk=null;if(talkPress){talkPress=false;if(R.talk)talkBack()}
+  if(!C.grudge&&R.time>9){C.grudge=true;grudgeCall()}
   const later=(s,fn)=>C.q.push({at:R.time+s,fn});for(let i=C.q.length-1;i>=0;i--)if(R.time>=C.q[i].at){const f=C.q[i].fn;C.q.splice(i,1);f()}
   const rival=(c,kind,o={})=>{if(!ai(c)||C.banter>0&&!o.now)return false;const ok=radio(c.id,kind);if(ok)C.banter=o.gap||5;return ok};
   /* pre-race deals come back to haunt you in the opening laps */
@@ -980,9 +1035,12 @@ function radio(id,kind){
   const c=R.cars.find(c=>c.id===id);if(c&&(c.human||c.uid))return false;   // real people online speak for themselves
   const l=aggr(id,c?.rage>0),b=band(l),L=LINES[id],X=XLINES[id]||{};let pool;
   if(kind==='passed')pool=L['passed_'+b];else if(X[kind])pool=Array.isArray(X[kind])?X[kind]:X[kind][b]||X[kind].mid;else if(L[kind])pool=L[kind];else pool=L[b];
+  if(kind==='hit')memo(id).hit++;
   if(!pool||!pool.length)return false;
   const mood=kind==='passed'?(b==='low'?'angry':b==='high'?'happy':'surprised'):RMOOD[kind]||(b==='low'?'angry':b==='high'?'happy':null);
-  return say(id,pick(pool),{angry:kind==='hit'||kind==='wreck'||(l<=1&&kind!=='beaten'),mood,prio:kind==='hit'?1:0});
+  const ok=say(id,pick(pool),{angry:kind==='hit'||kind==='wreck'||(l<=1&&kind!=='beaten'),mood,prio:kind==='hit'?1:0});
+  if(ok&&!R.net&&!R.pl.fin)R.talk={id,until:R.time+3.4};
+  return ok;
 }
 function doShunt(c){
   if(c.shuntCD>0)return;c.shuntCD=c.isP?1.0:2.2;
@@ -1475,12 +1533,12 @@ function drawRace(){
   if(R.paused){ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='rgba(20,10,34,.72)';ctx.fillRect(0,0,W,H);big('PAUSED',H/2-16,36,'#fbf8f2');ctx.font='16px Rubik,sans-serif';ctx.fillStyle='#fbf8f2';ctx.fillText('Press P or tap to resume',W/2,H/2+34)}
 }
 /* Channel 8 broadcast: live bug, grid lower third, final lap / race complete banners, Barry's ticker, damage + Stewards meters */
-const BARRY={crash:['And they\'ve come together!','Oh, that\'s gonna leave a mark!','Panel beaters, start your engines!'],roo:['Skippy wants a lap!','Roo on the circuit!'],emu:['An emu! Of course there\'s an emu!'],
+const BARRY={sledge:['Words on the radio! This is personal!','Ooh, a sledge! The crowd loves it!','They’re talking trash out there, folks!','Handbags at forty k’s!'],crash:['And they\'ve come together!','Oh, that\'s gonna leave a mark!','Panel beaters, start your engines!'],roo:['Skippy wants a lap!','Roo on the circuit!'],emu:['An emu! Of course there\'s an emu!'],
   lead:['New leader, folks!','We have a new race leader!'],final:['Final lap! Hold onto your pies!','Last time around!'],flag:['Black flag! Stewards have had enough!'],
   win:['The Rookie takes it! Unbelievable!'],yowie:['The Yowie is on the move!','Lock up your pies, the Yowie\'s coming!'],shunt:['Door to door! Ooh!','That\'s a bit of argy-bargy!']};
 const SPONSOR=['This lap is brought to you by Kanga Tyres. Grip like a roo on a hot tin roof!','Tin Roo Racing Fuel: if it\'s good enough for the Yowie, it\'s good enough for you.','Emu Lager. The official drink of sitting down after this.','Spinifex Suspension, because the Nullarbor isn\'t as flat as they say.','Bushfire Motor Oil. Keeps her slick when it\'s forty in the shade.','Crocodile Tools. They bite back.','Red Dust Motors, Alice Springs. Tell \'em Barry sent ya.','Outback Batteries. Still cranking after the third roo.','Bullbar 4x4. For when the roo doesn\'t move.','Uluru Resorts. Where the sunset never misses.','Sundown Caravans. Slow down, you\'re on holidays.'];
 BARRY.sponsor=SPONSOR;
-function barry(k){if(!R||(R.barryCD||0)>R.time||!BARRY[k])return;SND.play(k==='final'?'final':'barry');let txt=pick(BARRY[k]);const nk=G&&G.flags&&G.flags.nick;
+function barry(k){if(!R||(R.barryCD||0)>R.time)return;let txt;if(k.startsWith('grudge:')){const [,id,t]=k.split(':');txt=pick([`Bad blood between #8 and ${NAMES[id]} after ${shortTrack(t)}!`,`${NAMES[id]} hasn’t forgotten ${shortTrack(t)}, folks!`,`Unfinished business from ${shortTrack(t)}!`])}else if(!BARRY[k])return;else txt=pick(BARRY[k]);SND.play(k==='final'?'final':'barry');const nk=G&&G.flags&&G.flags.nick;
   if(nk&&k==='lead'&&R.pl&&rank()[0]===R.pl)txt=pick([`${nk} hits the front!`,`Here comes ${nk}! Nobody can live with that!`,`${nk} takes the lead and the crowd goes off!`]);
   else if(nk&&k==='crash'&&R.pl.crashT>0)txt=pick([`Oh, ${nk}! That’s gonna leave a mark!`,`${nk} has found the scenery!`]);
   R.tick={txt,t:3.6};R.barryCD=R.time+4.5}
@@ -1518,20 +1576,37 @@ function drawBroadcast(){
   if(ART.img.hud_damage_bar_empty){ctx.font='9px "Press Start 2P",monospace';ctx.textAlign='right';ctx.textBaseline='middle';
     hudImg('damage_bar_empty',mx,my,3);const dw=Math.round(64*pl.dmgVis/100);if(dw>0&&ART.img.hud_damage_bar)ctx.drawImage(ART.img.hud_damage_bar,0,0,dw,8,mx,my,dw*3,24);ctx.fillStyle='#fbf8f2';ctx.fillText('DMG',mx-8,my+12);
     if(R.pen>1||R.ute){hudImg('penalty_bar_empty',mx,my+30,3);const pw=Math.round(64*Math.min(100,R.pen)/100);if(pw>0&&ART.img.hud_penalty_bar)ctx.drawImage(ART.img.hud_penalty_bar,0,0,pw,8,mx,my+30,pw*3,24);ctx.fillStyle=R.ute?'#e63946':'#fbf8f2';ctx.fillText('STW',mx-8,my+42);if(R.ute)hudImg('flag_black',mx-74,my+28,2)}}
-  if(R.tick){R.tick.t-=1/60;const ty=TOUCH?H-36:H-74;if(hudImg('ticker',0,ty,2)){ctx.textAlign='left';ctx.textBaseline='middle';ctx.font='11px "Press Start 2P",monospace';const bh=ART.img.rd_barry;if(bh){ctx.imageSmoothingEnabled=false;ctx.drawImage(bh,120,ty+2,28,28)}ctx.fillStyle='#ffcd00';ctx.fillText('BARRY:',bh?156:84,ty+16);ctx.fillStyle='#fbf8f2';ctx.fillText(R.tick.txt,bh?242:170,ty+16)}if(R.tick.t<=0)R.tick=null}
+  if(R.tick){R.tick.t-=1/60;drawLowerThird(R.tick);if(R.tick.t<=0)R.tick=null}
 }
+function drawLowerThird(tk){   // Barry Doolan, Channel 8 commentary, as a TV lower-third
+  const up=Math.max(0,Math.min(1,(3.6-tk.t)/0.25,tk.t/0.3)),bw=620,bx0=(W-bw)/2,by=(TOUCH?H-78:H-150)+Math.round((1-up)*40),bh=ART.img['pm|neutral|barry|_n']||radioHead('barry','portrait');
+  ctx.save();ctx.globalAlpha=up;ctx.textBaseline='middle';ctx.textAlign='left';
+  ctx.fillStyle='#ffcd00';ctx.fillRect(bx0+66,by,300,18);ctx.fillStyle='#0c0614';ctx.font='9px "Press Start 2P",monospace';ctx.fillText('CH 8 · BARRY DOOLAN · COMMENTARY',bx0+74,by+10);
+  ctx.fillStyle='rgba(16,10,40,.94)';ctx.fillRect(bx0+66,by+18,bw-66,44);ctx.fillStyle='#00843d';ctx.fillRect(bx0+66,by+59,bw-66,3);
+  ctx.fillStyle='#e63946';ctx.fillRect(bx0+bw-62,by+4,54,12);ctx.fillStyle='#fff';ctx.font='8px "Press Start 2P",monospace';ctx.fillText('LIVE',bx0+bw-51,by+10);
+  ctx.fillStyle='#ffcd00';ctx.fillRect(bx0,by,62,62);if(bh){ctx.imageSmoothingEnabled=bh.width>40;ctx.drawImage(bh,bx0+3,by+3,56,56);ctx.imageSmoothingEnabled=false}else{ctx.fillStyle='#39304a';ctx.fillRect(bx0+3,by+3,56,56)}
+  let fs=12;ctx.font=fs+'px "Press Start 2P",monospace';while(ctx.measureText(tk.txt).width>bw-90&&fs>8){fs--;ctx.font=fs+'px "Press Start 2P",monospace'}
+  ctx.fillStyle='#fbf8f2';ctx.fillText(tk.txt,bx0+78,by+41);ctx.restore();
+}
+function drawYouHead(x,y){   // placeholder pixel helmet for #8 until the art lands
+  ctx.fillStyle='#1a1230';ctx.fillRect(x,y,64,64);ctx.fillStyle='#ffcd00';ctx.beginPath();ctx.arc(x+32,y+36,24,Math.PI,0);ctx.fill();ctx.fillRect(x+8,y+36,48,16);
+  ctx.fillStyle='#00843d';ctx.fillRect(x+8,y+28,48,6);ctx.fillStyle='#0c0614';ctx.fillRect(x+16,y+36,34,10);ctx.fillStyle='#9fd3ee';ctx.fillRect(x+18,y+38,10,3);
+  ctx.fillStyle='#0c0614';ctx.font='10px "Press Start 2P",monospace';ctx.textAlign='center';ctx.fillText('8',x+32,y+22);ctx.textAlign='left'}
 function drawRadio(){
+  if(typeof pad!=='undefined'&&pad)pad.classList.toggle('talk',!!(R.talk&&!R.pl.fin));
   if(!R.radio)return;const r=R.radio,e=r.t0==null?9:R.time-r.t0,y=TOUCH?76:16,head=radioHead(r.id,r.mood),al=Math.min(1,r.t*3);
   const x=14-Math.round(Math.max(0,1-e/0.16)*140),nm=(NAMES[r.id]||r.id).toUpperCase()+(r.crew?(r.id===spotter()&&r.prio>=2?'  · SPOTTER':'  · CREW'):'');
   const col=r.angry?'#e63946':r.crew?'#00c35a':'#ffcd00',txt=e>=9?r.txt:r.txt.slice(0,Math.floor(e*48)+1);
   ctx.save();ctx.globalAlpha=al;ctx.font='12px "Press Start 2P",monospace';const tw=Math.max(ctx.measureText(r.txt).width,ctx.measureText(nm).width*.84)+28+(ART.img.ex_walkie?30:0);
   ctx.fillStyle='rgba(12,6,20,.9)';ctx.fillRect(x,y,76+tw,72);ctx.fillStyle=col;ctx.fillRect(x,y,76+tw,3);
   ctx.fillRect(x+4,y+4,68,68);
-  if(head){ctx.imageSmoothingEnabled=head.width>40;ctx.drawImage(head,x+6,y+6,64,64);ctx.imageSmoothingEnabled=false}else{ctx.fillStyle=COLORS[r.id]||'#39304a';ctx.fillRect(x+6,y+6,64,64)}
+  if(head){ctx.imageSmoothingEnabled=head.width>40;ctx.drawImage(head,x+6,y+6,64,64);ctx.imageSmoothingEnabled=false}else if(r.id==='you')drawYouHead(x+6,y+6);else{ctx.fillStyle=COLORS[r.id]||'#39304a';ctx.fillRect(x+6,y+6,64,64)}
   if(e<0.12){ctx.fillStyle='rgba(255,255,255,'+(0.5-e*4)+')';for(let k=0;k<8;k++)ctx.fillRect(x+6,y+6+Math.random()*60,64,2)}   // radio static as the picture comes in
   {const wk=ART.img.ex_walkie;if(wk){ctx.imageSmoothingEnabled=false;const ww=wk.width*.6,wh=wk.height*.6;ctx.drawImage(wk,x+76+tw-ww-8,y+36-wh/2+(e<1.2?Math.sin(e*40)*1.5:0),ww,wh)}}
   ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillStyle=col==='#e63946'?'#ff8a92':col;ctx.font='10px "Press Start 2P",monospace';ctx.fillText(nm,x+84,y+22);
-  ctx.fillStyle='#fbf8f2';ctx.font='12px "Press Start 2P",monospace';ctx.fillText(txt,x+84,y+48);ctx.restore();
+  ctx.fillStyle='#fbf8f2';ctx.font='12px "Press Start 2P",monospace';ctx.fillText(txt,x+84,y+48);
+  if(R.talk&&R.talk.id===r.id&&!R.pl.fin){const lab=TOUCH?'TAP TALK TO ANSWER':gpad()?'LB · TALK BACK':'T · TALK BACK',bl=((R.time*4)|0)%2;ctx.font='10px "Press Start 2P",monospace';const lw=ctx.measureText(lab).width+20;ctx.fillStyle=bl?'#00c35a':'#ffcd00';ctx.fillRect(x,y+74,lw,20);ctx.fillStyle='#0c0614';ctx.fillText(lab,x+10,y+85)}
+  ctx.restore();
 }
 function drawHUD(){
   const p=R.pl,T=R.T,rk=rank(),pos=rk.indexOf(p)+1,lap=clamp(Math.floor(p.dist/T.L)+1,1,LAPS),y0=602;
@@ -1557,7 +1632,7 @@ function drawHUD(){
 }
 function endRace(){
   if(R.tt)return endTT();if(R.net)return endNet();
-  const rk=rank(),pi=rk.indexOf(R.pl);
+  const rk=rank(),pi=rk.indexOf(R.pl);rememberRace(rk);
   rk.forEach((c,i)=>{G.points[c.id]=(G.points[c.id]||0)+PTS[i]});
   const won=Math.round(PRIZE[pi]*(1+G.race*0.1)*dexMult()/10)*10,xp=XPP[pi]+R.picks*10;
   G.money+=won+R.cash;const lv=gainXP(xp);
@@ -1933,7 +2008,7 @@ function padEdge(g,i){const now=pressed(g,i),was=PAD.prev[i];PAD.prev[i]=now;ret
 function padInput(inp){const g=gpad();if(!g)return inp;
   const ax=Math.abs(g.axes[0]||0)>.15?g.axes[0]:0,dp=(pressed(g,15)?1:0)-(pressed(g,14)?1:0),st=ax||dp;
   if(st)inp.steer=clamp(st,-1,1);if(pressed(g,0)||pressed(g,7))inp.gas=true;if(pressed(g,1)||pressed(g,6))inp.brake=true;
-  if(padEdge(g,2))inp.nitro=true;if(padEdge(g,3)||padEdge(g,5))inp.shunt=true;return inp}
+  if(padEdge(g,2))inp.nitro=true;if(padEdge(g,3)||padEdge(g,5))inp.shunt=true;if(padEdge(g,4))talkPress=true;return inp}
 function padMenus(){const g=gpad();if(!g)return;
   if(mode==='race'&&R){if(padEdge(g,9))R.paused=!R.paused;if(R.phase==='grid'&&padEdge(g,0)){const b=document.querySelector('#gridpop [data-k]');if(b)b.click()}return}
   const bs=[...document.querySelectorAll('#ov button:not([disabled]),.start')].filter(b=>b.offsetParent!==null);if(!bs.length)return;
@@ -2181,6 +2256,7 @@ addEventListener('keydown',e=>{
   if(GAMEKEYS.includes(e.code))e.preventDefault();
   if(!K[e.code]&&(e.code==='Space'||e.code==='ShiftLeft'||e.code==='ShiftRight'))nitroPress=true;
   if(!K[e.code]&&(e.code==='KeyE'||e.code==='KeyX'))shuntPress=true;
+  if(!K[e.code]&&e.code==='KeyT')talkPress=true;
   if(R&&R.phase==='grid'){const m={Digit1:'taunt',Digit2:'encourage',Digit3:'ignore',Enter:'ignore'}[e.code];if(m){e.preventDefault();gridChoice(m)}}
   if(!K[e.code]&&(e.code==='KeyP'||e.code==='Escape'))R.paused=!R.paused;
   K[e.code]=true;
@@ -2202,7 +2278,7 @@ function keyAt(zone,x,y){
 function ptrUpdate(p,x,y){
   if(p.stick){const z=p.zone.getBoundingClientRect(),dx=x-p.ox,dy=y-p.oy,m=Math.hypot(dx,dy),k=m>58?58/m:1;
     TS.stick={on:true,dx,dy,mag:m};stickEl.firstChild.style.transform=`translate(${dx*k}px,${dy*k}px)`;return}
-  const k=keyAt(p.zone,x,y);if(k!==p.key){if(k==='n'){nitroPress=true}if(k==='s'){shuntPress=true}p.key=k;syncTS()}
+  const k=keyAt(p.zone,x,y);if(k!==p.key){if(k==='n'){nitroPress=true}if(k==='s'){shuntPress=true}if(k==='t'){talkPress=true}p.key=k;syncTS()}
 }
 pad.addEventListener('pointerdown',e=>{
   if(e.target.id==='pauseBtn'){e.preventDefault();if(R)R.paused=!R.paused;return}
@@ -2228,7 +2304,7 @@ function loop(now){
   requestAnimationFrame(loop);
 }
 showTitle();requestAnimationFrame(loop);if(NET.me)setTimeout(()=>cloudPull(true),1500);
-window.__A8={get G(){return G},get R(){return R},TRACKS,TS,ART,SPRITES,DMG,spawnDebris,gridChoice,doShunt,aggr,crowdEvent,SND,CRASH,updRace:dt=>updRace(dt),liveStart:g=>liveStart(g),liveState:p=>liveState(p),LIVE,NET,EVENTS,TROPHY,SET,PAD,padInput:i=>padInput(i),cloudPull:q=>cloudPull(q),say,radio:(i,k)=>radio(i,k),XLINES,CREWRADIO,radioHead};
+window.__A8={get G(){return G},get R(){return R},TRACKS,TS,ART,SPRITES,DMG,spawnDebris,gridChoice,doShunt,aggr,crowdEvent,SND,CRASH,updRace:dt=>updRace(dt),liveStart:g=>liveStart(g),liveState:p=>liveState(p),LIVE,NET,EVENTS,TROPHY,SET,PAD,padInput:i=>padInput(i),cloudPull:q=>cloudPull(q),say,radio:(i,k)=>radio(i,k),talk:()=>{talkPress=true},grudgeCall:()=>grudgeCall(),barry:k=>barry(k),XLINES,CREWRADIO,radioHead};
 loadArt().catch(e=>console.warn('Aussie 8: art load failed',e));
 }
 </script>
