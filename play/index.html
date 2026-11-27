@@ -184,6 +184,10 @@ table.board .btn{padding:4px 8px;font-size:11px}
 .paddock{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;margin:8px 0}
 .pcard{display:flex;gap:12px;align-items:center;text-align:left;background:rgba(18,10,30,.82);border:2px solid #4a3a66;border-radius:12px;padding:10px;color:#fbf8f2;cursor:pointer;font:inherit}
 .pcard:hover,.pcard:focus-visible{border-color:var(--gold)}.pcard b{display:block}.pcard small{color:rgba(251,248,242,.75)}.pcard .pimg{width:64px;height:64px}.pcard .pimg.wide{width:96px}
+.trophies{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin:10px 0}
+.trophy{background:rgba(18,10,30,.7);border:2px solid #3a2d52;border-radius:12px;padding:10px;opacity:.55}.trophy.got{opacity:1;border-color:var(--gold)}
+.trophy .cup{font-size:22px;display:block}.trophy b{display:block}.trophy small{color:rgba(251,248,242,.75)}
+.medalshelf{font-size:18px;margin:6px 0 12px}
 </style>
 </head>
 <body>
@@ -526,7 +530,7 @@ function fresh(){return{money:400,karma:0,race:0,xp:0,lvl:1,sp:1,stats:{hand:0,g
   crew:{rosa:{in:true,aff:10,met:true,left:null},dex:{in:false,aff:0,met:false,left:null},june:{in:false,aff:0,met:false,left:null}},
   rival:0,opinion:{shazza:0,tash:0,sal:0,thommo:0,yowie:0,earl:0},flags:{},used:[],points:Object.fromEntries(['you',...RIVALS.map(r=>r.id)].map(k=>[k,0])),stage:'event'}}
 let G=null,R=null,mode='title',curEv=null,lastRes=null;
-const save=()=>{if(G&&G.trial)return;try{localStorage.setItem(SAVE,JSON.stringify(G))}catch(e){}};
+const save=()=>{if(G&&G.trial)return;G.saveV=(G.saveV||0)+1;try{localStorage.setItem(SAVE,JSON.stringify(G))}catch(e){}cloudPush()};
 function migrate(g){
   if(!g||!g.points)return g;
   if(g.points.gazza!=null&&g.points.yowie==null)g.points.yowie=g.points.gazza;   // the Yowie took Gazza's #6 seat
@@ -748,6 +752,23 @@ const EVENTS=[
    {t:'Duke: he deserves to hear it from you',tag:'risky',fx:{rival:40,karma:6,flag:'truthDuke'},res:'Duke reads it twice in the dark of his trailer. “I didn’t know.” He means it. “Tomorrow I race you clean.”'},
    {t:'The Yowie: leave it on his seat with a pie',tag:'good',fx:{opinion:{yowie:30},karma:6,flag:'truthYowie'},res:'In the morning the pie tin is back on your bonnet, with something heavy inside: a 1994 championship medal.'},
    {t:'Nobody. Burn it and race',tag:'neutral',fx:{xp:30},res:'Some ghosts stay buried. Tomorrow is just a race. You almost believe it.'}]},
+ /* ---- season 2+: the fallout ---- */
+ {id:'s2_duke',pri:4,when:()=>(G.season||1)>=2&&G.race===0,title:'Season two',
+  get text(){const p=G.prev||{};return G.rival>=15?`Duke Vance is waiting at your trailer with two coffees. “Off-season was boring without you.” He hands one over. “I’ve got a new truck and no excuses. Let’s give ’em a show.”`:G.rival<=-15?`Duke Vance has a new factory truck, a new crew and the same old grudge. He parks it right next to yours. “Last season was luck,” he says, loud enough for the cameras. “This season you’re finished.”`:`New season, same red dirt. Duke Vance nods at you across the paddock${p.champ?', the champion’s number plate still on your bonnet':''}. Everyone’s faster this year. Everyone’s hungrier.`},
+  choices:[
+   {t:'“Let’s give ’em a show.”',tag:'good',fx:{rival:10,karma:2},res:'The cameras love it. Marge Quill is already printing posters.'},
+   {t:'“You talk a lot for a bloke who finished behind me.”',tag:'risky',fx:{rival:-10,xp:30},res:'He laughs, but his hands are tight on the cup.'},
+   {t:'Say nothing. Let the racing talk',tag:'neutral',fx:{xp:20},res:'You go back to your truck. Rosa has already got the bonnet up.'}]},
+ {id:'s2_fallout',pri:4,when:()=>(G.season||1)>=2&&G.race===1,title:'The fallout',
+  get text(){const f=G.flags;return f.truthLou!==undefined?'Vance Motors has pulled its factory money. Channel 8 runs a documentary about 1994 between races, and Hank’s Corner has a brass plaque now. Rick Vance hasn’t been seen at a track all year.':f.truthDuke!==undefined?'Duke has split from his father’s team and races as a privateer now, out of a borrowed shed. He still won’t talk about why. You know why.':f.rackSold!==undefined?'There’s a shiny new Vance Motors grandstand this season. Somewhere under it, you suspect, is a bent steering rack.':'Nothing changed. Rick Vance still sits in the best seat in the house, and the gold ring at the crossover is fading.'},
+  choices:[
+   {t:'Go and stand at Hank’s Corner for a minute',tag:'good',fx:{karma:3,opinion:{yowie:8}},res:'The gold ring has been repainted. Someone did it at night, carefully.'},
+   {t:'Focus on the season. The past is the past',tag:'neutral',fx:{xp:30},res:'Four laps at a time. That’s all anyone can do.'}]},
+ {id:'s2_yowie',pri:4,when:()=>(G.season||1)>=2&&G.race===2,title:'A new Yowie?',
+  get text(){return G.flags.yowieBeaten!==undefined?'The number six truck is back, and so is the fur suit. But the Yowie is shorter this year, chattier, and keeps stopping to sell hats out of an esky. Hank Booker watches from the commentary box, grinning.':'The Yowie is back for another season: same fur, same goggles, same silence, same limp in the left leg. He leaves a pie on your bonnet on the first morning. Some things never change.'},
+  choices:[
+   {t:'Leave a pie on his bonnet in return',tag:'good',fx:{opinion:{yowie:10},money:-5},res:'The next morning, two pies.'},
+   {t:'Rip the helmet off him at the next race (Nerve 3+)',tag:'risky',run:()=>G.stats.nerve>=3?{fx:{opinion:{yowie:-20},xp:50},res:G.flags.yowieBeaten!==undefined?'It’s Gazza. Of course it’s Gazza. “Mate! I’ve got a mortgage!”':'He catches your wrist without looking. Very gently, he puts your hand back by your side. You don’t try again.'}:{fx:{opinion:{yowie:-8}},res:'You lose your nerve halfway across the paddock. He saw you coming anyway.'}}]},
  {id:'quiet',repeat:true,title:'Open road',text:'A quiet stretch of highway between tracks. The sun is going down orange over the desert and there’s nothing on the schedule till morning.',
   choices:[
    {t:'Run practice laps on a dry salt lake',tag:'neutral',fx:{xp:70},res:'You come back sunburnt and sharper.'},
@@ -757,6 +778,7 @@ const EVENTS=[
 const SCHED={0:'stranded',1:'june_intro',2:'dex_intro',4:'duke_bribe'};
 const TAGS={good:'Good',bad:'Shady',neutral:'Neutral',risky:'Gamble'};
 function nextEvent(){
+  const s2=EVENTS.find(e=>e.pri===4&&!G.used.includes(e.id)&&e.when&&e.when());if(s2)return s2;   // season 2+ story comes first
   const s=SCHED[G.race];if(s&&!G.used.includes(s))return EVENTS.find(e=>e.id===s);
   const av=EVENTS.filter(e=>!e.sched&&!e.who&&!e.repeat&&!G.used.includes(e.id)&&(!e.when||e.when()));
   if(!av.length)return EVENTS.find(e=>e.id==='quiet');
@@ -793,7 +815,7 @@ function mkCar(d,g,T,isP){
     lane:g[1],laneTo:g[1],laneT:rnd(1,3),dmg:0,dmgVis:0,rage:0,shuntCD:rnd(1,3),alongT:0,nitro:1,bonus:0,nitroT:0,fin:false,ft:0,bumpCD:0,stuck:0,rev:0,rb:1,steerV:0};
   const nr=nearest(T,c.x,c.y,null);c.hint=nr.i;c.s=nr.s;c.dist=nr.s>T.L/2?nr.s-T.L:nr.s;
   if(isP){c.st=playerStats();c.bonus=juneBonus();c.nitro=G.nitro+c.bonus}
-  else{c.st={max:194+G.race*5.5+d.skill,acc:250+G.race*6,turn:3.4,grip:7.5};if(d.id==='duke'&&G.flags.dukeSab!==undefined)c.st.max*=0.86}
+  else{c.st={max:194+G.race*5.5+d.skill,acc:250+G.race*6,turn:3.4,grip:7.5};{const sm=1+Math.min(.12,.04*((G.season||1)-1));c.st.max*=sm;c.st.acc*=sm}if(d.id==='duke'&&G.flags.dukeSab!==undefined)c.st.max*=0.86}
   return c;
 }
 function newRace(T,cars,pl){const r={T,cars,pl,phase:'count',t:3.2,time:0,order:[],pick:[],pickT:3,parts:[],floats:[],shake:0,cash:0,picks:0,done:0,paused:false,roo:null,rooT:rnd(6,10),crashes:0,fx:[],debris:[],opD:{},pen:0,ute:null,flags:0,fine:0,radio:null,radioCD:{},radioG:3,rankT:0,ranks:{}};
@@ -878,7 +900,7 @@ function playerInput(){
   let gas=!!(K.ArrowUp||K.KeyW||TS.g),brake=!!(K.ArrowDown||K.KeyS||TS.b),steer=(r?1:0)-(l?1:0);
   if(TOUCH&&CTL.mode==='stick'){gas=gas||!brake;const st=TS.stick;if(st&&st.on&&st.mag>14)steer=clamp(wrapA(Math.atan2(st.dy,st.dx)-R.pl.a)*2.4,-1,1)}
   const sh=shuntPress;shuntPress=false;
-  return{gas,brake,steer,nitro:n,shunt:sh};
+  return padInput({gas,brake,steer:clamp(steer*SET.sens,-1,1),nitro:n,shunt:sh});
 }
 function aiInput(c,dt){
   const T=R.T,fx=Math.cos(c.a),fy=Math.sin(c.a),fs=c.vx*fx+c.vy*fy;
@@ -1067,7 +1089,7 @@ function physics(c,inp,dt){
   }
   if(c.nitroT>0)c.nitroT-=dt;
   if(inp.shunt)doShunt(c);if(c.isP&&c.shuntCD>0)c.shuntCD-=dt;
-  if(inp.nitro&&c.nitro>0&&c.nitroT<=0){c.nitro--;if(c.bonus>0)c.bonus--;c.nitroT=c.isP?1.2+G.stats.nerve*0.15:1.2;if(c.isP){R.shake=Math.max(R.shake,2);buzz(15);SND.play('nitro')}}
+  if(inp.nitro&&c.nitro>0&&c.nitroT<=0){c.nitro--;if(c.bonus>0)c.bonus--;c.nitroT=c.isP?1.2+G.stats.nerve*0.15:1.2;if(c.isP){R.shake=Math.max(R.shake,2);buzz(15);SND.play('nitro');R.nitroUsed=(R.nitroUsed||0)+1}}
   const boost=c.nitroT>0;c.gasOn=inp.gas;
   c.steerV+=(inp.steer-c.steerV)*Math.min(1,dt*12);
   let fx=Math.cos(c.a),fy=Math.sin(c.a),fs=c.vx*fx+c.vy*fy;
@@ -1234,7 +1256,7 @@ function updRoo(dt){
   const r=R.roo;r.t+=dt;r.big=Math.max(0,r.big-dt);r.x+=r.vx*dt;r.y+=r.vy*dt;r.trav+=Math.hypot(r.vx,r.vy)*dt;
   r.h=Math.abs(Math.sin(r.t*7))*(r.big>0?16:7);
   for(const c of R.cars){if(r.hit[c.id]||c.z>5||r.h>4)continue;if(Math.hypot(c.x-r.x,c.y-r.y)<(ART.img.wl_roo_run?28:24)){r.hit[c.id]=1;c.vx*=0.5;c.vy*=0.5;c.a+=rnd(-0.5,0.5);r.vx*=1.8;r.vy*=1.8;r.big=0.8;puff(r.x,r.y,T.dust,6);
-    if(c.isP){R.shake=Math.max(R.shake,3);R.floats.push({x:r.x,y:r.y-20,txt:r.kind==='emu'?'SQUAWK!':'BOING!',col:'#ffcd00',life:1});SND.play(r.kind==='emu'?'emu':'roo')}barry(r.kind==='emu'?'emu':'roo')}}
+    if(c.isP){R.shake=Math.max(R.shake,3);R.floats.push({x:r.x,y:r.y-20,txt:r.kind==='emu'?'SQUAWK!':'BOING!',col:'#ffcd00',life:1});SND.play(r.kind==='emu'?'emu':'roo');unlock('roo')}barry(r.kind==='emu'?'emu':'roo')}}
   if(r.trav>2*(WALL+20)+40){R.roo=null;R.rooT=rnd(9,15)}
 }
 function sndFrame(){
@@ -1279,7 +1301,7 @@ function updRace(dt){
 const ri=Math.round;
 function drawRace(){
   const T=R.T;let sx=0,sy=0;
-  if(R.shake>0&&!R.paused){sx=ri(rnd(-R.shake,R.shake)/2);sy=ri(rnd(-R.shake,R.shake)/2)}
+  if(R.shake>0&&!R.paused&&SET.shake>0){sx=ri(rnd(-R.shake,R.shake)/2*SET.shake);sy=ri(rnd(-R.shake,R.shake)/2*SET.shake)}
   bx.fillStyle='#000';bx.fillRect(0,0,AW,AH);bx.drawImage(R.layer||T.img,sx,sy);if(R.crowd)drawStadium(bx,R.crowd,R.crowd.L,sx,sy);
   bx.save();bx.translate(sx,sy);
   for(const p of R.pick){const a=A(p.x,p.y),s=ART.img['pk_'+p.type]||SPR[p.type],b=ri(Math.sin(p.t*5)*1.5);bx.fillStyle='rgba(0,0,0,.4)';bx.fillRect(ri(a.x-3),ri(a.y+3),7,2);bx.drawImage(s,ri(a.x-s.width/2),ri(a.y-s.height/2-2+b))}
@@ -1403,15 +1425,17 @@ function endRace(){
    if(R.flags){G.money=Math.max(0,G.money-R.fine);notes.push(`The Stewards black-flagged you ${R.flags} time${R.flags>1?'s':''}: $${R.fine} fine.`)}}
   if(R.crashes)notes.push('You were in '+R.crashes+' crash'+(R.crashes>1?'es':'')+' this race.');
   {const fl=G.flags;   // settle the paddock deals
-   if(fl.sideBet&&fl.sideBet.race===G.race){const b=fl.sideBet;if(pi+1<=b.top){const pay=b.stake*b.mult;G.money+=pay;notes.push(`Gazza’s book pays out $${pay}. He kisses the cash and keeps $20 of it “for admin”.`)}else notes.push(`Your $${b.stake} side bet is gone. Gazza says sorry with a fur hat.`);delete fl.sideBet}
+   if(fl.sideBet&&fl.sideBet.race===G.race){const b=fl.sideBet;if(pi+1<=b.top){const pay=b.stake*b.mult;G.money+=pay;unlock('bet');notes.push(`Gazza’s book pays out $${pay}. He kisses the cash and keeps $20 of it “for admin”.`)}else notes.push(`Your $${b.stake} side bet is gone. Gazza says sorry with a fur hat.`);delete fl.sideBet}
    if(fl.hit&&fl.hit.race===G.race){const si=rk.findIndex(c=>c.id===fl.hit.id);if(si>pi){G.money+=fl.hit.pay;G.karma=clamp(G.karma-4,-100,100);notes.push(`${NAMES[fl.hit.id]} finished behind you. A windbreaker slips you the other $${fl.hit.pay} and says nothing.`)}else notes.push(`${NAMES[fl.hit.id]} beat you anyway. The windbreakers want a word about their deposit.`);delete fl.hit}
    if(R.penMult)notes.push('The Stewards were looking the other way. Mostly.');
-   if(fl.rivalBet&&fl.rivalBet.race===G.race){const b=fl.rivalBet,bi=rk.findIndex(c=>c.id===b.id);if(bi>pi){G.money+=b.stake*2;notes.push(`You beat ${NAMES[b.id]} and collect on the bet: $${b.stake*2}.`);if(b.id==='duke')G.rival=clamp(G.rival-5,-100,100);else G.opinion[b.id]=clamp((G.opinion[b.id]||0)-5,-100,100)}else{notes.push(`${NAMES[b.id]} beat you and pockets your $${b.stake}.`);if(b.id!=='duke')G.opinion[b.id]=clamp((G.opinion[b.id]||0)+5,-100,100)}delete fl.rivalBet}
+   if(fl.rivalBet&&fl.rivalBet.race===G.race){const b=fl.rivalBet,bi=rk.findIndex(c=>c.id===b.id);if(bi>pi){G.money+=b.stake*2;unlock('bet');notes.push(`You beat ${NAMES[b.id]} and collect on the bet: $${b.stake*2}.`);if(b.id==='duke')G.rival=clamp(G.rival-5,-100,100);else G.opinion[b.id]=clamp((G.opinion[b.id]||0)-5,-100,100)}else{notes.push(`${NAMES[b.id]} beat you and pockets your $${b.stake}.`);if(b.id!=='duke')G.opinion[b.id]=clamp((G.opinion[b.id]||0)+5,-100,100)}delete fl.rivalBet}
    if(G.race===SEASON-1&&fl.rickDeal!==undefined){const di=rk.findIndex(c=>c.id==='duke');notes.push(pi<di?'You beat Duke anyway. Rick Vance’s envelope is a debt now, and the factory seat is gone.':'Duke wins the Showdown. Rick Vance sends a card: “See you next season.”')}}
   if(dexMult()>1)notes.push('Dex squeezed an extra 20% out of the purse.');
   if(juneBonus())notes.push('June’s spotting earned you '+juneBonus()+' bonus nitro this race.');
   if(G.race===SEASON-1){const yi=rk.findIndex(c=>c.id==='yowie');if(yi>=0&&pi<yi)G.flags.yowieBeaten=G.race}
   G.lastOrder=rk.map(c=>c.id);
+  if(pi===0){unlock('first_win');if(!R.crashes)unlock('clean_win')}if(R.crashes>=3)unlock('survivor');if((R.nitroUsed||0)>=5)unlock('nitro5');
+  G.podStreak=pi<=2?(G.podStreak||0)+1:0;if(G.podStreak>=3)unlock('podium3');
   const T=R.T;netRace(TRACKS.indexOf(T),R.pl.ft,pi+1);G.race++;G.stage=G.race>=SEASON?'end':'event';save();
   lastRes={rk:rk.map(c=>({id:c.id,ft:c.fin?c.ft:null})),pi,won,cash:R.cash,xp,lv,notes,track:T.name};
   showResults();
@@ -1450,7 +1474,7 @@ function portrait(id,mood='neutral',cls='pimg'){
 const face=(id,mood)=>portrait(id,mood)||`<span class="face" style="--c:${CREW[id].color}" title="${CREW[id].short}">${CREW[id].short[0]}</span>`;
 /* which art each story event uses: its own card (Batch09) or a location (Batch10), plus who is speaking */
 const EVENT_BG={earl_94:'paddock',earl_truth:'paddock',shazza_lean:'paddock',thommo_stream:'paddock',tash_data:'pit_garage_night',sal_coffee:'roadhouse',duke_cameras:'paddock',marge_feud:'channel8_race_control',june_engineer:'paddock',yowie_corner:'paddock',rosa_shed:'scrap_yard',rick_benefit:'flying_doctor_strip',truth:'pit_garage_night',gazza_intro:'paddock',gazza_bet:'dexs_gambling_shed',gazza_helmet:'pit_garage_night',lou_mic:'ch8_interview',lou_1994:'roadhouse',lou_scoop:'channel8_race_control',pemberton_word:'paddock',stranded:'bush_camp',june_intro:'paddock',dex_intro:'roadhouse',duke_bribe:'paddock',garage_night:'pit_garage_night',benefit:'flying_doctor_strip',casino:'gold_coast_nightlife',rosa_shop:'rosas_garage',rosa_repay:'rosas_garage',dex_debt:'dexs_gambling_shed',june_doubt:'paddock',reporter:'ch8_interview',hank_return:'hanks_homestead',hank_revenge:'pit_garage_night',duke_diner:'roadhouse',quiet:'bush_camp',yowie_pies:'paddock'};
-const EVENT_SPEAKER={june_engineer:['june','surprised'],yowie_corner:['yowie','sad'],rosa_shed:['rosa','surprised'],rick_benefit:['rick','neutral','yowie','angry'],gazza_intro:['gazza','neutral'],gazza_bet:['gazza','neutral','windbreakers','neutral'],gazza_helmet:['gazza','neutral','yowie','surprised'],lou_mic:['lou_tran','neutral'],lou_1994:['lou_tran','neutral'],lou_scoop:['lou_tran','neutral','shazza','neutral'],pemberton_word:['pemberton','neutral'],duke_bribe:['duke','smug'],duke_diner:['duke','angry'],rosa_shop:['rosa','sad'],rosa_repay:['rosa','happy'],yowie_pies:['yowie','calm'],june_intro:['june','focused'],june_doubt:['june','surprised'],dex_intro:['dex','happy'],dex_debt:['dex','neutral','windbreakers','neutral'],stranded:['hank','sad'],hank_return:['hank','neutral'],hank_revenge:['rosa','angry','hank','angry']};
+const EVENT_SPEAKER={s2_duke:['duke','smug'],s2_fallout:['rick','neutral'],s2_yowie:['yowie','neutral'],june_engineer:['june','surprised'],yowie_corner:['yowie','sad'],rosa_shed:['rosa','surprised'],rick_benefit:['rick','neutral','yowie','angry'],gazza_intro:['gazza','neutral'],gazza_bet:['gazza','neutral','windbreakers','neutral'],gazza_helmet:['gazza','neutral','yowie','surprised'],lou_mic:['lou_tran','neutral'],lou_1994:['lou_tran','neutral'],lou_scoop:['lou_tran','neutral','shazza','neutral'],pemberton_word:['pemberton','neutral'],duke_bribe:['duke','smug'],duke_diner:['duke','angry'],rosa_shop:['rosa','sad'],rosa_repay:['rosa','happy'],yowie_pies:['yowie','calm'],june_intro:['june','focused'],june_doubt:['june','surprised'],dex_intro:['dex','happy'],dex_debt:['dex','neutral','windbreakers','neutral'],stranded:['hank','sad'],hank_return:['hank','neutral'],hank_revenge:['rosa','angry','hank','angry']};
 const sceneUrl=k=>ARTM&&ARTM.scenes[k]?artUrl(ARTM.scenes[k]):'';
 function eventArt(id){const e=ARTM&&ARTM.events[id];if(e)return `<img class="evcard" src="${artUrl(e)}" alt="">`;const sc=sceneUrl(EVENT_BG[id]);return sc?`<img class="evcard" src="${sc}" alt="">`:''}
 const pips=(n,max=5)=>`<span class="pips">${Array.from({length:max},(_,i)=>`<i class="${i<n?'on':''}"></i>`).join('')}</span>`;
@@ -1543,7 +1567,7 @@ function jamKey(k){
 async function signIn(){
   SI.busy=true;drawSignIn();
   try{const r=await NET.call('enter',{name:SI.name,pin:SI.pin});NET.me={token:r.token,name:r.driver.name,id:r.driver.id};NET.keep();
-    SND.play('win');toast(r.created?'Welcome to the grid, '+r.driver.name+'!':'Welcome back, '+r.driver.name+'!');const after=SI.after;SI=null;after()}
+    SND.play('win');toast(r.created?'Welcome to the grid, '+r.driver.name+'!':'Welcome back, '+r.driver.name+'!');const after=SI.after;SI=null;after();cloudPull()}
   catch(e){SI.busy=false;SI.pin='';SI.msg=e.message;if(e.code==='wrong_pin'||e.code==='locked')SI.step='pin';if(e.code==='bad_name'||e.code==='name_taken')SI.step='name';SND.play('flag');drawSignIn()}
 }
 /* ---- online hub */
@@ -1553,6 +1577,7 @@ function showOnline(){
   <p class="story">${me?'Your best laps and races go on the world boards automatically.':'Pick a name and a four-digit PIN, arcade style. Use the same name and PIN on any device.'}</p>
   <div class="actions">${me?`<button class="btn ghost sm" data-act="signout">Sign out</button>`:`<button class="btn" data-act="signin">Sign in</button>`}</div>
   <div class="keys">
+    <div class="key"><b>Weekly challenge</b>One track, one week. Best lap takes gold when it closes.<br><button class="btn sm" data-act="weekly">This week</button></div>
     <div class="key"><b>Leaderboards</b>The fastest laps and races on every track.<br><button class="btn sm" data-act="boards:0">Leaderboards</button></div>
     <div class="key"><b>Time Trial</b>Just you, the track and a ghost. Everyone drives the same truck, so laps are fair.<br><button class="btn sm" data-act="tt">Time Trial</button></div>
     <div class="key"><b>Race friends</b>Make a room, share the code, race live.<br><button class="btn sm" data-act="lobby" ${me?'':'disabled'}>${me?'Race friends':'Sign in first'}</button></div>
@@ -1588,11 +1613,11 @@ async function showTTTrack(ti){
   <button class="choice" data-act="ttg:${ti}:-"><span class="tag">Solo</span><span>No ghost${d?'':' (offline)'}</span></button></div>
   ${NET.me?'':'<p class="note">Not signed in: your laps won’t go on the board.</p>'}
   <div class="actions"><button class="btn ghost" data-act="tt">Back</button></div></div>`}
-async function startTT(ti,gid){
+async function startTT(ti,gid,wk){
   let g=null;
-  if(gid&&gid!=='-'){ov.innerHTML=`<div class="panel"><p class="muted">Loading ghost…</p></div>`;try{g=await NET.call('ghost',{track:ti,driver_id:gid});g.id=gid}catch(e){toast(e.message)}}
+  if(gid&&gid!=='-'){ov.innerHTML=`<div class="panel"><p class="muted">Loading ghost…</p></div>`;try{g=await NET.call(wk?'weekly_ghost':'ghost',wk?{driver_id:gid}:{track:ti,driver_id:gid});g.id=gid}catch(e){toast(e.message)}}
   borrowG();const T=TRACKS[ti],pl=mkCar({id:'you',name:NET.me?NET.me.name:'You',tag:'YOU'},[T.L-14,0],T,true);pl.nitro=3;pl.bonus=0;
-  R=newRace(T,[pl],pl);R.tt={ti,g,ghostT0:0};R.pickT=1e9;R.rooT=1e9;R.crowd=stadOK()?crowdNew(T):null;
+  R=newRace(T,[pl],pl);R.tt={ti,g,ghostT0:0,weekly:!!wk};R.pickT=1e9;R.rooT=1e9;R.crowd=stadOK()?crowdNew(T):null;
   setMode('race');if(document.activeElement)document.activeElement.blur();if(TOUCH)pad.classList.add('hints');
 }
 function endTT(){
@@ -1602,7 +1627,10 @@ function endTT(){
   <table class="board laps">${laps.map((l,i)=>`<tr class="${l===best?'me':''}"><td>Lap ${i+1}</td><td>${fmtMs(l.ms)}</td><td>${tt.g?((l.ms-tt.g.lap_ms<=0?'−':'+')+fmtMs(Math.abs(l.ms-tt.g.lap_ms))+' vs '+esc(tt.g.name)):''}</td></tr>`).join('')}
   <tr><td><b>Total</b></td><td><b>${fmtMs(total)}</b></td><td></td></tr></table>
   <p class="note" id="netnote">${NET.me?(best?'Sending your best lap to the board…':''):'Sign in to put your laps on the board.'}</p>
-  <div class="actions"><button class="btn" data-act="ttg:${tt.ti}:${tt.g?tt.g.id||'-':'-'}">Go again</button><button class="btn ghost" data-act="boards:${tt.ti}">Leaderboard</button><button class="btn ghost" data-act="online">Online</button></div></div>`;
+  <div class="actions"><button class="btn" data-act="${tt.weekly?'wkg:'+(tt.g&&tt.g.id||'-'):'ttg:'+tt.ti+':'+(tt.g?tt.g.id||'-':'-')}">Go again</button>${tt.weekly?'<button class="btn ghost" data-act="weekly">Weekly board</button>':''}<button class="btn ghost" data-act="boards:${tt.ti}">Leaderboard</button><button class="btn ghost" data-act="online">Online</button></div></div>`;
+  if(tt.g&&best&&best.ms<tt.g.lap_ms)unlock('ghost');
+  if(tt.weekly&&NET.me&&best)NET.call('submit_weekly',{token:NET.me.token,track:tt.ti,lap_ms:best.ms,ghost:best.ghost})
+    .then(r=>{toast(r.improved?`Weekly challenge: you’re #${r.rank} this week!`:`Your weekly best is still ${fmtMs(r.best_ms)} (#${r.rank}).`,4500)}).catch(e=>toast(e.message));
   if(NET.me&&best)NET.call('submit_lap',{token:NET.me.token,track:tt.ti,lap_ms:best.ms,ghost:best.ghost})
     .then(r=>{const el=document.getElementById('netnote');if(el)el.textContent=r.improved?`New personal best! You're #${r.rank} on ${T.name}.`:`Your best here is ${fmtMs(r.best_ms)}, #${r.rank} on the board.`;if(r.improved)SND.play('win')})
     .catch(e=>{const el=document.getElementById('netnote');if(el)el.textContent=e.message});
@@ -1701,14 +1729,105 @@ function endNet(){
   ov.innerHTML=`<div class="panel"><p class="kicker">Room ${esc(LIVE.code||'')} · results</p><h2>You finished ${ordinal(pos)}</h2>
   <table class="board">${cars.map((c,i)=>`<tr class="${c===me?'me':''}"><td>${i+1}</td><td><b style="color:${COLORS[c.id]||'#fff'}">■</b> ${esc(c.name)}${c.human?'':' <small class="muted">AI</small>'}</td><td>${c.fin?fmtMs(c.ft*1000):'DNF'}</td></tr>`).join('')}</table>
   <div class="actions">${LIVE.ch?`<button class="btn" data-act="lobby">Back to the room</button>`:''}<button class="btn ghost" data-act="room:leave">Leave room</button></div></div>`;
-  SND.play(pos===1?'win':'finish');
+  SND.play(pos===1?'win':'finish');unlock('online');
+}
+/* ---------- CLOUD SAVES: your season, trophies and all follow your name + PIN between devices ---------- */
+const CLOUD={timer:null,asked:false};
+function cloudPayload(){return{g:G&&!G.trial?G:(HOME_G&&HOME_G.g)||null,trophies:TROPHY.got}}
+function cloudPush(){if(!NET.me)return;clearTimeout(CLOUD.timer);CLOUD.timer=setTimeout(()=>{const d=cloudPayload();if(!d.g&&!d.trophies.length)return;
+  NET.call('save_put',{token:NET.me.token,version:(d.g&&d.g.saveV)||0,data:d}).catch(()=>{})},2000)}
+const saveSummary=g=>g?`Round ${Math.min(g.race+1,SEASON)}${g.season>1?' of season '+g.season:''}, $${g.money}`:'no season';
+async function cloudPull(quiet){
+  if(!NET.me)return;let r;try{r=await NET.call('save_get',{token:NET.me.token})}catch(e){return}
+  const cs=r.save;if(cs&&cs.data&&Array.isArray(cs.data.trophies))TROPHY.merge(cs.data.trophies);
+  const cv=cs?cs.version||0:0,cg=cs&&cs.data&&cs.data.g?migrate(cs.data.g):null,local=HOME_G?HOME_G.g:G;if(cg)cg.saveV=cv;
+  if(!cg){cloudPush();return}
+  if(!local){adoptCloud(cg);return}
+  if(cv<=(local.saveV||0)){cloudPush();return}
+  if(quiet&&mode==='race'){CLOUD.pending=cg;return}
+  askCloud(cg,local);
+}
+function adoptCloud(cg){if(HOME_G)HOME_G.g=cg;else G=cg;try{localStorage.setItem(SAVE,JSON.stringify(cg))}catch(e){}toast('Season loaded from the cloud: '+saveSummary(cg));if(mode==='menu'&&!R)showTitle()}
+function askCloud(cg,local){
+  CLOUD.cg=cg;setMode('menu','title');
+  ov.innerHTML=`<div class="panel"><p class="kicker">Cloud save</p><h2>Which season do you want?</h2>
+  <p class="story">There’s a newer save on your name than the one on this device.</p>
+  <div class="choices"><button class="choice good" data-act="cloud:use"><span class="tag">Cloud</span><span>${esc(saveSummary(cg))}</span></button>
+  <button class="choice" data-act="cloud:keep"><span class="tag">This device</span><span>${esc(saveSummary(local))}</span></button></div>
+  <p class="muted">The one you don’t pick is replaced.</p></div>`;
+}
+/* ---------- TROPHY CABINET: achievements kept across every season ---------- */
+const TROPHIES=[
+ ['first_win','First blood','Win a race.'],['clean_win','Not a scratch','Win a race without a single crash.'],['podium3','Regular on the box','Finish on the podium three races in a row.'],
+ ['survivor','Held together with tape','Finish a race after three or more crashes.'],['nitro5','Nitro junkie','Fire five nitros in one race.'],['roo','Roo spotter','Get bounced by a kangaroo.'],
+ ['bet','High roller','Win a side bet or a bet with a rival.'],['pie_mate','Pie mates','Get the Yowie on side: mate level.'],['unmasked','Unmasked','Beat the Yowie in the final round and see who’s under the helmet.'],
+ ['truth','Truth teller','Tell someone the truth about ’94.'],['champion','Champion of the outback','Win the season.'],['people','The People’s Champion','Win the season with a great reputation.'],
+ ['outlaw','Run out of town','Finish a season with a terrible reputation.'],['clean_hands','Clean hands','Finish a season without taking a single dirty envelope.'],
+ ['ghost','Ghost buster','Beat a ghost’s lap in Time Trial.'],['medal','On the podium of the world','Win a weekly challenge medal.'],['online','Mates’ rates','Finish a live race with friends.'],['season2','Back for more','Start a second season.']];
+const TROPHY={got:(()=>{try{return JSON.parse(localStorage.getItem('aussie8-trophies')||'[]')}catch(e){return[]}})(),
+  keep(){try{localStorage.setItem('aussie8-trophies',JSON.stringify(this.got))}catch(e){}},
+  merge(list){let ch=false;for(const id of list)if(!this.got.includes(id)&&TROPHIES.some(t=>t[0]===id)){this.got.push(id);ch=true}if(ch)this.keep()}};
+function unlock(id){if(TROPHY.got.includes(id))return;const t=TROPHIES.find(x=>x[0]===id);if(!t)return;TROPHY.got.push(id);TROPHY.keep();toast('🏆 Trophy unlocked: '+t[1],3800);SND.play('cash');cloudPush()}
+function showTrophies(){setMode('menu','title');const n=TROPHY.got.length;
+  ov.innerHTML=`<div class="panel wide"><p class="kicker">Trophy cabinet</p><h2>${n} of ${TROPHIES.length}</h2>
+  <div class="trophies">${TROPHIES.map(([id,nm,ds])=>{const g=TROPHY.got.includes(id);return`<div class="trophy ${g?'got':''}"><span class="cup">${g?'🏆':'🔒'}</span><b>${esc(nm)}</b><small>${esc(ds)}</small></div>`}).join('')}</div>
+  <div class="actions"><button class="btn ghost" data-act="title">Back</button></div></div>`}
+/* ---------- SETTINGS and GAMEPAD ---------- */
+const SET=(()=>{try{return Object.assign({sens:1,shake:1},JSON.parse(localStorage.getItem('aussie8-settings')||'{}'))}catch(e){return{sens:1,shake:1}}})();
+const keepSet=()=>{try{localStorage.setItem('aussie8-settings',JSON.stringify(SET))}catch(e){}};
+const PAD={idx:null,prev:{},name:''};
+addEventListener('gamepadconnected',e=>{PAD.idx=e.gamepad.index;PAD.name=e.gamepad.id.replace(/\(.*\)/,'').trim();toast('Controller connected: '+(PAD.name||'gamepad'))});
+addEventListener('gamepaddisconnected',e=>{if(PAD.idx===e.gamepad.index){PAD.idx=null;toast('Controller disconnected')}});
+function gpad(){if(PAD.idx==null||!navigator.getGamepads)return null;return navigator.getGamepads()[PAD.idx]||null}
+const pressed=(g,i)=>!!(g.buttons[i]&&(g.buttons[i].pressed||g.buttons[i].value>.4));
+function padEdge(g,i){const now=pressed(g,i),was=PAD.prev[i];PAD.prev[i]=now;return now&&!was}
+function padInput(inp){const g=gpad();if(!g)return inp;
+  const ax=Math.abs(g.axes[0]||0)>.15?g.axes[0]:0,dp=(pressed(g,15)?1:0)-(pressed(g,14)?1:0),st=ax||dp;
+  if(st)inp.steer=clamp(st,-1,1);if(pressed(g,0)||pressed(g,7))inp.gas=true;if(pressed(g,1)||pressed(g,6))inp.brake=true;
+  if(padEdge(g,2))inp.nitro=true;if(padEdge(g,3)||padEdge(g,5))inp.shunt=true;return inp}
+function padMenus(){const g=gpad();if(!g)return;
+  if(mode==='race'&&R){if(padEdge(g,9))R.paused=!R.paused;if(R.phase==='grid'&&padEdge(g,0)){const b=document.querySelector('#gridpop [data-k]');if(b)b.click()}return}
+  const bs=[...document.querySelectorAll('#ov button:not([disabled]),.start')].filter(b=>b.offsetParent!==null);if(!bs.length)return;
+  let i=bs.indexOf(document.activeElement);
+  if(padEdge(g,13)||padEdge(g,15)){bs[(i+1+bs.length)%bs.length].focus()}else if(padEdge(g,12)||padEdge(g,14)){bs[(i-1+bs.length*2)%bs.length].focus()}
+  else if(padEdge(g,0)||padEdge(g,9)){(i>=0?bs[i]:bs[0]).click()}
+  else if(padEdge(g,1)){const back=bs.find(b=>/^(Back|Head back)/.test(b.textContent.trim()));if(back)back.click()}}
+function showSettings(){setMode('menu','title');const seg=(k,opts)=>`<div class="seg">${opts.map(([v,l])=>`<button class="btn sm ${SET[k]===v?'':'ghost'}" data-act="set:${k}:${v}">${l}</button>`).join('')}</div>`;
+  ov.innerHTML=`<div class="panel"><p class="kicker">Settings</p><h2>Settings</h2>
+  <div class="card"><h3>Steering</h3>${seg('sens',[[0.7,'Gentle'],[1,'Normal'],[1.35,'Twitchy']])}</div>
+  <div class="card" style="margin-top:14px"><h3>Screen shake</h3>${seg('shake',[[1,'Full'],[0.4,'Less'],[0,'Off']])}</div>
+  <div class="card" style="margin-top:14px"><h3>Controller</h3><p class="muted" style="margin:0">${gpad()?`Connected: ${esc(PAD.name||'gamepad')}. Left stick or d-pad steers, A or right trigger for gas, B or left trigger brakes, X for nitro, Y or right bumper to shunt, Start pauses. In menus the d-pad moves and A picks.`:'Plug in a controller (Xbox, PlayStation or Switch Pro) and press any button.'}</p></div>
+  ${ctlUI()}<div class="actions"><button class="btn ghost" data-act="title">Back</button></div></div>`}
+/* ---------- WEEKLY CHALLENGE: one featured track a week, best lap wins, medals when the week closes ---------- */
+let WEEK=null;
+function untilText(iso){const ms=new Date(iso)-Date.now();if(ms<=0)return'closing now';const d=Math.floor(ms/864e5),h=Math.floor(ms%864e5/36e5),m=Math.floor(ms%36e5/6e4);return d?`${d}d ${h}h`:h?`${h}h ${m}m`:`${m}m`}
+async function showWeekly(){setMode('menu','title');ov.innerHTML=`<div class="panel"><p class="kicker">Weekly challenge</p><p class="muted">Loading this week…</p></div>`;
+  let w;try{w=await NET.call('weekly',NET.me?{token:NET.me.token}:{})}catch(e){ov.innerHTML=`<div class="panel"><p class="kicker">Weekly challenge</p><p class="note">${esc(e.message)}</p><div class="actions"><button class="btn ghost" data-act="online">Back</button></div></div>`;return}
+  WEEK=w;const T=TRACKS[w.track],me=NET.me,mine=me&&w.board.findIndex(r=>r.id===me.id),top=w.board[0],M=w.medals;
+  if(M&&(M.gold+M.silver+M.bronze)>0)unlock('medal');
+  const medal=p=>['','🥇','🥈','🥉'][p]||'';
+  ov.innerHTML=`<div class="panel wide"><p class="kicker">Weekly challenge · week ${w.week+1}</p><h2>${esc(T.name)}${T.cx?' · figure-8':''}</h2>
+  <p class="story">Best single lap in the standard truck wins. Closes in <b>${untilText(w.ends_at)}</b> (Monday, midnight UTC). The top three take home gold, silver and bronze.</p>
+  ${M?`<p class="medalshelf">Your medals: 🥇 ${M.gold} · 🥈 ${M.silver} · 🥉 ${M.bronze}</p>`:''}
+  <div class="boards"><div><h3>This week</h3><table class="board">${w.board.length?w.board.map((r,i)=>`<tr class="${me&&r.id===me.id?'me':''}"><td>${medal(i+1)||i+1}</td><td>${esc(r.name)}</td><td>${fmtMs(r.ms)}</td><td><button class="btn sm ghost" data-act="wkg:${r.id}">Race ghost</button></td></tr>`).join(''):'<tr><td colspan="4" class="muted">No laps yet this week. Be the first.</td></tr>'}</table></div>
+   <div><h3>Last week${w.last_week.track!=null?' · '+esc(TRACKS[w.last_week.track].name):''}</h3><table class="board">${w.last_week.podium.length?w.last_week.podium.map(r=>`<tr><td>${medal(r.place)}</td><td>${esc(r.name)}</td><td>${fmtMs(r.ms)}</td></tr>`).join(''):'<tr><td class="muted">No podium yet.</td></tr>'}</table></div></div>
+  ${me?'':'<p class="note">Sign in to put your lap on the weekly board.</p>'}
+  <div class="actions">${top?`<button class="btn" data-act="wkg:${top.id}">Chase ${esc(top.name)}’s ghost</button>`:''}<button class="btn ${top?'ghost':''}" data-act="wkg:-">Race solo</button><button class="btn ghost" data-act="online">Back</button></div></div>`}
+/* ---------- SEASON 2+: carry the truck, crew and reputation into a tougher season ---------- */
+function newSeason(){
+  const o=G,keepFlags=['truthLou','truthDuke','truthYowie','rackSold','rack','gazzaMate','knowsYowie','yowieBeaten','rickDeal','keptYowie','soldYowie','nick'];
+  const n=fresh();Object.assign(n,{season:(o.season||1)+1,money:o.money,upg:o.upg,stats:o.stats,lvl:o.lvl,xp:o.xp,crew:o.crew,used:o.used,
+    karma:Math.round(o.karma*.5),rival:Math.round(o.rival*.5),opinion:Object.fromEntries(Object.entries(o.opinion||{}).map(([k,v])=>[k,Math.round(v*.5)])),
+    prev:{champ:standings()[0]==='you',karma:o.karma,rival:o.rival}});
+  for(const k of keepFlags)if(o.flags[k]!==undefined)n.flags[k]=o.flags[k];
+  G=n;G.stage='event';save();unlock('season2');setMode('menu');showEvent(nextEvent());
 }
 function showMenu(){
   setMode('menu','title');const s=load();
   ov.innerHTML=`<div class="panel"><p class="kicker">One season · eight trucks · four loops and four figure-8s</p>
   <div class="title-logo"><img src="wordmark.png" alt="Aussie 8"></div>
   <p class="story">Eight trophy trucks and eight red-dirt arenas from the Red Centre to the Daintree. Half are flat-out loops; the other half are figure-8s with a crossover where everybody meets. Then live with what you do between races. Help strangers or rob them, take the bribe or leak it. Your crew remembers every call, and they’ll walk if you push them too far.</p>
-  <div class="actions">${s&&s.race<SEASON?`<button class="btn" data-act="cont">Continue season (race ${s.race+1} of ${SEASON})</button><button class="btn ghost" data-act="new">New season</button>`:`<button class="btn" data-act="new">Start season</button>`}<button class="btn ghost" data-act="online">Online${NET.me?' · '+esc(NET.me.name):''}</button></div>
+  <div class="actions">${s&&s.race<SEASON?`<button class="btn" data-act="cont">Continue season (race ${s.race+1} of ${SEASON})</button><button class="btn ghost" data-act="new">New season</button>`:`<button class="btn" data-act="new">Start season</button>`}<button class="btn ghost" data-act="online">Online${NET.me?' · '+esc(NET.me.name):''}</button><button class="btn ghost" data-act="trophies">Trophies ${TROPHY.got.length}/${TROPHIES.length}</button><button class="btn ghost" data-act="settings">Settings</button></div>
   <div class="keys">
     <div class="key"><b>Drive</b>Arrow keys or WASD. On phones, drag your thumb where you want to go, or switch to buttons below.</div>
     <div class="key"><b>Nitro</b>Space or Shift. Grab green N canisters on track for more.</div>
@@ -1761,7 +1880,7 @@ function choose(i){
   const ev=curEv,c=ev.choices[i];if(c.req&&!c.req())return;
   if(!ev.repeat&&!G.used.includes(ev.id))G.used.push(ev.id);
   if(ev.who){padLeft();G.pad.left--;(G.pad.done=G.pad.done||[]).push(ev.id)}
-  const r=c.run?c.run():{fx:c.fx||{},res:c.res},o=apply(r.fx);G.stage='garage';save();
+  const m0=G.money,r=c.run?c.run():{fx:c.fx||{},res:c.res},o=apply(r.fx);if(c.tag==='bad'&&G.money>m0)G.dirty=(G.dirty||0)+1;if(aggr('yowie')>=4)unlock('pie_mate');G.stage='garage';save();
   ov.innerHTML=`<div class="panel"><p class="kicker">${ev.title}</p><h2>${r.res}</h2>
   ${o.out.length?`<div class="pills">${o.out.map(([t,up])=>`<span class="pill ${up?'up':'dn'}">${t}</span>`).join('')}</div>`:''}
   ${o.joined.map(id=>`<div class="react">${face(id)}<div><b>${CREW[id].name}</b> joined your crew as ${CREW[id].role.toLowerCase()}.<br><span class="muted">Likes: ${CREW[id].likes}</span></div></div>`).join('')}
@@ -1814,6 +1933,7 @@ function showEnding(){
   setMode('menu','title');
   const st=standings(),champ=st[0]==='you',k=G.karma;
   const title=champ?(k>=35?'The People’s Champion':k<=-35?'Crowned in red dirt':'Champion, no halo'):(k>=35?'Hero of the outback':k<=-35?'Run out of town':'Just another driver');
+  {const f=G.flags;if(champ)unlock('champion');if(champ&&k>=35)unlock('people');if(k<=-35)unlock('outlaw');if(!G.dirty)unlock('clean_hands');if(f.truthLou!==undefined||f.truthDuke!==undefined||f.truthYowie!==undefined)unlock('truth')}
   const EK={'The People’s Champion':'peoples_champion','Crowned in red dirt':'crowned_in_red_dirt','Champion, no halo':'champion_no_halo','Hero of the outback':'hero_of_the_outback','Run out of town':'run_out_of_town','Just another driver':'just_another_driver'}[title];
   if(EK)setMode('menu','scene:'+EK);
   const lines=[];
@@ -1838,13 +1958,14 @@ function showEnding(){
   ${lines.map(l=>`<p class="story" style="margin-bottom:10px">${l}</p>`).join('')}
   <div class="pills" style="margin-top:12px"><span class="pill">Karma ${k}</span><span class="pill">Duke ${G.rival}</span><span class="pill">Level ${G.lvl}</span><span class="pill">$${G.money.toLocaleString()}</span></div>
   <p class="dedication">Dedicated to Ivan “Ironman” Stewart and <i>Super Off Road</i>, the arcade classic that inspired Aussie 8.</p>
-  <div class="actions"><button class="btn" data-act="new">Start a new season</button><button class="btn ghost" data-act="title">Title screen</button></div></div>`;
+  <div class="actions"><button class="btn" data-act="season2">Season ${(G.season||1)+1}: carry it all over</button><button class="btn ghost" data-act="new">Start a new season</button><button class="btn ghost" data-act="title">Title screen</button></div></div>`;
 }
 /* The reveal only happens after the player beats the Yowie in the final round.
    REVEAL holds the identity: fictional canon (Hank Booker) until the owner chooses an original character and art.
    A real person is not used here. */
 const REVEAL={name:'Hank Booker',line:'Thirty years after the crossover crash, I had to know if I could still do it. Took a rookie to catch me.'};
 function showYowieReveal(){
+  unlock('unmasked');
   NAMES.hank=REVEAL.name;
   G.flags.yowieRevealed=G.race;save();setMode('menu','scene:paddock');
   ov.innerHTML=`<div class="panel"><p class="kicker">Presentation night · after the final round</p>
@@ -1876,6 +1997,14 @@ ov.addEventListener('click',e=>{
   else if(a==='nitro'){const cost=Math.round(150*discount()/10)*10;if(G.nitro<9&&G.money>=cost){G.money-=cost;G.nitro++;showGarage()}}
   else if(a==='race')startRace();
   else if(a==='online')showOnline();
+  else if(a==='cloud:use'){adoptCloud(CLOUD.cg);showTitle()}
+  else if(a==='cloud:keep'){const l=HOME_G?HOME_G.g:G;if(l){l.saveV=(CLOUD.cg.saveV||0)+1;try{localStorage.setItem(SAVE,JSON.stringify(l))}catch(e){}}cloudPush();toast('Kept this device’s season');showTitle()}
+  else if(a==='trophies')showTrophies();
+  else if(a==='settings')showSettings();
+  else if(a.startsWith('set:')){const [,k,v]=a.split(':');SET[k]=+v;keepSet();showSettings()}
+  else if(a==='weekly')showWeekly();
+  else if(a.startsWith('wkg:'))startTT(WEEK.track,a.slice(4),true);
+  else if(a==='season2')newSeason();
   else if(a==='signin')showSignIn();
   else if(a==='signout'){const t=NET.me&&NET.me.token;NET.me=null;NET.keep();if(t)NET.call('signout',{token:t}).catch(()=>{});showOnline()}
   else if(a.startsWith('jk:'))jamKey(a.slice(3));
@@ -1945,12 +2074,12 @@ document.addEventListener('gesturestart',e=>{if(mode==='race')e.preventDefault()
 applyCtl();
 let last=performance.now();
 function loop(now){
-  const dt=Math.min(0.033,(now-last)/1000);last=now;
+  const dt=Math.min(0.033,(now-last)/1000);last=now;padMenus();
   if(mode==='race'&&R){if(!R.paused)updRace(dt);else SND.silence();if(mode==='race'&&R)drawRace()}
   requestAnimationFrame(loop);
 }
-showTitle();requestAnimationFrame(loop);
-window.__A8={get G(){return G},get R(){return R},TRACKS,TS,ART,SPRITES,DMG,spawnDebris,gridChoice,doShunt,aggr,crowdEvent,SND,CRASH,updRace:dt=>updRace(dt),liveStart:g=>liveStart(g),liveState:p=>liveState(p),LIVE,NET,EVENTS};
+showTitle();requestAnimationFrame(loop);if(NET.me)setTimeout(()=>cloudPull(true),1500);
+window.__A8={get G(){return G},get R(){return R},TRACKS,TS,ART,SPRITES,DMG,spawnDebris,gridChoice,doShunt,aggr,crowdEvent,SND,CRASH,updRace:dt=>updRace(dt),liveStart:g=>liveStart(g),liveState:p=>liveState(p),LIVE,NET,EVENTS,TROPHY,SET,PAD,padInput:i=>padInput(i),cloudPull:q=>cloudPull(q)};
 loadArt().catch(e=>console.warn('Aussie 8: art load failed',e));
 }
 </script>

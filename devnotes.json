@@ -2,6 +2,37 @@
   "_howto": "Newest first. Add an entry at the top each time you push an update; the website and the in-game 'What's new' both read this file. tag: new | improved | fixed.",
   "notes": [
     {
+      "version": "2.0",
+      "date": "2026-11-27",
+      "title": "Cloud saves, weekly challenge, trophies and Season 2",
+      "items": [
+        {
+          "tag": "new",
+          "text": "Cloud saves: sign in with your name and PIN and your season, money, crew and trophies follow you between your phone and computer. If two devices disagree, you pick which season to keep."
+        },
+        {
+          "tag": "new",
+          "text": "Weekly challenge: one featured track a week, best single lap in the standard truck. When the week closes on Monday (midnight UTC), the top three take gold, silver and bronze for their medal shelf. Chase the leader’s ghost."
+        },
+        {
+          "tag": "new",
+          "text": "Trophy cabinet: 18 trophies to chase across every season, from “Roo spotter” and “Nitro junkie” to “Clean hands” and “Unmasked”."
+        },
+        {
+          "tag": "new",
+          "text": "Season 2 (and beyond): carry your truck, crew, money and half your reputation into a tougher season. Rivals are faster, Duke remembers how last season went, and the fallout from 1994 plays out."
+        },
+        {
+          "tag": "new",
+          "text": "Gamepad support: Xbox, PlayStation or Switch Pro controllers drive, pause and work the menus."
+        },
+        {
+          "tag": "new",
+          "text": "Settings: steering sensitivity, screen shake (full, less or off), controls and sound in one place."
+        }
+      ]
+    },
+    {
       "version": "1.6",
       "date": "2026-11-27",
       "title": "Grid order and debris fixes",

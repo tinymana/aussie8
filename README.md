@@ -112,6 +112,8 @@ Title art supplied by the project owner. Game code written with Claude.
 Online features run on the owner's **tiny-mana-jams** Supabase project, in their own `aussie8` schema (nothing is shared with Typlympics or the other games there).
 
 - `supabase/functions/aussie8/index.ts`: the edge function, deployed as-is. Actions: `enter` (name + PIN, like Typlympics), `me`, `submit_lap` (Time Trial best lap + ghost, checked against the fastest a truck can go), `submit_race`, `board`, `ghost`, `signout`.
+- More actions: `save_get` / `save_put` (cloud saves, 300 KB cap), `weekly` (this week's featured track, board, last week's podium, your medals; finished weeks award medals lazily), `submit_weekly`, `weekly_ghost`. Week 0 starts Monday 2026-11-23 00:00 UTC; the track is `(week * 3 + 1) % 8`.
+- Deploy: the live function is a one-line loader that imports `supabase/functions/aussie8/index.ts` from a pinned commit on GitHub, the same pattern Typlympics uses. After changing the function, push, then redeploy the loader with the new commit hash.
 - `supabase/migrations/`: the schema. The API roles have no access to it; only the function does.
 - Live races use Supabase Realtime broadcast on channel `aussie8:<ROOM>` with the publishable key; each player broadcasts their own truck up to 15 times a second (less in a full room, to stay inside the free plan's 100 Realtime messages a second), the host also broadcasts the AI rivals. `play/vendor/supabase-2.119.2.js` is the supabase-js browser build (MIT).
 
