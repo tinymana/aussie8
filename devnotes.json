@@ -2,6 +2,29 @@
   "_howto": "Newest first. Add an entry at the top each time you push an update; the website and the in-game 'What's new' both read this file. tag: new | improved | fixed.",
   "notes": [
     {
+      "version": "1.5",
+      "date": "2026-11-27",
+      "title": "The paddock, and the truth about ’94",
+      "items": [
+        {
+          "tag": "new",
+          "text": "The paddock: between races, walk among whoever’s hanging around tonight and pick three conversations. You can’t talk to everyone."
+        },
+        {
+          "tag": "new",
+          "text": "Paddock talks with Big Earl, Shazza, Thommo, Tash, Sal, Duke and promoter Marge Quill, plus Gazza, Lou and Pemberton. Bet a rival you’ll beat them, buy telemetry, start a feud for the cameras, or shout a tired veteran a flat white."
+        },
+        {
+          "tag": "new",
+          "text": "The 1994 mystery unfolds: June recognises Vance Motors’ chief engineer, the Yowie kneels at Hank’s Corner, Rosa finds a bent steering rack in her dad’s shed, Earl finally talks, and Rick Vance turns up at the benefit with an envelope."
+        },
+        {
+          "tag": "new",
+          "text": "The night before the Showdown, decide who to tell: Channel 8 (a packed, roaring house), Duke (he races you clean), the Yowie (he gives you room), or nobody."
+        }
+      ]
+    },
+    {
       "version": "1.4",
       "date": "2026-11-27",
       "title": "Back-paddock deals",

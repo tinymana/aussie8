@@ -180,6 +180,10 @@ table.board .btn{padding:4px 8px;font-size:11px}
 .dedication{margin:16px 0 0;font-size:13px;color:rgba(251,248,242,.7);font-style:normal}
 .reveal{display:flex;gap:16px;align-items:flex-end}.reveal .yfull{height:180px;width:auto;image-rendering:pixelated;flex:none}@media (max-width:600px){.reveal{flex-direction:column;align-items:center}.reveal .yfull{height:140px}}
 .pimg.wide{width:108px}.react .pimg.wide{width:72px}
+.slots{display:flex;gap:6px;align-items:center;margin:4px 0 12px}.slots span{width:14px;height:14px;border-radius:50%;border:2px solid var(--gold)}.slots span.on{background:var(--gold)}
+.paddock{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;margin:8px 0}
+.pcard{display:flex;gap:12px;align-items:center;text-align:left;background:rgba(18,10,30,.82);border:2px solid #4a3a66;border-radius:12px;padding:10px;color:#fbf8f2;cursor:pointer;font:inherit}
+.pcard:hover,.pcard:focus-visible{border-color:var(--gold)}.pcard b{display:block}.pcard small{color:rgba(251,248,242,.75)}.pcard .pimg{width:64px;height:64px}.pcard .pimg.wide{width:96px}
 </style>
 </head>
 <body>
@@ -460,7 +464,7 @@ const TRUCKS={you:['#f2efe6','#a9a49a','#ffffff','#00843d','#ffcd00'],duke:['#d8
 let STEW=[];{const r=rotSprites(truckArt('#f2f2ee','#a0a0a0','#ffffff','#1d4a72','#e63946'));STEW=[r,r]}
 const SPRITES={};for(const k in TRUCKS){const c=TRUCKS[k],r=rotSprites(truckArt(c[0],c[1],c[2],c[3],c[4]));SPRITES[k]=[r,r,r,r]}
 const RIVALS=[{id:'duke',name:'Duke Vance',tag:'DUKE',skill:14},{id:'shazza',name:'Shazza Kelly',tag:'SHAZ',skill:10},{id:'tash',name:'Tash Kowalski',tag:'TASH',skill:8},{id:'sal',name:'Sal Vitale',tag:'SAL',skill:7},{id:'thommo',name:'Thommo Price',tag:'THOM',skill:4},{id:'yowie',name:'The Yowie',tag:'YOWIE',skill:17},{id:'earl',name:'Big Earl',tag:'EARL',skill:0}];
-const NAMES={you:'You',barry:'Barry Doolan',biscuit:'Biscuit',gazza:'Gazza',lou_tran:'Lou Tran',pemberton:'Chief Steward Pemberton',windbreakers:'The Windbreakers',hank:'Hank Booker'},COLORS={you:'#f2efe6'};RIVALS.forEach(r=>{NAMES[r.id]=r.name;COLORS[r.id]=TRUCKS[r.id][0]});
+const NAMES={you:'You',barry:'Barry Doolan',biscuit:'Biscuit',gazza:'Gazza',lou_tran:'Lou Tran',pemberton:'Chief Steward Pemberton',windbreakers:'The Windbreakers',hank:'Hank Booker',rick:'Rick Vance',marge:'Marge Quill'},COLORS={you:'#f2efe6'};RIVALS.forEach(r=>{NAMES[r.id]=r.name;COLORS[r.id]=TRUCKS[r.id][0]});
 /* Road Rash layer: each rival's opinion of the player (-100..100) times their temperament
    sets how they race you. Duke's opinion is the existing G.rival meter. */
 const NUM={duke:1,sal:2,shazza:3,tash:4,thommo:5,yowie:6,earl:7};   // truck numbers (canon: last season's finishing order)
@@ -619,14 +623,14 @@ const EVENTS=[
    {t:'Follow him to his trailer',tag:'risky',run:()=>G.stats.charm>=2?{fx:{flag:'sawBiscuit',opinion:{yowie:4}},res:'Through the trailer window you see a blue heeler asleep on a fur suit.'}:{fx:{karma:-2,opinion:{yowie:-6}},res:'Gazza steps out of nowhere. “Nothing to see here, mate.”'}},
    {t:'Sell the pie to Thommo for his stream (+$40)',tag:'bad',fx:{money:40,karma:-4,aff:{june:-4},opinion:{yowie:-15,thommo:8}},res:'Thommo eats it live. The Yowie is watching.'}]},
  /* ---- Gazza, Lou and the Stewards: back-paddock deals with consequences on race day (Road Rash style) ---- */
- {id:'gazza_intro',pri:1,when:()=>G.race>=1,title:'The Yowie’s manager',
+ {id:'gazza_intro',who:'gazza',hook:'Flogging fur Yowie hats out of an esky at the gate.',pri:1,when:()=>G.race>=1,title:'The Yowie’s manager',
   text:'A bloke in a singlet and a sweat-black cap is flogging fur Yowie hats out of an esky at the gate. “Gazza Reid. Drove the number six, till the big fella turned up with a pie tin full of cash. I’m his manager now.” He leans in. “Bore pump on the farm’s crook. Lend us a hundred and fifty?”',
   choices:[
    {t:'Lend him $150. Mates look after mates',tag:'good',req:()=>G.money>=150,reqT:'Needs $150',fx:{money:-150,karma:6,flag:'gazzaMate',opinion:{yowie:6}},res:'“Fair dinkum, you’re a legend. I’ll give it back. Probably.” He jams a fur hat on your head, free of charge.'},
    {t:'Ask who’s really under the helmet (Charm 2+)',tag:'risky',run:()=>G.stats.charm>=2?{fx:{flag:'gazzaSlip',xp:30},res:'“The Yowie? Never met him. Lovely bloke. Bad knee, mind. The left one.” He goes white the second it’s out of his mouth.'}:{fx:{karma:-1,flag:'gazzaMet'},res:'“Mate. I sell hats.” He snaps the esky shut and won’t look at you again.'}},
    {t:'Dob him in to the Stewards for selling knock-offs (+$80)',tag:'bad',fx:{money:80,karma:-8,flag:'gazzaGrudge',opinion:{yowie:-15}},res:'Pemberton confiscates the esky. Across the paddock the Yowie watches the whole thing, very still.'},
    {t:'Buy a hat and keep walking',tag:'neutral',fx:{money:-20,flag:'gazzaMet'},res:'It smells like a wet dog and fits like a dream.'}]},
- {id:'gazza_bet',pri:1,when:()=>G.race>=3&&(G.flags.gazzaMate!==undefined||G.flags.gazzaMet!==undefined||G.flags.gazzaSlip!==undefined),title:'Behind the dunnies',
+ {id:'gazza_bet',who:'gazza',hook:'Running a book behind the dunnies.',pri:1,when:()=>G.race>=3&&(G.flags.gazzaMate!==undefined||G.flags.gazzaMet!==undefined||G.flags.gazzaSlip!==undefined),title:'Behind the dunnies',
   text:'Behind the toilet block, Gazza is running a book with two blokes in matching windbreakers. “They’ve got you at four to one for a podium, mate. Put your money where your bull bar is.” One windbreaker cracks his knuckles. “Or there’s other work. Sal’s been winning too much.”',
   choices:[
    {t:'Put $200 on yourself to finish top three',tag:'risky',req:()=>G.money>=200,reqT:'Needs $200',run:()=>{G.flags.sideBet={stake:200,top:3,mult:4,race:G.race};return{fx:{money:-200},res:'Gazza writes it on his forearm in biro. “Pays eight hundred. No pressure, mate.”'}}},
@@ -638,7 +642,7 @@ const EVENTS=[
    {t:'“See what?” Keep his secret',tag:'good',fx:{karma:6,opinion:{yowie:20},flag:'keptYowie'},res:'The helmet goes back on. A slow nod. Before dawn there’s a warm pie on your bonnet.'},
    {t:'Sell the tip to Channel 8 (+$400)',tag:'bad',fx:{money:400,karma:-14,opinion:{yowie:-40},flag:'soldYowie'},res:'The producer pays cash. Next race, the Yowie lines up right behind you and stays there.'},
    {t:'Ask Gazza straight who he is (Charm 3+)',tag:'risky',run:()=>G.stats.charm>=3?{fx:{flag:'knowsYowie',xp:60,opinion:{yowie:5}},res:'Gazza sags. “Thirty years he’s waited to race that crossover again. Let him finish it.” He won’t say the name. He doesn’t have to: there’s a blue heeler asleep in the cab.'}:{fx:{karma:-2},res:'“Hats, mate. I sell hats.” His hands are shaking.'}}]},
- {id:'lou_mic',pri:1,when:()=>G.race>=1&&lastRes&&lastRes.pi<=2,title:'Mic in your face',
+ {id:'lou_mic',who:'lou_tran',hook:'Channel 8 mic in hand, heading your way.',pri:1,when:()=>G.race>=1&&lastRes&&lastRes.pi<=2,title:'Mic in your face',
   get text(){return`Your helmet isn’t even off and there’s a Channel 8 microphone in your face. Lou Tran, pit reporter, still with grease under her nails from ten years on the spanners. “Podium at ${lastRes?lastRes.track:'the track'}! Barry’s calling you a hoon. Your words, live, go.”`},
   choices:[
    {t:'Thank the crew, the crowd and the roos',tag:'good',fx:{karma:4,aff:{rosa:5,june:5,dex:3},flag:'louTrust'},res:'Lou lowers the mic. “Honest. Rare. I’ll remember that.”'},
@@ -650,18 +654,100 @@ const EVENTS=[
    {t:'Tell her everything you’ve seen this season',tag:'good',fx:{karma:5,flag:'louTrust',xp:40},res:'She writes fast. “If this is true, it’s the biggest story Channel 8’s had in thirty years. Watch your back.”'},
    {t:'Sell Duke out: say his dad’s been bragging (+$250)',tag:'bad',fx:{money:250,rival:-25,karma:-6,flag:'leakVance'},res:'It runs at six o’clock. Duke finds you in the paddock and doesn’t say a word. He doesn’t have to.'},
    {t:'“No comment.” Some ghosts should stay buried',tag:'neutral',fx:{xp:10},res:'Lou closes the notebook. “That’s what everyone said in ’94, too.”'}]},
- {id:'lou_scoop',pri:2,when:()=>G.race>=4&&G.flags.louTrust!==undefined,title:'Crossover cam',
+ {id:'lou_scoop',who:'lou_tran',hook:'Waving a tape from the crossover camera.',pri:2,when:()=>G.race>=4&&G.flags.louTrust!==undefined,title:'Crossover cam',
   text:'Lou plays you footage from Channel 8’s crossover camera: Shazza, clear as day, punting you into the tyres on purpose. “I can run it tonight. Pemberton would have to act. Or you can handle it your way.”',
   choices:[
    {t:'Run it. Let Pemberton sort her out',tag:'good',fx:{karma:4,opinion:{shazza:-15},flag:'shazzaWatched'},res:'Shazza cops a fine and a final warning. For the next two races she keeps her elbows in, and she hates you for it.'},
    {t:'Bury it. You’ll settle this on the track',tag:'risky',fx:{opinion:{shazza:5},xp:30},res:'Lou pockets the tape. “Your funeral. I’ll keep a camera on the crossover.”'},
    {t:'Sell the tape to Shazza (+$300)',tag:'bad',fx:{money:300,karma:-9,opinion:{shazza:15},unflag:'louTrust'},res:'Shazza pays in fifties and grins like a croc. Lou stops returning your calls.'}]},
- {id:'pemberton_word',pri:1,when:()=>G.race>=2&&G.karma<=-10,title:'A word from the Stewards',
+ {id:'pemberton_word',who:'pemberton',hook:'Waiting at your truck with a clipboard.',pri:1,when:()=>G.race>=2&&G.karma<=-10,title:'A word from the Stewards',
   text:'Chief Steward Pemberton is waiting at your truck, clipboard out, reading glasses on a cord. “Three complaints, one smashed mirror and the promoter’s ute. You start next race with points against you.” He taps the clipboard. “Unless the paperwork were to… get lost.”',
   choices:[
    {t:'Slide him $250 for “processing”',tag:'bad',req:()=>G.money>=250,reqT:'Needs $250',run:()=>{G.flags.stewardsBought=G.race+2;return{fx:{money:-250,karma:-8},res:'The envelope vanishes. “Clerical error,” says Pemberton. “Drive safely.” For two races, the Stewards look the other way. Mostly.'}}},
    {t:'Argue the toss (Charm 2+)',tag:'risky',run:()=>{if(G.stats.charm>=2)return{fx:{xp:30},res:'He reads the complaints again, sighs and tears one up. “Don’t make me regret this.”'};G.flags.penStart=40;return{fx:{karma:-1},res:'“Forty points, then.” He writes it down very neatly.'}}},
    {t:'Cop it sweet',tag:'good',run:()=>{G.flags.penStart=25;return{fx:{karma:4},res:'“Appreciated,” says Pemberton. “Twenty-five points. Keep it clean out there.”'}}}]},
+ /* ---- paddock conversations (who + hook): three per evening between races ---- */
+ {id:'earl_94',who:'earl',hook:'Sitting on a tyre, staring at the crossover.',pri:1,when:()=>G.race>=2,title:'Since ’94',
+  text:'Big Earl hasn’t moved in an hour. He’s staring at the crossover like it owes him money. “Nobody looks at that corner the same since ’94, kid.” He spits in the dust. “Nobody that was there, anyway.”',
+  choices:[
+   {t:'Ask what happened in ’94',tag:'neutral',fx:{opinion:{earl:5},flag:'earlHint',xp:20},res:'“Some things you only say once. Not tonight.” He taps the gold ring painted on the dirt at the crossover.'},
+   {t:'Pull up a tyre and crack him a cold one from the esky',tag:'good',fx:{money:-10,opinion:{earl:12},karma:2,flag:'earlHint'},res:'Long pause. “Rosa’s dad and I go back. You drive like him. Too brave by half.”'},
+   {t:'Tell him he’s past it and should hand in his licence',tag:'bad',fx:{opinion:{earl:-15}},res:'“Back in my day we raced on gravel and gratitude.” He doesn’t look at you again. On track, he stops giving you room.'}]},
+ {id:'earl_truth',who:'earl',hook:'Wants a word. Somewhere quiet.',pri:2,when:()=>G.race>=5&&G.flags.earlHint!==undefined&&(G.opinion.earl||0)>=5,title:'Some things you only say once',
+  text:'Earl walks you out past the floodlights. “The night before the ’94 crash I saw a Vance Motors mechanic coming out of Hank Booker’s shed. Two in the morning. Carrying a steering rack.” He breathes out. “Thirty years I’ve kept that. Now it’s yours.”',
+  choices:[
+   {t:'Promise to keep it between you',tag:'good',fx:{karma:3,opinion:{earl:10},flag:'earlSecret'},res:'Earl nods once. “Then I can retire.” You’ve never seen him look lighter.'},
+   {t:'Ask him to say it to Lou Tran on camera',tag:'risky',req:()=>G.flags.louTrust!==undefined,reqT:'Lou has to trust you',fx:{opinion:{earl:-5},flag:'earlSecret',xp:40},res:'He thinks about it for a long time. “One take. No second chances.” Lou’s camera rolls.'},
+   {t:'Tell Duke his family’s dirty laundry is showing',tag:'bad',fx:{rival:-15,flag:'earlSecret',opinion:{earl:-10}},res:'Duke goes very quiet, then very red. Earl hears about it before you’ve left the pits.'}]},
+ {id:'shazza_lean',who:'shazza',hook:'Leaning on your bonnet, chewing gum.',pri:0,when:()=>G.race>=1,title:'Nice paint',
+  text:'Shazza Kelly is leaning on your bonnet, cracking gum. “Nice paint. Be a shame if it ended up on the wall at the crossover.” She grins. “Or you could make it interesting.”',
+  choices:[
+   {t:'Bet her $100 you finish ahead of her',tag:'risky',req:()=>G.money>=100,reqT:'Needs $100',run:()=>{G.flags.rivalBet={id:'shazza',stake:100,race:G.race};return{fx:{money:-100,opinion:{shazza:5}},res:'“Ha! Easiest hundred I’ll ever make.” You shake on it. Her grip is murder.'}}},
+   {t:'Laugh it off and trade racing lines',tag:'good',fx:{opinion:{shazza:10},xp:20},res:'“You’re all right for a dag.” She shows you where she brakes for the crossover. It’s later than you’d dare.'},
+   {t:'Shove her off your truck',tag:'bad',fx:{opinion:{shazza:-18},karma:-2},res:'She lands on her feet and points at you. “See you on the grid.” Everyone in the paddock heard it.'}]},
+ {id:'thommo_stream',who:'thommo',hook:'Phone on a selfie stick, looking for content.',pri:0,when:()=>G.race>=1,title:'Smash that like button',
+  text:'Thommo swings his selfie stick into your face. “Chat, look who it is! Bro, do a burnout for the stream. Ten thousand people watching. Kanga Tyres said they’d chuck in a hundred if it goes viral.”',
+  choices:[
+   {t:'Light ’em up for the stream (+$100)',tag:'neutral',fx:{money:100,opinion:{thommo:15},karma:-1},res:'The smoke takes out half the paddock. Thommo is screaming. “Bro, that was cinema.” Pemberton writes something down.'},
+   {t:'Roast him live in front of his chat',tag:'risky',fx:{opinion:{thommo:-12},xp:30},res:'His chat turns on him instantly. He laughs it off, badly. On track he’ll want a highlight with your name on it.'},
+   {t:'“Not today, mate.” Walk away',tag:'good',fx:{karma:2},res:'“Respect, respect.” He’s already pointing the camera at a roo.'}]},
+ {id:'tash_data',who:'tash',hook:'Tablet out, watching your laps again.',pri:0,when:()=>G.race>=2,title:'Four tenths',
+  text:'Tash Kowalski doesn’t look up from her tablet. “Your line through turn two costs you four tenths a lap. I can show you. Or you can keep losing.” She finally looks up. “Statistically, you shouldn’t have won anything yet.”',
+  choices:[
+   {t:'“Show me.”',tag:'good',fx:{opinion:{tash:10},xp:60},res:'Twenty minutes of overlays later, you can see it. “Noted,” she says, which from Tash is a standing ovation.'},
+   {t:'Offer $150 for her telemetry on Duke',tag:'risky',req:()=>G.money>=150,reqT:'Needs $150',fx:{money:-150,xp:100,rival:-5,opinion:{tash:5}},res:'She transfers the file before you’ve finished asking. Duke brakes early at every crossover. Now you know.'},
+   {t:'Tell her racing isn’t a spreadsheet',tag:'bad',fx:{opinion:{tash:-10}},res:'“It is if you’re good at it.” She goes back to the tablet. You no longer exist.'}]},
+ {id:'sal_coffee',who:'sal',hook:'Queueing at the coffee van, looking tired.',pri:0,when:()=>G.race>=2,title:'Flat white',
+  text:'Sal Vitale is in the coffee queue, hands in his pockets. “Twenty years I’ve been doing this. The coffee’s never been worse and the kids have never been faster.” He nods at you. “You’re one of the kids.”',
+  choices:[
+   {t:'Shout him a flat white',tag:'good',fx:{money:-5,opinion:{sal:12},karma:1},res:'“Good on ya.” He tells you which marshals wave the yellow flag late. It’s useful.'},
+   {t:'Ask what Duke’s really like',tag:'neutral',fx:{opinion:{sal:4},xp:20},res:'“Fast. Scared of his old man. Watch his mirrors when Rick Vance is in the stands.”'},
+   {t:'Tell him he’s getting too old for this',tag:'bad',fx:{opinion:{sal:-12}},res:'“Maybe.” He takes his coffee. “I’ll be old in front of you, though.”'}]},
+ {id:'duke_cameras',who:'duke',mood:'smug',hook:'Signing autographs, cameras everywhere.',pri:0,when:()=>G.race>=1,title:'Enjoy the tailgate',
+  text:'Duke Vance is signing hats for a queue of kids, cameras flashing. He sees you and raises his voice for the microphones. “Enjoy the view of my tailgate this week, mate. It’s the closest you’ll get to a factory truck.”',
+  choices:[
+   {t:'Shake his hand for the cameras',tag:'good',fx:{rival:10,karma:2},res:'He wasn’t expecting that. The grip is firm, the smile is fake, and the photo makes the front page.'},
+   {t:'Bet him $200 you finish ahead of him',tag:'risky',req:()=>G.money>=200,reqT:'Needs $200',run:()=>{G.flags.rivalBet={id:'duke',stake:200,race:G.race};return{fx:{money:-200,rival:-5},res:'“Two hundred,” Duke says for the cameras, as if it was his idea. The kids cheer.'}}},
+   {t:'Tell the cameras his daddy bought his seat',tag:'bad',fx:{rival:-18,karma:-2},res:'The queue goes silent. One kid boos. Duke’s jaw does something complicated.'}]},
+ {id:'marge_feud',who:'marge',hook:'Headset on, sunglasses up, watching the ratings.',pri:1,when:()=>G.race>=3,title:'Feuds sell tickets',
+  text:'Marge Quill, the promoter, steers you behind the grandstand by the elbow. “Ratings are soft, darl. You know what fixes ratings? A feud. You and Duke, on camera, every week. I’ll make it worth your while.”',
+  choices:[
+   {t:'Take the money and start the feud (+$300)',tag:'bad',fx:{money:300,rival:-20,karma:-4},res:'“That’s the spirit, darl.” By Sunday the posters say GRUDGE MATCH.'},
+   {t:'Offer her a feud with Shazza instead (+$150)',tag:'risky',fx:{money:150,opinion:{shazza:-20}},res:'Marge shrugs. “Cheaper, louder. I can work with that.” Shazza sees the poster an hour later.'},
+   {t:'“I’m here to race, not sell tickets.”',tag:'good',fx:{karma:3},res:'“They all say that, darl.” She’s already dialling someone else.'}]},
+ /* ---- the 1994 mystery: story beats from the bible ---- */
+ {id:'june_engineer',pri:1,when:()=>inCrew('june')&&G.race>=3,title:'The man in the red polo',
+  text:'June stops mid-sentence and goes grey. Across the paddock, a heavy man in a Vance Motors polo is laughing with Duke’s crew. “That’s Bernie Kask, Vance Motors’ chief engineer. He’s the one who had me dropped.” Her hands are shaking. “He was a junior mechanic in ’94.”',
+  choices:[
+   {t:'Stand beside her and stare him down',tag:'good',fx:{aff:{june:15},karma:2},res:'Kask notices. His laugh dies. June breathes again. “Thanks. I mean it.”'},
+   {t:'Walk over and ask Kask about ’94 (Charm 2+)',tag:'risky',run:()=>G.stats.charm>=2?{fx:{flag:'kaskSlip',xp:50,aff:{june:5}},res:'“Ninety-four? I fitted racks for the boss, that’s all. Every truck. Well. Most trucks.” He realises what he said a second too late.'}:{fx:{rival:-10},res:'Kask smiles like a closing door. Ten minutes later Duke’s crew are watching you.'}},
+   {t:'Tell her to toughen up. It’s racing',tag:'bad',fx:{aff:{june:-15}},res:'June nods slowly and goes back to her clipboard. She doesn’t say another word all night.'}]},
+ {id:'yowie_corner',pri:1,when:()=>G.race>=4,title:'The gold ring',
+  text:'On the cool-down lap the Yowie stops at the crossover. He climbs out, kneels, and puts a gloved hand on the faded gold ring painted on the dirt, the one everybody calls Hank’s Corner. Then he looks straight at you.',
+  choices:[
+   {t:'Stop beside him and switch off your engine',tag:'good',fx:{opinion:{yowie:12},karma:3,flag:'ringRespect'},res:'You sit in the silence together. He stands, nods once, and limps back to his truck. The left leg.'},
+   {t:'Blast the horn and roar past',tag:'bad',fx:{opinion:{yowie:-12}},res:'He doesn’t flinch. He just watches you go.'},
+   {t:'Film it for Thommo’s stream (+$60)',tag:'bad',fx:{money:60,opinion:{yowie:-15,thommo:10},karma:-4},res:'Two hundred thousand views by morning. The Yowie’s trailer stays locked tight.'}]},
+ {id:'rosa_shed',pri:1,when:()=>inCrew('rosa')&&G.race>=5,title:'Dad’s shed',
+  text:'Rosa drags a tarp off a pile in her dad’s old shed in Broken Hill. “He kept everything from ’94. Said one day somebody would ask.” Under it: a bent steering rack, stamped VANCE MOTORS, with a paper tag. Truck #1. Hank Booker.',
+  choices:[
+   {t:'Wrap it up and keep it safe',tag:'good',fx:{flag:'rack',aff:{rosa:10},xp:40},res:'Rosa runs a thumb over the tag. “Dad was right, then.” She locks it in your trailer.'},
+   {t:'Get it to Lou Tran tonight',tag:'risky',fx:{flag:'rack',karma:4,aff:{rosa:5}},res:'Lou turns it over under the floodlights and goes quiet. “This is it. This is the whole story.”'},
+   {t:'Call Vance Motors and name a price (+$1000)',tag:'bad',fx:{money:1000,karma:-20,aff:{rosa:-30},flag:'rackSold'},res:'A courier collects it within the hour. Rosa watches the van leave and doesn’t say a word.'}]},
+ {id:'rick_benefit',pri:1,when:()=>G.race>=6,title:'Rick Vance',
+  text:'At the benefit night Rick Vance works the room in a red polo and a watch worth more than your truck. The Yowie takes one look at him, sets down his pie and walks out into the dark. Rick finds you at the bar. “Walk with me.”',
+  choices:[
+   {t:'Hear him out',tag:'bad',run:()=>{G.flags.rickDeal=G.race;return{fx:{money:500,karma:-10,rival:15},res:'“Let Duke win the Showdown and there’s a factory seat for you next year. Something for your trouble.” The envelope is thick.'}}},
+   {t:'Turn him down where the press can hear',tag:'good',fx:{karma:6,rival:-10},res:'“No thanks, Mr Vance.” Lou Tran’s camera catches his face. It isn’t a nice face.'},
+   {t:'Ask him about the steering racks in ’94',tag:'risky',req:()=>G.flags.rack!==undefined||G.flags.earlSecret!==undefined||G.flags.kaskSlip!==undefined,reqT:'You need to know something first',fx:{flag:'rickRattled',xp:60},res:'For one second Rick Vance looks every one of his years. “Careful, kid. Careful.” He leaves without finishing his drink.'}]},
+ {id:'truth',pri:3,when:()=>G.race===7&&(G.flags.rack!==undefined||G.flags.earlSecret!==undefined||G.flags.kaskSlip!==undefined||G.flags.knowsYowie!==undefined),title:'Who do you tell?',
+  get text(){const k=[G.flags.rack!==undefined&&'the bent steering rack from Rosa’s dad’s shed',G.flags.earlSecret!==undefined&&'what Earl saw at two in the morning',G.flags.kaskSlip!==undefined&&'Bernie Kask’s slip of the tongue'].filter(Boolean);
+    return`The night before the Outback Showdown. You know ${k.length?k.join(', '):'more than you should'}. Thirty years ago somebody sabotaged Hank Booker at the crossover, and tomorrow everyone races it one more time. Who do you tell?`},
+  choices:[
+   {t:'Channel 8: give Lou Tran the whole story',tag:'good',fx:{karma:10,rival:-20,flag:'truthLou'},res:'It leads the six o’clock news. Rick Vance’s lawyers are on the phone by seven. The crowd at the Showdown is the biggest the series has ever seen.'},
+   {t:'Duke: he deserves to hear it from you',tag:'risky',fx:{rival:40,karma:6,flag:'truthDuke'},res:'Duke reads it twice in the dark of his trailer. “I didn’t know.” He means it. “Tomorrow I race you clean.”'},
+   {t:'The Yowie: leave it on his seat with a pie',tag:'good',fx:{opinion:{yowie:30},karma:6,flag:'truthYowie'},res:'In the morning the pie tin is back on your bonnet, with something heavy inside: a 1994 championship medal.'},
+   {t:'Nobody. Burn it and race',tag:'neutral',fx:{xp:30},res:'Some ghosts stay buried. Tomorrow is just a race. You almost believe it.'}]},
  {id:'quiet',repeat:true,title:'Open road',text:'A quiet stretch of highway between tracks. The sun is going down orange over the desert and there’s nothing on the schedule till morning.',
   choices:[
    {t:'Run practice laps on a dry salt lake',tag:'neutral',fx:{xp:70},res:'You come back sunburnt and sharper.'},
@@ -672,7 +758,7 @@ const SCHED={0:'stranded',1:'june_intro',2:'dex_intro',4:'duke_bribe'};
 const TAGS={good:'Good',bad:'Shady',neutral:'Neutral',risky:'Gamble'};
 function nextEvent(){
   const s=SCHED[G.race];if(s&&!G.used.includes(s))return EVENTS.find(e=>e.id===s);
-  const av=EVENTS.filter(e=>!e.sched&&!e.repeat&&!G.used.includes(e.id)&&(!e.when||e.when()));
+  const av=EVENTS.filter(e=>!e.sched&&!e.who&&!e.repeat&&!G.used.includes(e.id)&&(!e.when||e.when()));
   if(!av.length)return EVENTS.find(e=>e.id==='quiet');
   const top=Math.max(...av.map(e=>e.pri||0));return pick(av.filter(e=>(e.pri||0)===top));
 }
@@ -720,8 +806,10 @@ function startRace(){
   {const fl=G.flags;   // paddock deals that follow you onto the grid
    if(fl.penStart){R.pen=fl.penStart;delete fl.penStart;R.radio={id:'pemberton',txt:`You start on ${R.pen} penalty points, #8. Keep it clean.`,t:4,angry:true};R.radioG=4}
    if(fl.stewardsBought!==undefined&&G.race<fl.stewardsBought)R.penMult=0.5;
-   if(fl.shazzaWatched!==undefined&&G.race-fl.shazzaWatched<=1){const sz=cars.find(c=>c.id==='shazza');if(sz)sz.tame=true}}
+   if(fl.shazzaWatched!==undefined&&G.race-fl.shazzaWatched<=1){const sz=cars.find(c=>c.id==='shazza');if(sz)sz.tame=true}
+   if(G.race===SEASON-1){if(fl.truthDuke!==undefined){const d=cars.find(c=>c.id==='duke');if(d)d.tame=true}if(fl.truthYowie!==undefined){const y=cars.find(c=>c.id==='yowie');if(y)y.tame=true}}}
   R.crowd=stadOK()?crowdNew(T):null;
+  if(R.crowd&&G.race===SEASON-1&&G.flags.truthLou!==undefined){R.crowd.base=.5;R.crowd.ex=.7}   // the story broke: a packed, roaring house
   setMode('race');if(document.activeElement)document.activeElement.blur();if(TOUCH)pad.classList.add('hints');
   gridMoment();
 }
@@ -1313,7 +1401,9 @@ function endRace(){
   {const fl=G.flags;   // settle the paddock deals
    if(fl.sideBet&&fl.sideBet.race===G.race){const b=fl.sideBet;if(pi+1<=b.top){const pay=b.stake*b.mult;G.money+=pay;notes.push(`Gazza’s book pays out $${pay}. He kisses the cash and keeps $20 of it “for admin”.`)}else notes.push(`Your $${b.stake} side bet is gone. Gazza says sorry with a fur hat.`);delete fl.sideBet}
    if(fl.hit&&fl.hit.race===G.race){const si=rk.findIndex(c=>c.id===fl.hit.id);if(si>pi){G.money+=fl.hit.pay;G.karma=clamp(G.karma-4,-100,100);notes.push(`${NAMES[fl.hit.id]} finished behind you. A windbreaker slips you the other $${fl.hit.pay} and says nothing.`)}else notes.push(`${NAMES[fl.hit.id]} beat you anyway. The windbreakers want a word about their deposit.`);delete fl.hit}
-   if(R.penMult)notes.push('The Stewards were looking the other way. Mostly.')}
+   if(R.penMult)notes.push('The Stewards were looking the other way. Mostly.');
+   if(fl.rivalBet&&fl.rivalBet.race===G.race){const b=fl.rivalBet,bi=rk.findIndex(c=>c.id===b.id);if(bi>pi){G.money+=b.stake*2;notes.push(`You beat ${NAMES[b.id]} and collect on the bet: $${b.stake*2}.`);if(b.id==='duke')G.rival=clamp(G.rival-5,-100,100);else G.opinion[b.id]=clamp((G.opinion[b.id]||0)-5,-100,100)}else{notes.push(`${NAMES[b.id]} beat you and pockets your $${b.stake}.`);if(b.id!=='duke')G.opinion[b.id]=clamp((G.opinion[b.id]||0)+5,-100,100)}delete fl.rivalBet}
+   if(G.race===SEASON-1&&fl.rickDeal!==undefined){const di=rk.findIndex(c=>c.id==='duke');notes.push(pi<di?'You beat Duke anyway. Rick Vance’s envelope is a debt now, and the factory seat is gone.':'Duke wins the Showdown. Rick Vance sends a card: “See you next season.”')}}
   if(dexMult()>1)notes.push('Dex squeezed an extra 20% out of the purse.');
   if(juneBonus())notes.push('June’s spotting earned you '+juneBonus()+' bonus nitro this race.');
   if(G.race===SEASON-1){const yi=rk.findIndex(c=>c.id==='yowie');if(yi>=0&&pi<yi)G.flags.yowieBeaten=G.race}
@@ -1354,8 +1444,8 @@ function portrait(id,mood='neutral',cls='pimg'){
 }
 const face=(id,mood)=>portrait(id,mood)||`<span class="face" style="--c:${CREW[id].color}" title="${CREW[id].short}">${CREW[id].short[0]}</span>`;
 /* which art each story event uses: its own card (Batch09) or a location (Batch10), plus who is speaking */
-const EVENT_BG={gazza_intro:'paddock',gazza_bet:'dexs_gambling_shed',gazza_helmet:'pit_garage_night',lou_mic:'ch8_interview',lou_1994:'roadhouse',lou_scoop:'channel8_race_control',pemberton_word:'paddock',stranded:'bush_camp',june_intro:'paddock',dex_intro:'roadhouse',duke_bribe:'paddock',garage_night:'pit_garage_night',benefit:'flying_doctor_strip',casino:'gold_coast_nightlife',rosa_shop:'rosas_garage',rosa_repay:'rosas_garage',dex_debt:'dexs_gambling_shed',june_doubt:'paddock',reporter:'ch8_interview',hank_return:'hanks_homestead',hank_revenge:'pit_garage_night',duke_diner:'roadhouse',quiet:'bush_camp',yowie_pies:'paddock'};
-const EVENT_SPEAKER={gazza_intro:['gazza','neutral'],gazza_bet:['gazza','neutral','windbreakers','neutral'],gazza_helmet:['gazza','neutral','yowie','surprised'],lou_mic:['lou_tran','neutral'],lou_1994:['lou_tran','neutral'],lou_scoop:['lou_tran','neutral','shazza','neutral'],pemberton_word:['pemberton','neutral'],duke_bribe:['duke','smug'],duke_diner:['duke','angry'],rosa_shop:['rosa','sad'],rosa_repay:['rosa','happy'],yowie_pies:['yowie','calm'],june_intro:['june','focused'],june_doubt:['june','surprised'],dex_intro:['dex','happy'],dex_debt:['dex','neutral','windbreakers','neutral'],stranded:['hank','sad'],hank_return:['hank','neutral'],hank_revenge:['rosa','angry','hank','angry']};
+const EVENT_BG={earl_94:'paddock',earl_truth:'paddock',shazza_lean:'paddock',thommo_stream:'paddock',tash_data:'pit_garage_night',sal_coffee:'roadhouse',duke_cameras:'paddock',marge_feud:'channel8_race_control',june_engineer:'paddock',yowie_corner:'paddock',rosa_shed:'scrap_yard',rick_benefit:'flying_doctor_strip',truth:'pit_garage_night',gazza_intro:'paddock',gazza_bet:'dexs_gambling_shed',gazza_helmet:'pit_garage_night',lou_mic:'ch8_interview',lou_1994:'roadhouse',lou_scoop:'channel8_race_control',pemberton_word:'paddock',stranded:'bush_camp',june_intro:'paddock',dex_intro:'roadhouse',duke_bribe:'paddock',garage_night:'pit_garage_night',benefit:'flying_doctor_strip',casino:'gold_coast_nightlife',rosa_shop:'rosas_garage',rosa_repay:'rosas_garage',dex_debt:'dexs_gambling_shed',june_doubt:'paddock',reporter:'ch8_interview',hank_return:'hanks_homestead',hank_revenge:'pit_garage_night',duke_diner:'roadhouse',quiet:'bush_camp',yowie_pies:'paddock'};
+const EVENT_SPEAKER={june_engineer:['june','surprised'],yowie_corner:['yowie','sad'],rosa_shed:['rosa','surprised'],rick_benefit:['rick','neutral','yowie','angry'],gazza_intro:['gazza','neutral'],gazza_bet:['gazza','neutral','windbreakers','neutral'],gazza_helmet:['gazza','neutral','yowie','surprised'],lou_mic:['lou_tran','neutral'],lou_1994:['lou_tran','neutral'],lou_scoop:['lou_tran','neutral','shazza','neutral'],pemberton_word:['pemberton','neutral'],duke_bribe:['duke','smug'],duke_diner:['duke','angry'],rosa_shop:['rosa','sad'],rosa_repay:['rosa','happy'],yowie_pies:['yowie','calm'],june_intro:['june','focused'],june_doubt:['june','surprised'],dex_intro:['dex','happy'],dex_debt:['dex','neutral','windbreakers','neutral'],stranded:['hank','sad'],hank_return:['hank','neutral'],hank_revenge:['rosa','angry','hank','angry']};
 const sceneUrl=k=>ARTM&&ARTM.scenes[k]?artUrl(ARTM.scenes[k]):'';
 function eventArt(id){const e=ARTM&&ARTM.events[id];if(e)return `<img class="evcard" src="${artUrl(e)}" alt="">`;const sc=sceneUrl(EVENT_BG[id]);return sc?`<img class="evcard" src="${sc}" alt="">`:''}
 const pips=(n,max=5)=>`<span class="pips">${Array.from({length:max},(_,i)=>`<i class="${i<n?'on':''}"></i>`).join('')}</span>`;
@@ -1623,10 +1713,26 @@ function showMenu(){
   </div><div id="whatsnew"></div>${ctlUI()}<p class="dedication">Dedicated to Ivan “Ironman” Stewart and <i>Super Off Road</i>, the arcade classic that inspired Aussie 8.</p></div>`;
   renderWN();
 }
+/* ---------- THE PADDOCK: between races, 4 to 6 characters standing around and three evening conversations ---------- */
+const PAD_SLOTS=3;
+function padLeft(){if(!G.pad||G.pad.race!==G.race)G.pad={race:G.race,left:PAD_SLOTS};return G.pad.left}
+function padTalks(){const by={};
+  for(const e of EVENTS){if(!e.who||G.used.includes(e.id)||(e.when&&!e.when()))continue;const cur=by[e.who];if(!cur||(e.pri||0)>(cur.pri||0))by[e.who]=e}
+  return Object.values(by).sort((a,b)=>(b.pri||0)-(a.pri||0)).slice(0,6)}
+function showPaddock(){
+  const talks=padTalks();if(padLeft()<=0||!talks.length)return showGarage();
+  G.stage='paddock';save();setMode('menu','scene:paddock');const T=trackFor(G.race),left=G.pad.left;
+  ov.innerHTML=`<div class="panel"><p class="kicker">The paddock · ${esc(T.name)} · dusk</p><h2>Who do you talk to?</h2>
+  <p class="story">Floodlights buzzing, generators thumping, somebody’s barbie going. You’ve got time for ${left===1?'one more conversation':left+' conversations'} before you have to get back to the truck.</p>
+  <div class="slots">${Array.from({length:PAD_SLOTS},(_,i)=>`<span class="${i<left?'on':''}"></span>`).join('')}<small class="muted">evening left</small></div>
+  <div class="paddock">${talks.map(e=>`<button class="pcard" data-act="talk:${e.id}">${portrait(e.who,e.mood||'neutral')||`<span class="face">${esc((NAMES[e.who]||e.who)[0])}</span>`}
+    <span><b>${esc((CREW[e.who]&&CREW[e.who].name)||NAMES[e.who]||e.who)}</b><small>${esc(e.hook||'')}</small></span></button>`).join('')}</div>
+  <div class="actions"><button class="btn ghost" data-act="garage">Head back to the truck</button></div></div>`;
+}
 function showEvent(ev){
   curEv=ev;G.stage='event';
   const crewNow=Object.keys(CREW).filter(inCrew);
-  setMode('menu','scene:'+(EVENT_BG[ev.id]||'paddock'));const sp=EVENT_SPEAKER[ev.id];
+  setMode('menu','scene:'+(EVENT_BG[ev.id]||'paddock'));const sp=EVENT_SPEAKER[ev.id]||(ev.who?[ev.who,ev.mood||'neutral']:null);
   ov.innerHTML=`<div class="panel">${eventArt(ev.id)}<p class="kicker">${G.race===0?'Before the season':'After race '+G.race+' of '+SEASON}</p>
   ${sp&&portrait(sp[0],sp[1])?`<div class="speaker">${portrait(sp[0],sp[1])}${sp[2]?portrait(sp[2],sp[3])||'':''}<h2 style="margin:0">${ev.title}</h2></div>`:`<h2>${ev.title}</h2>`}<p class="story">${ev.text}</p>
   ${crewNow.length?`<div class="riders">${crewNow.map(face).join('')}<span class="muted">Your crew is watching.</span></div>`:''}
@@ -1635,13 +1741,14 @@ function showEvent(ev){
 function choose(i){
   const ev=curEv,c=ev.choices[i];if(c.req&&!c.req())return;
   if(!ev.repeat&&!G.used.includes(ev.id))G.used.push(ev.id);
+  if(ev.who){padLeft();G.pad.left--}
   const r=c.run?c.run():{fx:c.fx||{},res:c.res},o=apply(r.fx);G.stage='garage';save();
   ov.innerHTML=`<div class="panel"><p class="kicker">${ev.title}</p><h2>${r.res}</h2>
   ${o.out.length?`<div class="pills">${o.out.map(([t,up])=>`<span class="pill ${up?'up':'dn'}">${t}</span>`).join('')}</div>`:''}
   ${o.joined.map(id=>`<div class="react">${face(id)}<div><b>${CREW[id].name}</b> joined your crew as ${CREW[id].role.toLowerCase()}.<br><span class="muted">Likes: ${CREW[id].likes}</span></div></div>`).join('')}
   ${o.reacts.map(x=>`<div class="react">${face(x.id,x.d>0?'happy':'angry')}<div><b>${CREW[x.id].short}</b> <span class="pill ${x.d>0?'up':'dn'}">${x.d>0?'+':'−'}${Math.abs(x.d)} trust</span><br><q>${x.line}</q></div></div>`).join('')}
   ${o.gone.map(id=>`<div class="note"><b>${CREW[id].short} has left your crew.</b> ${CREW[id].leave}</div>`).join('')}
-  <div class="actions"><button class="btn" data-act="garage">To the garage</button></div></div>`;
+  <div class="actions">${ev.who&&padLeft()>0&&padTalks().length?`<button class="btn" data-act="paddock">Back to the paddock</button><button class="btn ghost" data-act="garage">To the garage</button>`:ev.who||!padTalks().length?`<button class="btn" data-act="garage">To the garage</button>`:`<button class="btn" data-act="paddock">Walk the paddock</button>`}</div></div>`;
 }
 function standings(){return Object.keys(G.points).sort((a,b)=>G.points[b]-G.points[a]||(a==='you'?-1:1))}
 function showGarage(){
@@ -1725,6 +1832,7 @@ function resume(){
   if(!G)return showMenu();
   if(G.stage==='end'||G.race>=SEASON)return G.flags.yowieBeaten!==undefined&&G.flags.yowieRevealed===undefined?showYowieReveal():showEnding();
   if(G.stage==='event'){setMode('menu');return showEvent(nextEvent())}
+  if(G.stage==='paddock')return showPaddock();
   showGarage();
 }
 ov.addEventListener('click',e=>{
@@ -1735,6 +1843,8 @@ ov.addEventListener('click',e=>{
   else if(a==='title')showTitle();
   else if(a.startsWith('ch:'))choose(+a.slice(3));
   else if(a==='garage')showGarage();
+  else if(a==='paddock')showPaddock();
+  else if(a.startsWith('talk:')){const e=EVENTS.find(x=>x.id===a.slice(5));if(e)showEvent(e)}
   else if(a.startsWith('stat:')){const k=a.slice(5);if(G.sp>0&&G.stats[k]<5){G.stats[k]++;G.sp--;showGarage()}}
   else if(a.startsWith('upg:')){const k=a.slice(4),l=G.upg[k],cost=Math.round(UPC[l]*discount()/10)*10;if(l<5&&G.money>=cost){G.money-=cost;G.upg[k]++;showGarage()}}
   else if(a==='nitro'){const cost=Math.round(150*discount()/10)*10;if(G.nitro<9&&G.money>=cost){G.money-=cost;G.nitro++;showGarage()}}
