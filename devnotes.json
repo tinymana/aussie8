@@ -2,6 +2,25 @@
   "_howto": "Newest first. Add an entry at the top each time you push an update; the website and the in-game 'What's new' both read this file. tag: new | improved | fixed.",
   "notes": [
     {
+      "version": "1.6",
+      "date": "2026-11-27",
+      "title": "Grid order and debris fixes",
+      "items": [
+        {
+          "tag": "improved",
+          "text": "The grid now lines up in the order of the last race: the winner starts on pole, and the rival in the grid moment is whoever is actually lined up beside you."
+        },
+        {
+          "tag": "fixed",
+          "text": "Wreck parts slid down the screen after they landed. They now stay exactly where they fall until someone drives over them or they blink out."
+        },
+        {
+          "tag": "fixed",
+          "text": "Driving over a wreck part now catches anywhere under your truck, not just dead centre, so parts break up and slow you as they should."
+        }
+      ]
+    },
+    {
       "version": "1.5",
       "date": "2026-11-27",
       "title": "The paddock, and the truth about ’94",

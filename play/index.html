@@ -518,7 +518,7 @@ const DMG={develop:9,stages:[20,45,75],wall:0.12,bump:0.05,crash:13,landing:4,sm
    wobble, never enough to fight the player), and wreck parts slow whoever drives over them, then break up. */
 const CRASH={minJ:95,gritJ:6,hdMin:0.75,hdMax:2.4};
 const WOBBLE={from:45,amp:0.55,speedLoss:0.07};
-const DEBRIS={life:24,max:45,slow:0.9,hitR:12};
+const DEBRIS={life:24,max:45,slow:0.9,hitR:20};   // hitR covers the truck body (about 48 x 28)
 const hurt=(c,n)=>{c.dmg=Math.min(100,c.dmg+n)};
 const dstage=c=>c.dmgVis<DMG.stages[0]?0:c.dmgVis<DMG.stages[1]?1:c.dmgVis<DMG.stages[2]?2:3;
 
@@ -800,8 +800,10 @@ function newRace(T,cars,pl){const r={T,cars,pl,phase:'count',t:3.2,time:0,order:
   r.layer=mkc(AW,AH);r.layer.getContext('2d').drawImage(T.img,0,0);r.crowd=null;return r}
 function startRace(){
   const T=trackFor(G.race),grid=[];for(let row=0;row<4;row++)for(const o of [-20,20])grid.push([T.L-40-row*56-(o>0?18:0),o]);
-  const cars=[],slots=[0,1,2,3,4,6,7];RIVALS.forEach((r,i)=>cars.push(mkCar(r,grid[slots[i]],T,false)));
-  const pl=mkCar({id:'you',name:'You',tag:'YOU'},grid[5],T,true);cars.push(pl);
+  const order=Array.isArray(G.lastOrder)&&G.lastOrder.length===8?G.lastOrder:[...RIVALS.slice(0,5).map(r=>r.id),'you',...RIVALS.slice(5).map(r=>r.id)];   // last race's finish: winner on pole
+  const cars=[];let pl=null;
+  order.forEach((id,i)=>{if(id==='you'){pl=mkCar({id:'you',name:'You',tag:'YOU'},grid[i],T,true);cars.push(pl)}else{const r=RIVALS.find(x=>x.id===id);if(r)cars.push(mkCar(r,grid[i],T,false))}});
+  if(!pl){pl=mkCar({id:'you',name:'You',tag:'YOU'},grid[7],T,true);cars.push(pl)}
   R=newRace(T,cars,pl);
   {const fl=G.flags;   // paddock deals that follow you onto the grid
    if(fl.penStart){R.pen=fl.penStart;delete fl.penStart;R.radio={id:'pemberton',txt:`You start on ${R.pen} penalty points, #8. Keep it clean.`,t:4,angry:true};R.radioG=4}
@@ -820,7 +822,8 @@ const opDelta=(id,d)=>{if(!id||id==='you')return;R.opD[id]=(R.opD[id]||0)+d};
 const portraitUrl=(id,mood)=>{const P=ARTM&&ARTM.portraits[id];return P?artUrl(P[mood]||P.neutral):''};
 function gridMoment(){
   const gp=document.getElementById('gridpop');
-  const pool=RIVALS.filter(r=>r.id!=='duke'||G.race>0),r=pool[(G.race*3+Math.floor(Math.random()*pool.length))%pool.length],l=aggr(r.id),L=LINES[r.id],ln=pick(L[band(l)]);
+  const pool=RIVALS.filter(r=>r.id!=='duke'||G.race>0),pi=R.cars.indexOf(R.pl),nb=R.cars[pi^1],   // whoever is lined up beside you
+    r=(nb&&RIVALS.find(x=>x.id===nb.id))||pool[(G.race*3+Math.floor(Math.random()*pool.length))%pool.length],l=aggr(r.id),L=LINES[r.id],ln=pick(L[band(l)]);
   R.phase='grid';R.gridR=r.id;
   const img=portraitUrl(r.id,'neutral'),btn=(k,t)=>ARTM&&ARTM.choices[k]?`<button data-grid="${k}" aria-label="${t}"><img src="${artUrl(ARTM.choices[k])}" alt="${t}"></button>`:`<button class="txt" data-grid="${k}">${t}</button>`;
   gp.innerHTML=`${img?`<img class="gpi" src="${img}" alt="">`:`<span class="gpi" style="background:${COLORS[r.id]}">${r.name.replace('The ','')[0]}</span>`}<div><b>#${NUM[r.id]} ${r.name.toUpperCase()}</b><small>Beside you on the grid · ${LEVELS[l]}</small><p>“${ln}”</p></div>
@@ -1112,8 +1115,9 @@ function spawnDebris(c,n,x,y,oil){
   if(R.debris.length>90)R.debris.splice(0,R.debris.length-90);
 }
 function settle(d){const a=A(d.x,d.y);R.layer.getContext('2d').drawImage(ART.img.debris,d.v*16,d.ti*16,16,16,ri(a.x-8),ri(a.y-8),16,16)}
-function updDebris(dt){for(const d of R.debris){d.x+=d.vx*dt;d.y+=d.vy*dt;const k=Math.pow(0.35,dt);d.vx*=k;d.vy*=k;d.vz-=520*dt;d.z+=d.vz*dt;
-    if(d.rest){d.life-=dt;continue}
+function updDebris(dt){for(const d of R.debris){
+    if(d.rest){d.life-=dt;continue}   // landed parts stay exactly where they are until hit or expired
+    d.x+=d.vx*dt;d.y+=d.vy*dt;const k=Math.pow(0.35,dt);d.vx*=k;d.vy*=k;d.vz-=520*dt;d.z+=d.vz*dt;
     if(d.z<=0){d.z=0;if(d.vz<-60&&Math.hypot(d.x-R.pl.x,d.y-R.pl.y)<300)SND.play('debris');d.vz=-d.vz*0.35;d.vx*=0.6;d.vy*=0.6;if(d.vz<35){d.rest=true;d.vx=d.vy=d.vz=0;d.life=DEBRIS.life+Math.random()*6}}}
   // a truck that drives over a part is slowed and knocked a little, and the part breaks up
   for(const d of R.debris){if(!d.rest||d.life<=0)continue;for(const c of R.cars){if(c.z>3)continue;if(Math.hypot(c.x-d.x,c.y-d.y)<DEBRIS.hitR){
@@ -1407,6 +1411,7 @@ function endRace(){
   if(dexMult()>1)notes.push('Dex squeezed an extra 20% out of the purse.');
   if(juneBonus())notes.push('June’s spotting earned you '+juneBonus()+' bonus nitro this race.');
   if(G.race===SEASON-1){const yi=rk.findIndex(c=>c.id==='yowie');if(yi>=0&&pi<yi)G.flags.yowieBeaten=G.race}
+  G.lastOrder=rk.map(c=>c.id);
   const T=R.T;netRace(TRACKS.indexOf(T),R.pl.ft,pi+1);G.race++;G.stage=G.race>=SEASON?'end':'event';save();
   lastRes={rk:rk.map(c=>({id:c.id,ft:c.fin?c.ft:null})),pi,won,cash:R.cash,xp,lv,notes,track:T.name};
   showResults();
