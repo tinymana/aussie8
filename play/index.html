@@ -1249,18 +1249,24 @@ function crash(a,b,J){
   barry('crash');
   R.floats.push({x:mx,y:my-24,txt:'CRASH!',col:pl?'#e63946':'#fbf8f2',life:1.1});
 }
-function kaboom(r){const emu=r.kind==='emu';
-  burst(r.x,r.y,'#c1440e',16,280,2);burst(r.x,r.y,'#e0612a',14,230,2);burst(r.x,r.y,'#ffb347',10,190,1);   // outback red dirt
-  burst(r.x,r.y,emu?'#ece6da':'#c08a55',12,210,1);burst(r.x,r.y,emu?'#3b3530':'#7a4e2c',8,170,1);           // feathers or fur
-  puff(r.x,r.y,'#c1440e',12);fxSpawn('crash',r.x,r.y);if(R.crowd)crowdEvent('crash',r.x/2)}
+function kaboom(r){const emu=r.kind==='emu';(R.booms=R.booms||[]).push({x:r.x,y:r.y,t0:R.time,emu});
+  for(let i=0;i<26;i++){const a=rnd(0,7),v=rnd(60,260);R.parts.push({x:r.x,y:r.y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:rnd(.5,.9),max:.9,r:rnd(6,10),col:pick(['#ffd34d','#ff9a2e','#e0612a','#c1440e'])})}
+  for(let i=0;i<18;i++){const a=rnd(0,7),v=rnd(30,140);R.parts.push({x:r.x,y:r.y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-40,life:rnd(1,1.6),max:1.6,r:rnd(5,8),col:emu?pick(['#ece6da','#bdb4a6','#3b3530']):pick(['#c08a55','#9a6a3c','#7a4e2c'])})}   // fur or feathers, drifting
+  for(let i=0;i<10;i++)R.parts.push({x:r.x+rnd(-14,14),y:r.y+rnd(-14,14),vx:rnd(-25,25),vy:rnd(-35,-5),life:rnd(.9,1.5),max:1.5,r:rnd(8,14),col:pick(['#8a5a3a','#6e4a36','#a7774f']),grow:1});   // red-dirt smoke
+  fxSpawn('crash',r.x,r.y);R.shake=Math.max(R.shake,5);SND.play('crash',.8);if(R.crowd)crowdEvent('crash',r.x/2)}
+function drawBooms(){if(!R.booms)return;R.booms=R.booms.filter(b=>R.time-b.t0<.55);
+  for(const b of R.booms){const t=(R.time-b.t0)/.55,a=A(b.x,b.y),rad=4+t*26;   // fireball: white-hot core, yellow, orange, red-dirt rim
+    for(const [k,col] of [[1,'#c1440e'],[.8,'#ff7a1a'],[.58,'#ffd34d'],[.3,'#fff6d8']]){const rr=rad*k*(t<.6?1:1-(t-.6)*1.6);if(rr<1)continue;bx.globalAlpha=t<.6?1:Math.max(0,1-(t-.6)*2.5);bx.fillStyle=col;
+      for(let i=0;i<10;i++){const an=i/10*6.283+b.t0,j=rr*(.82+.18*Math.sin(an*3+t*9));bx.fillRect(ri(a.x+Math.cos(an)*j*.5-j*.35),ri(a.y+Math.sin(an)*j*.5-j*.35),ri(j*.7),ri(j*.7))}}
+    bx.globalAlpha=1}}
 function updRoo(dt){
   const T=R.T;
   if(!R.roo){R.rooT-=dt;if(R.rooT<=0){const p=pointAt(T,R.pl.s+rnd(260,480)),side=Math.random()<.5?-1:1,nx=-p.ty,ny=p.tx,o=(WALL+20)*side;
     R.roo={x:p.x+nx*o,y:p.y+ny*o,vx:-nx*side*80,vy:-ny*side*80,t:0,trav:0,hit:{},big:0,kind:ART.img.wl_emu_run&&Math.random()<0.3?'emu':'roo'};crowdEvent('roo',R.roo.x/2)}return}
   const r=R.roo;r.t+=dt;r.big=Math.max(0,r.big-dt);r.x+=r.vx*dt;r.y+=r.vy*dt;r.trav+=Math.hypot(r.vx,r.vy)*dt;
-  if(r.launch){const L=r.launch;L.t+=dt;r.lz+=L.vz*dt;L.vz-=700*dt;r.ang+=L.spin*dt;if(L.t>1.4||r.lz<-20){R.roo=null;R.rooT=rnd(9,15)}return}   // sailing off over the scrub, dazed but fine
+  if(r.poof){R.roo=null;R.rooT=rnd(9,15);return}   // gone in a cartoon puff of red dirt
   r.h=Math.abs(Math.sin(r.t*7))*(r.big>0?16:7);
-  for(const c of R.cars){if(r.hit[c.id]||c.z>5||r.h>4)continue;if(Math.hypot(c.x-r.x,c.y-r.y)<(ART.img.wl_roo_run?28:24)){r.hit[c.id]=1;c.vx*=0.5;c.vy*=0.5;c.a+=rnd(-0.5,0.5);r.vx=c.vx*1.6+r.vx*.6;r.vy=c.vy*1.6+r.vy*.6;r.big=0.8;kaboom(r);r.launch={t:0,vz:520,spin:rnd(7,11)*(Math.random()<.5?-1:1)};r.lz=0;r.ang=0;
+  for(const c of R.cars){if(r.hit[c.id]||c.z>5||r.h>4)continue;if(Math.hypot(c.x-r.x,c.y-r.y)<(ART.img.wl_roo_run?28:24)){r.hit[c.id]=1;c.vx*=0.5;c.vy*=0.5;c.a+=rnd(-0.5,0.5);r.vx=c.vx*1.6+r.vx*.6;r.vy=c.vy*1.6+r.vy*.6;r.big=0.8;kaboom(r);r.poof=true;
     if(c.isP){R.shake=Math.max(R.shake,3);R.floats.push({x:r.x,y:r.y-20,txt:r.kind==='emu'?'KA-SQUAWK!':'KA-BOING!',col:'#ffcd00',life:1.2});SND.play(r.kind==='emu'?'emu':'roo');unlock('roo')}barry(r.kind==='emu'?'emu':'roo')}}
   if(r.trav>2*(WALL+20)+40){R.roo=null;R.rooT=rnd(9,15)}
 }
@@ -1325,7 +1331,7 @@ function drawRace(){
   for(const c of R.cars.slice().sort((p,q)=>p.y+p.z*3-(q.y+q.z*3))){const a=A(c.x,c.y);
     if(c.nitroT>0&&FXI('nitro')){const m=FXM('nitro'),fr=Math.floor(R.time*18)%m.n,b=A(c.x-Math.cos(c.a)*22,c.y-Math.sin(c.a)*22);bx.save();bx.translate(ri(b.x),ri(b.y-c.z*0.35));bx.rotate(c.a);bx.drawImage(FXI('nitro'),fr*32,0,32,32,-16,-16,32,32);bx.restore()}
     bx.drawImage(SPRITES[c.id][dstage(c)].spr[idx(c.a)],ri(a.x-15),ri(a.y-15-c.z*0.35))}
-  if(R.fx)drawFx(true);
+  if(R.fx)drawBooms();drawFx(true);
   if(R.ute){const u=R.ute,a=A(u.x,u.y),S=STEW[Math.floor(R.time*6)%2];if(S){bx.drawImage(S.shadow[idx(u.a)],ri(a.x-13),ri(a.y-12));bx.drawImage(S.spr[idx(u.a)],ri(a.x-15),ri(a.y-15))}}
   bx.restore();
   ctx.imageSmoothingEnabled=false;ctx.drawImage(buf,0,0,W,H);
