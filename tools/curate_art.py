@@ -158,9 +158,12 @@ ok('props: ' + ', '.join(PROPS), 'art/props/*.png', 'BATCH08_TRACK_SCENERY/props
 
 # ---------------------------------------------------------------- portraits
 portraits = {}
-for rid in ['duke', 'sal', 'shazza', 'tash', 'thommo', 'earl']:
+for rid in ['sal', 'shazza', 'tash', 'thommo', 'earl']:
     portraits[rid] = {'neutral': save(rgba(f'BATCH08B_RIVALS/portraits/{rid}.png'), f'portraits/{rid}_neutral.png')}
     ok(f'portrait:{rid}_neutral', f'art/portraits/{rid}_neutral.png', f'BATCH08B_RIVALS/portraits/{rid}.png', 'only one mood supplied')
+# Owner's call (Nov 2026): Duke is the blond champion with sunglasses (PROFILE_ASSETS), not the rival-kit Duke in a cap.
+portraits['duke'] = {'neutral': save(rgba('PROFILE_ASSETS/profiles/duke.png'), 'portraits/duke_neutral.png')}
+ok('portrait:duke_neutral (blond)', 'art/portraits/duke_neutral.png', 'PROFILE_ASSETS/profiles/duke.png', 'owner picked the blond Duke; only one mood supplied')
 ROSA = {'neutral': 1, 'smug': 2, 'happy': 3, 'neutral2': 4, 'serious': 5, 'surprised': 6}
 portraits['rosa'] = {m: save(clean_frame_edges(rgba(f'PROFILE_ASSETS/expressions/rosa_{i:02d}.png')), f'portraits/rosa_{m}.png') for m, i in ROSA.items()}
 ok('portrait:rosa (neutral, smug, happy, neutral2, serious, surprised)', 'art/portraits/rosa_*.png', 'PROFILE_ASSETS/expressions/rosa_01..06.png', '6 px framed edge cropped (84x84); no true angry/sad: "serious" is used as a labelled stand-in')
@@ -174,13 +177,15 @@ for rid in ['marge', 'rick']:
     ok(f'portrait:{rid}_neutral', f'art/portraits/{rid}_neutral.png', f'PROFILE_ASSETS/profiles/{rid}.png')
 held.append(('PROFILE_ASSETS june / dex profiles + expressions, radio_june_calm', 'Off-model: June is canon a 22-year-old Black woman with braids in a green and gold polo (the art shows an older woman in a straw hat and glasses). Dex is canon a slick 45-year-old in a gold suit (the art shows a bearded old man with a cigar). The Batch09 event cards draw both closer to canon.'))
 held.append(('PROFILE_ASSETS duke/marge/rick/hank_1994 expressions', 'Bad crops: heads cut off and name-plate fragments ("UKE", "RGE", "ICK", "NK") baked in.'))
-held.append(('PROFILE_ASSETS/profiles/duke.png vs BATCH08B_RIVALS/portraits/duke.png', 'Two different Dukes (blond with sunglasses vs brown hair and cap). The rival-kit Duke is used everywhere for consistency with the other rivals and his radio head. Owner to pick one.'))
+held.append(('BATCH08B_RIVALS portraits/duke.png, BATCH13 radio_duke_calm.png, 02_DRIVER_REFERENCES duke_*', 'The brown-haired Duke in a cap. Superseded: the owner chose the blond Duke.'))
 held.append(('BATCH08B_RIVALS grid/*.png, radio/*.png cards', 'Names are baked into the image and the Yowie\'s is truncated ("THE"). The game draws names itself over the clean portraits.'))
 
 # ---------------------------------------------------------------- radio heads (Batch13)
 radio = {}
-for rid in ['duke', 'sal', 'shazza', 'tash', 'thommo', 'earl', 'yowie']:
+for rid in ['sal', 'shazza', 'tash', 'thommo', 'earl', 'yowie']:
     radio[rid] = save(rgba(f'BATCH13_BROADCAST_HUD/ui/radio_{rid}_calm.png'), f'radio/{rid}.png')
+radio['duke'] = save(rgba('PROFILE_ASSETS/profiles/duke.png').crop((14, 4, 82, 72)).resize((32, 32), Image.LANCZOS), 'radio/duke.png')
+ok('radio head: duke (blond)', 'art/radio/duke.png', 'PROFILE_ASSETS/profiles/duke.png', 'face cropped from the blond portrait until a drawn radio head arrives')
 ok('radio heads (calm): duke, sal, shazza, tash, thommo, earl, yowie', 'art/radio/*.png', 'BATCH13_BROADCAST_HUD/ui/radio_*_calm.png', 'calm only; angry is shown with a red frame, labelled placeholder')
 
 # ---------------------------------------------------------------- RPG locations (Batch10 + two CORE scenes)
@@ -317,6 +322,7 @@ missing += [
     ('Portraits: June and Dex on-model', 'Held back as off-model; initials used.'),
     ('Mood sets for the six rivals, Marge and Rick (angry, happy, sad, smug, surprised)', 'Neutral is shown; reactions that should be angry are marked with a red frame as a labelled placeholder.'),
     ('Angry radio heads for all rivals', 'Calm head plus red frame placeholder.'),
+    ('Blond Duke: expressions (angry, happy, sad, smug, surprised) and a drawn 32x32 radio head', 'Neutral portrait shown; radio head is cropped from it.'),
     ('Rosa angry and sad', '"serious" used as a labelled stand-in.'),
     ('Paddock standing sprites and idle animations', 'Only reference poses supplied; paddock uses portraits.'),
     ('Duke event cards (envelope, roadhouse) and Hank racing-cam card', 'Held back as off-model; backgrounds plus portraits used.'),
@@ -342,12 +348,16 @@ lines += [f'| {a} | `{b}` | `{c}` | {d} |' for a, b, c, d in mapped]
 lines += ['', '## Held back (not used at runtime)', '', '| Source | Why |', '| --- | --- |'] + [f'| `{a}` | {b} |' for a, b in held]
 lines += ['', '## Missing artwork', '', '| Needed | What the game does meanwhile |', '| --- | --- |'] + [f'| {a} | {b} |' for a, b in missing]
 lines += ['', '## Decisions for the owner', '',
-  '- **Finale reveal identity.** The canon update asks for the Yowie to be revealed as Ivan "Ironman" Stewart, a real person. That is not implemented: the game does not name or depict real people, and the Batch12 reveal art is held back. The reveal mechanics are built and gated on beating the Yowie in the final round; the identity lives in one place (`REVEAL` in `play/index.html`) and currently uses the original fictional canon, Hank Booker. Pick an original character and supply art, and it is a one-line change.',
-  '- **Yowie design.** The approved full-body Yowie carries a diagonal bandolier with silver boxes, which together with the all-brown fur reads as Chewbacca. Runtime only uses head-only Yowie art. Replace the bandolier (for example with a plain racing harness) before any full-body Yowie is used.',
-  '- **Damage timings** (`DMG` in `play/index.html`) are proposed values: dents develop at 9 points a second, stages at 20 / 45 / 75, smoke from 45. Damage is visual only and does not change handling.',
-  '- **Debris** stays on the track for the race but has no collision, as physical debris collision is not approved.',
-  '- **Two Dukes.** The rival-kit Duke (cap, brown hair) is used everywhere; the profile Duke (blond, sunglasses) matches the written canon better. Choose one.',
-  '- **Player likeness.** The six ending illustrations show the player as one specific man; the story bible keeps the player unstated.']
+  '- **Finale reveal identity (open).** The owner wants the Yowie unmasked as Ivan "Ironman" Stewart. That is not implemented: the game does not name or depict real people, and the Batch12 reveal art is held back. The reveal is built and gated on beating the Yowie in the final round; the identity lives in `REVEAL` in `play/index.html` and is the fictional Hank Booker. A credits dedication to Super Off Road is offered instead.',
+  '- **Player likeness (open).** The six ending illustrations show the player as one specific man; the story bible keeps the player unstated.',
+  '',
+  '### Settled (Nov 2026)',
+  '',
+  '- **Duke** is the blond champion with sunglasses. Blond expressions and a drawn radio head are still needed.',
+  '- **Yowie** full-body art: a plain racing harness replaces the bandolier before any full-body Yowie is used.',
+  '- **Logo:** the gold and green wordmark.',
+  '- **Debris** slows a truck that drives over it, then breaks up; untouched parts blink out after about 25 s (`DEBRIS` in `play/index.html`).',
+  '- **Damage** now costs a little top speed and adds a gentle steering weave past 45% (`WOBBLE`); crashes need a harder, more side-on hit (`CRASH`). Damage stages stay at 20 / 45 / 75.']
 (REPO / 'docs').mkdir(exist_ok=True)
 (REPO / 'docs' / 'ART_INTEGRATION_REPORT.md').write_text('\n'.join(lines) + '\n')
 size = sum(f.stat().st_size for f in OUT.rglob('*') if f.is_file())

@@ -476,7 +476,12 @@ async function loadArt(){
 /* ---------- DAMAGE (visual only; does not change handling) ----------
    Proposed timings, pending owner approval: damage lands at once but the dents
    develop on the truck over a couple of seconds; heavy damage smokes. */
-const DMG={develop:9,stages:[20,45,75],wall:0.12,bump:0.05,crash:18,landing:4,smokeAt:45};
+const DMG={develop:9,stages:[20,45,75],wall:0.12,bump:0.05,crash:13,landing:4,smokeAt:45};
+/* Owner, Nov 2026: utes are hardier (fewer crashes), a battered ute handles a little worse (speed and a slight
+   wobble, never enough to fight the player), and wreck parts slow whoever drives over them, then break up. */
+const CRASH={minJ:95,gritJ:6,hdMin:0.75,hdMax:2.4};
+const WOBBLE={from:45,amp:0.55,speedLoss:0.07};
+const DEBRIS={life:24,max:45,slow:0.9,hitR:12};
 const hurt=(c,n)=>{c.dmg=Math.min(100,c.dmg+n)};
 const dstage=c=>c.dmgVis<DMG.stages[0]?0:c.dmgVis<DMG.stages[1]?1:c.dmgVis<DMG.stages[2]?2:3;
 
@@ -661,7 +666,7 @@ document.getElementById('gridpop').addEventListener('click',e=>{const b=e.target
 function radio(id,kind){
   if(!R||!LINES[id]||R.radioG>0||(R.radioCD[id]||0)>R.time)return;
   const l=aggr(id,R.cars.find(c=>c.id===id)?.rage>0),b=band(l),pool=kind==='hit'?LINES[id].hit:kind==='passed'?LINES[id]['passed_'+b]:LINES[id][b];
-  R.radio={id,txt:pick(pool),t:2.6,angry:kind==='hit'||l<=1};R.radioCD[id]=R.time+8;R.radioG=2.5;
+  R.radio={id,txt:pick(pool),t:2.6,angry:kind==='hit'||l<=1};SND.play('radio');R.radioCD[id]=R.time+8;R.radioG=2.5;
 }
 function doShunt(c){
   if(c.shuntCD>0)return;c.shuntCD=c.isP?1.0:2.2;
@@ -669,7 +674,7 @@ function doShunt(c){
   if(!best){c.shuntCD=0.4;return}
   const fx=Math.cos(c.a),fy=Math.sin(c.a),rx=-fy,ry=fx,side=Math.sign((best.x-c.x)*rx+(best.y-c.y)*ry)||1,grit=c.isP?G.stats.grit:1,push=120+grit*12;
   best.vx+=rx*side*push;best.vy+=ry*side*push;c.vx-=rx*side*35;c.vy-=ry*side*35;hurt(best,6);hurt(c,2);
-  const mx=(c.x+best.x)/2,my=(c.y+best.y)/2;if(!fxSpawn('shunt',mx,my,{fps:16,top:true}))burst(mx,my,'#ffe39a',8,140,2);
+  const mx=(c.x+best.x)/2,my=(c.y+best.y)/2;if(c.isP||best.isP)SND.play('shunt');if(!fxSpawn('shunt',mx,my,{fps:16,top:true}))burst(mx,my,'#ffe39a',8,140,2);
   if(c.isP||best.isP){R.shake=Math.max(R.shake,4);buzz(25)}
   if(c.isP||best.isP)barry('shunt');
   if(c.isP){crowdEvent('ram',c.x/2);opDelta(best.id,-8);best.rage=6;R.pen+=14*(G.karma<-35?1.4:1);radio(best.id,'hit')}
@@ -685,12 +690,12 @@ function updRivals(dt){
     for(const c of R.cars){if(c.isP)continue;const ci=rk.indexOf(c),was=R.ranks[c.id];if(was!=null&&was<R.ranks.you&&ci>pi)radio(c.id,'passed');R.ranks[c.id]=ci}R.ranks.you=pi}
   /* the Stewards: dirty driving fills a meter; when full their ute hunts you down for a black flag */
   R.pen=Math.max(0,R.pen-dt*1.5);
-  if(!R.ute&&R.pen>=100&&!pl.fin){const p=pointAt(R.T,pl.s-140);R.ute={s:pl.s-140,x:p.x,y:p.y,a:Math.atan2(p.ty,p.tx),t:0,off:0};R.floats.push({x:pl.x,y:pl.y-30,txt:'STEWARDS!',col:'#e63946',life:1.4});buzz([30,40,30])}
+  if(!R.ute&&R.pen>=100&&!pl.fin){const p=pointAt(R.T,pl.s-140);R.ute={s:pl.s-140,x:p.x,y:p.y,a:Math.atan2(p.ty,p.tx),t:0,off:0};R.floats.push({x:pl.x,y:pl.y-30,txt:'STEWARDS!',col:'#e63946',life:1.4});buzz([30,40,30]);SND.play('siren')}
   if(R.ute){const u=R.ute;u.t+=dt;const gap=(pl.dist%R.T.L+R.T.L)%R.T.L-((u.s%R.T.L)+R.T.L)%R.T.L,g2=((gap%R.T.L)+R.T.L)%R.T.L;
     if(g2>60&&g2<R.T.L/2){u.s+=Math.max(260,Math.hypot(pl.vx,pl.vy)*1.25)*dt;const p=pointAt(R.T,u.s),pn=nearest(R.T,pl.x,pl.y,pl.hint);u.off+=(pn.d-u.off)*Math.min(1,dt*3);
       const nx=p.x-p.ty*u.off,ny=p.y+p.tx*u.off;u.a=Math.atan2(ny-u.y,nx-u.x);u.x=nx;u.y=ny}
     else{const dx=pl.x-u.x,dy=pl.y-u.y,d=Math.hypot(dx,dy)||1,sp=Math.max(220,Math.hypot(pl.vx,pl.vy)*1.2);u.a=Math.atan2(dy,dx);u.x+=dx/d*sp*dt;u.y+=dy/d*sp*dt;u.s=nearest(R.T,u.x,u.y,null).s}
-    if(Math.hypot(pl.x-u.x,pl.y-u.y)<32){R.flags++;R.fine+=100;pl.flagT=2.5;R.pen=0;R.ute=null;barry('flag');if(R.crowd)R.crowd.cd.pen=0;crowdEvent('pen');R.floats.push({x:pl.x,y:pl.y-30,txt:'BLACK FLAG!',col:'#fbf8f2',life:1.6});R.shake=Math.max(R.shake,4);buzz(80)}
+    if(Math.hypot(pl.x-u.x,pl.y-u.y)<32){R.flags++;R.fine+=100;pl.flagT=2.5;R.pen=0;R.ute=null;barry('flag');SND.play('flag');if(R.crowd)R.crowd.cd.pen=0;crowdEvent('pen');R.floats.push({x:pl.x,y:pl.y-30,txt:'BLACK FLAG!',col:'#fbf8f2',life:1.6});R.shake=Math.max(R.shake,4);buzz(80)}
     else if(u.t>12){R.ute=null;R.pen=60}}
   if(pl.flagT>0)pl.flagT-=dt;
 }
@@ -726,6 +731,90 @@ function aiInput(c,dt){
   return{gas,brake,steer,nitro:!c.isP&&c.nitro>0&&curv<0.15&&Math.random()<dt*0.35,shunt:wantShunt};
 }
 const NOINP={gas:false,brake:false,steer:0,nitro:false};
+/* ---------- SOUND: every effect is synthesised live with WebAudio (no files). The owner's soundtrack plays from
+   MUSIC_FILE once it is added to play/music/; until then the game is silent between effects. ---------- */
+const MUSIC_FILE=null;   // e.g. 'music/aussie8_theme.mp3'
+const SND=(()=>{
+  let ac=null,sfx,mus,nb,L=null;const last={};
+  const cfg=(()=>{try{return Object.assign({sfx:.8,music:.6,mute:false},JSON.parse(localStorage.getItem('aussie8-sound')||'{}'))}catch(e){return{sfx:.8,music:.6,mute:false}}})();
+  const save=()=>{try{localStorage.setItem('aussie8-sound',JSON.stringify(cfg))}catch(e){}};
+  const music=new Audio();music.loop=true;music.preload='none';let musicOK=true,musicWant=false;
+  music.addEventListener('error',()=>{musicOK=false});
+  const musVol=()=>{music.volume=cfg.mute?0:cfg.music*(mode==='race'?.55:1)};
+  function init(){
+    if(ac){if(ac.state==='suspended')ac.resume();return}
+    const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;ac=new AC();
+    const comp=ac.createDynamicsCompressor();comp.threshold.value=-16;comp.ratio.value=5;comp.connect(ac.destination);
+    sfx=ac.createGain();sfx.gain.value=cfg.mute?0:cfg.sfx;sfx.connect(comp);
+    nb=ac.createBuffer(1,ac.sampleRate*2,ac.sampleRate);const d=nb.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+    if(musicWant)playMusic();
+  }
+  const now=()=>ac.currentTime;
+  function tone(type,f0,f1,dur,vol,dl=0,dest){const t=now()+dl,o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.setValueAtTime(f0,t);
+    if(f1!==f0)o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);g.gain.setValueAtTime(1e-4,t);g.gain.exponentialRampToValueAtTime(vol,t+.006);
+    g.gain.exponentialRampToValueAtTime(1e-4,t+dur);o.connect(g);g.connect(dest||sfx);o.start(t);o.stop(t+dur+.03)}
+  function hiss(dur,vol,type,f0,f1,q=1,dl=0,atk=.008){const t=now()+dl,n=ac.createBufferSource(),f=ac.createBiquadFilter(),g=ac.createGain();n.buffer=nb;n.loop=true;
+    f.type=type;f.frequency.setValueAtTime(f0,t);f.frequency.exponentialRampToValueAtTime(Math.max(30,f1),t+dur);f.Q.value=q;
+    g.gain.setValueAtTime(1e-4,t);g.gain.exponentialRampToValueAtTime(vol,t+atk);g.gain.exponentialRampToValueAtTime(1e-4,t+dur);
+    n.connect(f);f.connect(g);g.connect(sfx);n.start(t,Math.random()*1.5);n.stop(t+dur+.05)}
+  const notes=(type,fs,step,len,vol,dl=0)=>fs.forEach((f,i)=>f&&tone(type,f,f,len,vol,dl+i*step));
+  const FX={
+    click:()=>tone('square',880,1320,.05,.06),
+    beep:()=>{tone('square',440,440,.16,.12);tone('triangle',880,880,.16,.05)},
+    go:()=>{tone('square',880,880,.5,.13);tone('square',1320,1320,.5,.07);hiss(.5,.08,'highpass',3000,6000,.7)},
+    wall:k=>{hiss(.2,.3*k,'lowpass',1100,140,1);tone('sine',130,45,.18,.42*k);tone('square',90,60,.06,.08*k)},
+    bump:k=>{tone('square',230,150,.07,.1*k);hiss(.09,.14*k,'bandpass',2600,1300,3)},
+    crash:k=>{hiss(.7,.55*k,'lowpass',3200,180,.7);tone('sine',95,30,.55,.7*k);tone('sawtooth',320,55,.28,.16*k);
+      for(let i=0;i<6;i++)tone('triangle',1700+Math.random()*2600,1300,.07,.06,.08+i*.055+Math.random()*.04)},
+    land:k=>{tone('sine',115,48,.16,.34*k);hiss(.13,.16*k,'lowpass',650,150)},
+    nitro:()=>{hiss(1,.32,'bandpass',380,3400,2,0,.05);tone('sawtooth',170,560,.8,.06);tone('sine',60,90,.6,.25)},
+    cash:()=>notes('square',[988,1319,1976],.06,.09,.08),
+    pnitro:()=>{tone('square',330,1320,.22,.09);tone('triangle',660,2640,.22,.05)},
+    spanner:()=>{for(let i=0;i<4;i++)hiss(.03,.22,'bandpass',3600,3600,6,i*.07);notes('triangle',[523,784],.09,.14,.08,.3)},
+    shunt:()=>{tone('square',170,75,.13,.18);hiss(.13,.22,'lowpass',1600,280)},
+    roo:()=>{tone('sine',210,720,.11,.28);tone('sine',720,170,.26,.24,.11)},
+    emu:()=>{tone('square',900,1300,.06,.08);tone('square',1300,700,.09,.08,.07);tone('square',950,1250,.07,.07,.18)},
+    radio:()=>{hiss(.09,.1,'bandpass',2100,1900,1.5);tone('square',1500,1500,.035,.04,.1)},
+    barry:()=>notes('triangle',[784,1047],.1,.16,.07),
+    siren:()=>{for(let i=0;i<3;i++){tone('sawtooth',700,980,.25,.045,i*.5);tone('sawtooth',980,700,.25,.045,i*.5+.25)}},
+    flag:()=>{tone('square',330,200,.4,.11);tone('square',247,150,.4,.07,.05)},
+    final:()=>[0,.2,.4].forEach(d=>{tone('triangle',1568,1568,.35,.1,d);tone('sine',3136,3136,.2,.03,d)}),
+    finish:()=>notes('square',[523,659,784,1047],.09,.14,.08),
+    win:()=>{notes('square',[523,659,784,1047,0,784,1047,1319],.11,.13,.08);tone('square',1568,1568,.6,.08,.9);notes('triangle',[262,330,392,523],.22,.2,.08)},
+    debris:()=>tone('triangle',2300+Math.random()*900,1500,.05,.035),
+    cheer:k=>{hiss(1.7,.2*k,'bandpass',750,1500,.8,0,.25);for(let i=0;i<3;i++)if(Math.random()<.7)tone('sine',2300+Math.random()*500,2900+Math.random()*400,.32,.025*k,.2+i*.35)},
+    ooh:k=>hiss(1.1,.18*k,'bandpass',420,900,1.2,0,.12),
+    boo:k=>{hiss(1.8,.2*k,'lowpass',520,300,1,0,.25);tone('sawtooth',135,115,1.6,.025*k,.1)},
+  };
+  const GAP={bump:.09,wall:.1,debris:.05,land:.12,cash:.05,radio:.4,barry:.5,cheer:.6,boo:.8,ooh:.5};
+  function play(k,v=1){if(!ac||cfg.mute||!FX[k])return;const t=now();if(GAP[k]&&(last[k]||0)>t-GAP[k])return;last[k]=t;try{FX[k](clamp(v,.2,1.5))}catch(e){}}
+  function loops(){
+    if(!ac||L)return;const t=now(),mk=(type,f)=>{const o=ac.createOscillator();o.type=type;o.frequency.value=f;o.start(t);return o};
+    const nz=f=>{const n=ac.createBufferSource();n.buffer=nb;n.loop=true;n.start(t,Math.random());const b=ac.createBiquadFilter();b.type='bandpass';b.frequency.value=f;n.connect(b);return b};
+    // the player's V8: two detuned saws and a sub, chopped at firing rate, through a throttle-opened low-pass
+    const eg=ac.createGain();eg.gain.value=0;const lp=ac.createBiquadFilter();lp.type='lowpass';lp.Q.value=5;lp.frequency.value=600;
+    const chop=ac.createGain();chop.gain.value=.65;const lfo=mk('square',20),lfoG=ac.createGain();lfoG.gain.value=.35;lfo.connect(lfoG);lfoG.connect(chop.gain);
+    const o1=mk('sawtooth',40),o2=mk('sawtooth',40),o3=mk('square',20);[o1,o2,o3].forEach(o=>o.connect(lp));lp.connect(chop);chop.connect(eg);eg.connect(sfx);
+    const sk=nz(1500);sk.Q.value=2.5;const skg=ac.createGain();skg.gain.value=0;sk.connect(skg);skg.connect(sfx);            // tyre scrub
+    const pk=nz(160);pk.Q.value=.7;const pkg=ac.createGain();pkg.gain.value=0;pk.connect(pkg);pkg.connect(sfx);             // the pack's rumble
+    const cr=nz(650);cr.Q.value=.6;const crg=ac.createGain();crg.gain.value=0;cr.connect(crg);crg.connect(sfx);             // crowd bed
+    L={eg,lp,lfo,o1,o2,o3,skg,pkg,crg,cr};
+  }
+  function update(s){
+    if(!ac||!L)return;const t=now(),k=.07;
+    const f=34+s.spd*.2+(s.boost?22:0)+(s.gas?6:0);
+    L.o1.frequency.setTargetAtTime(f,t,k);L.o2.frequency.setTargetAtTime(f*1.013,t,k);L.o3.frequency.setTargetAtTime(f/2,t,k);L.lfo.frequency.setTargetAtTime(f/2,t,k);
+    L.lp.frequency.setTargetAtTime(300+s.spd*2+(s.gas?450:0)+(s.boost?1100:0),t,.09);
+    L.eg.gain.setTargetAtTime(s.on?(s.gas?.15:.08)*(s.air?.7:1):0,t,.08);
+    L.skg.gain.setTargetAtTime(s.on?Math.min(.2,Math.max(0,s.slip-65)/450):0,t,.05);
+    L.pkg.gain.setTargetAtTime(s.on?s.pack*.16:0,t,.15);
+    L.crg.gain.setTargetAtTime(s.crowdOn?.025+s.crowd*.075:0,t,.35);L.cr.frequency.setTargetAtTime(500+s.crowd*600,t,.4);
+  }
+  function playMusic(){musicWant=true;if(!musicOK||!MUSIC_FILE)return;if(!music.src)music.src=MUSIC_FILE;musVol();const p=music.play();if(p&&p.catch)p.catch(()=>{})}
+  function set(k,v){cfg[k]=v;save();if(sfx)sfx.gain.value=cfg.mute?0:cfg.sfx;musVol()}
+  return{init,play,loops,update,playMusic,musVol,set,cfg,get on(){return!!ac&&!cfg.mute}};
+})();
+['pointerdown','keydown','touchstart'].forEach(t=>addEventListener(t,()=>{SND.init();SND.playMusic()},{capture:true,passive:true}));
 function physics(c,inp,dt){
   const T=R.T,st=c.st,grit=c.isP?G.stats.grit:1;
   if(c.crashT>0){c.crashT-=dt;inp=NOINP;c.a+=c.spin*dt;c.spin*=Math.max(0,1-2.2*dt);if(Math.random()<0.5)puff(c.x,c.y,'#55505c',1)}
@@ -743,13 +832,14 @@ function physics(c,inp,dt){
   }
   if(c.nitroT>0)c.nitroT-=dt;
   if(inp.shunt)doShunt(c);if(c.isP&&c.shuntCD>0)c.shuntCD-=dt;
-  if(inp.nitro&&c.nitro>0&&c.nitroT<=0){c.nitro--;if(c.bonus>0)c.bonus--;c.nitroT=c.isP?1.2+G.stats.nerve*0.15:1.2;if(c.isP){R.shake=Math.max(R.shake,2);buzz(15)}}
-  const boost=c.nitroT>0;
+  if(inp.nitro&&c.nitro>0&&c.nitroT<=0){c.nitro--;if(c.bonus>0)c.bonus--;c.nitroT=c.isP?1.2+G.stats.nerve*0.15:1.2;if(c.isP){R.shake=Math.max(R.shake,2);buzz(15);SND.play('nitro')}}
+  const boost=c.nitroT>0;c.gasOn=inp.gas;
   c.steerV+=(inp.steer-c.steerV)*Math.min(1,dt*12);
   let fx=Math.cos(c.a),fy=Math.sin(c.a),fs=c.vx*fx+c.vy*fy;
-  if(!air){let tf=clamp(fs/80,-1,1);if(inp.gas&&Math.abs(fs)<28)tf=Math.max(tf,0.4);c.a+=c.steerV*st.turn*tf*dt}
+  if(!air){let tf=clamp(fs/80,-1,1);if(inp.gas&&Math.abs(fs)<28)tf=Math.max(tf,0.4);c.a+=c.steerV*st.turn*tf*dt;
+    if(c.dmgVis>WOBBLE.from&&fs>80){const w=(c.dmgVis-WOBBLE.from)/(100-WOBBLE.from);c.a+=Math.sin(R.time*7.3+c.x*0.01)*WOBBLE.amp*w*dt}}   // bent steering: a gentle weave
   fx=Math.cos(c.a);fy=Math.sin(c.a);fs=c.vx*fx+c.vy*fy;let ls=-c.vx*fy+c.vy*fx;
-  const maxS=st.max*surf*(boost?1.35:1)*c.rb*(c.flagT>0?0.35:1),acc=st.acc*(boost?1.9:1);
+  const wob=Math.max(0,(c.dmgVis-WOBBLE.from)/(100-WOBBLE.from)),maxS=st.max*surf*(boost?1.35:1)*c.rb*(c.flagT>0?0.35:1)*(1-wob*WOBBLE.speedLoss),acc=st.acc*(boost?1.9:1);
   if(!air){
     if(inp.gas){if(fs<maxS)fs+=acc*dt}
     else if(inp.brake){if(fs>5)fs-=420*dt;else fs=Math.max(-90,fs-170*dt)}
@@ -760,10 +850,10 @@ function physics(c,inp,dt){
   c.vx=fx*fs-fy*ls;c.vy=fy*fs+fx*ls;
   c.x+=c.vx*dt;c.y+=c.vy*dt;
   if(c.z>0||c.vz>0){c.vz-=720*dt;c.z+=c.vz*dt;
-    if(c.z<=0){c.z=0;if(c.vz<-120){const k=c.isP?0.86+G.upg.shk*0.025:0.9;c.vx*=k;c.vy*=k;puff(c.x,c.y,T.dust,8);if(c.vz<-170)hurt(c,DMG.landing);if(c.isP)R.shake=Math.max(R.shake,3)}c.vz=0}}
+    if(c.z<=0){c.z=0;if(c.vz<-120){const k=c.isP?0.86+G.upg.shk*0.025:0.9;c.vx*=k;c.vy*=k;puff(c.x,c.y,T.dust,8);if(c.vz<-170)hurt(c,DMG.landing);if(c.isP){R.shake=Math.max(R.shake,3);SND.play('land',-c.vz/220)}}c.vz=0}}
   nr=nearest(T,c.x,c.y,c.hint);
   if(nr.dist>WALLC){c.x=nr.px+nr.ux*WALLC;c.y=nr.py+nr.uy*WALLC;const vn=c.vx*nr.ux+c.vy*nr.uy;
-    if(vn>0){c.vx-=nr.ux*vn*1.5;c.vy-=nr.uy*vn*1.5;const k=0.88+grit*0.015;c.vx*=k;c.vy*=k;if(vn>50)hurt(c,(vn-50)*DMG.wall);if(vn>140)spawnDebris(c,1,c.x,c.y,false);if(vn>60){burst(c.x,c.y,'#ffe39a',6,160,2);if(c.isP)R.shake=Math.max(R.shake,vn/40)}}}
+    if(vn>0){c.vx-=nr.ux*vn*1.5;c.vy-=nr.uy*vn*1.5;const k=0.88+grit*0.015;c.vx*=k;c.vy*=k;if(vn>50)hurt(c,(vn-50)*DMG.wall);if(vn>140)spawnDebris(c,1,c.x,c.y,false);if(vn>60){burst(c.x,c.y,'#ffe39a',6,160,2);if(c.isP){R.shake=Math.max(R.shake,vn/40);SND.play('wall',vn/180)}}}}
   const sp=Math.hypot(c.vx,c.vy);
   if(sp>60&&c.z<1&&Math.random()<sp/240)puff(c.x-fx*20,c.y-fy*20,ad>HW?T.shoulder:T.dust,1);
   if(c.z<1&&Math.abs(ls)>75&&Math.random()<dt*10)fxSpawn('drift_dust',c.x-fx*12,c.y-fy*12,{fps:18});
@@ -771,15 +861,15 @@ function physics(c,inp,dt){
   if(c.dmgVis<c.dmg)c.dmgVis=Math.min(c.dmg,c.dmgVis+DMG.develop*dt);
   if(c.dmgVis>=DMG.smokeAt&&Math.random()<dt*c.dmgVis/(FXI('smoke')?40:18))smoke(c);
   {const st=dstage(c);if(st>(c.lastStage||0)){spawnDebris(c,st,c.x,c.y,st>=2)}c.lastStage=st}
-  if(!c.fin&&c.dist>=LAPS*T.L){c.fin=true;c.ft=R.time;R.order.push(c);{const n=R.order.length;crowdEvent(c.isP?(n===1?'win':n<=3?'podium':'finish'):'finish',c.x/2)}if(c.isP)R.floats.push({x:c.x,y:c.y-24,txt:'FINISH!',col:'#ffcd00',life:1.5})}
+  if(!c.fin&&c.dist>=LAPS*T.L){c.fin=true;c.ft=R.time;R.order.push(c);{const n=R.order.length;crowdEvent(c.isP?(n===1?'win':n<=3?'podium':'finish'):'finish',c.x/2)}if(c.isP){R.floats.push({x:c.x,y:c.y-24,txt:'FINISH!',col:'#ffcd00',life:1.5});SND.play(R.order.length===1?'win':'finish')}}
 }
 /* animated sprite effects (Batch04/05) */
 const FXI=k=>ART.img['fx_'+k],FXM=k=>ARTM&&ARTM.fx[k];
 function fxSpawn(k,x,y,o={}){if(!FXI(k)||!R)return false;R.fx.push({k,x,y,t:0,fps:o.fps||14,ang:o.ang||0,vx:o.vx||0,vy:o.vy||0,al:o.al||1,top:!!o.top});if(R.fx.length>180)R.fx.shift();return true}
 function updFx(dt){for(const f of R.fx){f.t+=dt;f.x+=f.vx*dt;f.y+=f.vy*dt}R.fx=R.fx.filter(f=>Math.floor(f.t*f.fps)<FXM(f.k).n)}
 function drawFx(top){for(const f of R.fx){if(f.top!==top)continue;const m=FXM(f.k),fr=Math.floor(f.t*f.fps),a=A(f.x,f.y);bx.save();bx.translate(ri(a.x),ri(a.y));if(f.ang)bx.rotate(f.ang);bx.globalAlpha=f.al;bx.drawImage(FXI(f.k),fr*m.w,0,m.w,m.h,-m.w/2,-m.h/2,m.w,m.h);bx.restore()}bx.globalAlpha=1}
-/* wreck debris (Batch08A): flies, lands, then stays on the track for the rest of the race.
-   Visual only: physical debris collision is not approved. */
+/* wreck debris (Batch08A): flies, lands and rests on the track. A truck that drives over a part is slowed and
+   knocked a little and the part breaks up; untouched parts blink out after about 25 s. Oil stains stay. */
 const BODYV={duke:0,shazza:0,sal:0,you:1,yowie:1,earl:2,tash:2,thommo:2};
 const PARTS=['tyre','wheel','bumper','body_panel','hood_fragment','glass','metal_shard','exhaust','spring','headlight','plastic'];
 function spawnDebris(c,n,x,y,oil){
@@ -787,13 +877,20 @@ function spawnDebris(c,n,x,y,oil){
   for(let i=0;i<n;i++){const tp=pick(PARTS),v=(tp==='body_panel'||tp==='hood_fragment')?(BODYV[c.id]??1):Math.floor(Math.random()*3),a=rnd(0,7),sp=rnd(40,150);
     R.debris.push({ti:T.indexOf(tp),v,x,y,vx:Math.cos(a)*sp+c.vx*0.3,vy:Math.sin(a)*sp+c.vy*0.3,z:rnd(2,8),vz:rnd(60,170)})}
   if(oil)settle({ti:T.indexOf('oil'),v:Math.floor(Math.random()*3),x,y});
-  if(R.debris.length>80)R.debris.splice(0,R.debris.length-80).forEach(settle);
+  if(R.debris.length>90)R.debris.splice(0,R.debris.length-90);
 }
 function settle(d){const a=A(d.x,d.y);R.layer.getContext('2d').drawImage(ART.img.debris,d.v*16,d.ti*16,16,16,ri(a.x-8),ri(a.y-8),16,16)}
 function updDebris(dt){for(const d of R.debris){d.x+=d.vx*dt;d.y+=d.vy*dt;const k=Math.pow(0.35,dt);d.vx*=k;d.vy*=k;d.vz-=520*dt;d.z+=d.vz*dt;
-    if(d.z<=0){d.z=0;d.vz=-d.vz*0.35;d.vx*=0.6;d.vy*=0.6;if(d.vz<35){d.done=true;settle(d)}}}
-  R.debris=R.debris.filter(d=>!d.done)}
-function drawDebris(){for(const d of R.debris){const a=A(d.x,d.y);bx.fillStyle='rgba(0,0,0,.35)';bx.fillRect(ri(a.x-3),ri(a.y+2),6,2);bx.drawImage(ART.img.debris,d.v*16,d.ti*16,16,16,ri(a.x-8),ri(a.y-8-d.z*0.5),16,16)}}
+    if(d.rest){d.life-=dt;continue}
+    if(d.z<=0){d.z=0;if(d.vz<-60&&Math.hypot(d.x-R.pl.x,d.y-R.pl.y)<300)SND.play('debris');d.vz=-d.vz*0.35;d.vx*=0.6;d.vy*=0.6;if(d.vz<35){d.rest=true;d.vx=d.vy=d.vz=0;d.life=DEBRIS.life+Math.random()*6}}}
+  // a truck that drives over a part is slowed and knocked a little, and the part breaks up
+  for(const d of R.debris){if(!d.rest||d.life<=0)continue;for(const c of R.cars){if(c.z>3)continue;if(Math.hypot(c.x-d.x,c.y-d.y)<DEBRIS.hitR){
+    c.vx*=DEBRIS.slow;c.vy*=DEBRIS.slow;c.a+=rnd(-0.06,0.06);d.life=0;burst(d.x,d.y,'#8d8794',5,90,1);burst(d.x,d.y,'#1d1b22',3,70,1);
+    if(c.isP){SND.play('debris');SND.play('bump',.5);R.shake=Math.max(R.shake,1.2)}break}}}
+  R.debris=R.debris.filter(d=>!(d.rest&&d.life<=0));
+  let resting=R.debris.filter(d=>d.rest);if(resting.length>DEBRIS.max)resting.slice(0,resting.length-DEBRIS.max).forEach(d=>d.life=Math.min(d.life,1.5))}
+function drawDebris(){for(const d of R.debris){const a=A(d.x,d.y);if(d.rest&&d.life<2){if(((d.life*8)|0)%2)continue}   // blinks out, arcade style
+  bx.fillStyle='rgba(0,0,0,.35)';bx.fillRect(ri(a.x-3),ri(a.y+2),6,2);bx.drawImage(ART.img.debris,d.v*16,d.ti*16,16,16,ri(a.x-8),ri(a.y-8-d.z*0.5),16,16)}}
 /* ---------- STADIUM CROWD (Batch 15): NHL '94-style grandstands in the top strip ----------
    Visual only: the crowd reacts to the race and never changes race rules. Positions, shirts and
    animation phases are seeded per track; reactions ripple out from where the action happened,
@@ -846,6 +943,7 @@ function crowdEvent(k,ax){
   const C=R&&R.crowd,e=CRE[k];if(!C||!e)return;
   if((C.cd[k]||0)>C.t)return;C.cd[k]=C.t+e.cd;C.ex=Math.min(1,C.ex+e.ex);C.n++;
   if(k==='win'||k==='podium')C.flash=C.t+2;
+  {const sk=e.a==='boo'?'boo':k==='crash'||k==='close'?'ooh':e.a==='cheer'||e.a==='victory'||k==='final'?'cheer':null;if(sk)SND.play(sk,e.r?.55:1)}
   const ox=ax==null?240:ax,sp=e.r?360:520;
   for(const f of C.fans){const d=Math.abs(f.x+5-ox);if(e.r&&d>e.r)continue;
     if((f.next&&f.next.p>e.p)||(f.act&&f.pr>e.p))continue;   // a bigger moment is already playing
@@ -879,13 +977,15 @@ function smoke(c){if(fxSpawn('smoke',c.x+rnd(-6,6),c.y+rnd(-6,6),{fps:9,vy:-22,v
 function puff(x,y,col,n){for(let i=0;i<n;i++)R.parts.push({x,y,vx:rnd(-30,30),vy:rnd(-30,30),life:rnd(0.4,0.9),max:0.9,r:rnd(3,7),col,grow:1})}
 function burst(x,y,col,n,v,r){for(let i=0;i<n;i++){const a=rnd(0,7);R.parts.push({x,y,vx:Math.cos(a)*rnd(v/3,v),vy:Math.sin(a)*rnd(v/3,v),life:rnd(0.2,0.45),max:0.45,r,col})}}
 function crash(a,b,J){
+  R.nCrash=(R.nCrash||0)+1;
   const k=clamp(J/160,0.6,1.3),mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
   {const pl=a.isP?a:b.isP?b:null,o=pl===a?b:a;if(pl){opDelta(o.id,-12);R.pen+=10*(G.karma<-35?1.4:1);o.rage=8;radio(o.id,'hit')}}
   crowdEvent('crash',(a.x+b.x)/4);
-  for(const c of [a,b]){hurt(c,DMG.crash*k);c.crashT=0.7+0.4*k;c.spin=(Math.random()<.5?-1:1)*rnd(6,10)*k;c.vx*=0.7;c.vy*=0.7;if(c.isP)R.crashes++}
+  for(const c of [a,b]){hurt(c,DMG.crash*k);c.crashT=0.55+0.3*k;c.spin=(Math.random()<.5?-1:1)*rnd(6,10)*k;c.vx*=0.7;c.vy*=0.7;if(c.isP)R.crashes++}
   burst(mx,my,'#ffe39a',14,220,2);burst(mx,my,TRUCKS[a.id][0],6,150,2);burst(mx,my,TRUCKS[b.id][0],6,150,2);burst(mx,my,'#1d1b22',6,120,2);puff(mx,my,R.T.dust,8);
   fxSpawn('crash',mx,my,{fps:18,top:true});spawnDebris(a,2+Math.floor(k*2),mx,my,true);spawnDebris(b,2+Math.floor(k*2),mx,my,false);
   const pl=a.isP||b.isP;if(pl){R.shake=Math.max(R.shake,7);buzz([40,30,60])}
+  {const p=R.pl,d=Math.hypot(mx-p.x,my-p.y);SND.play('crash',pl?1.2:Math.max(.25,1-d/600))}
   barry('crash');
   R.floats.push({x:mx,y:my-24,txt:'CRASH!',col:pl?'#e63946':'#fbf8f2',life:1.1});
 }
@@ -896,8 +996,13 @@ function updRoo(dt){
   const r=R.roo;r.t+=dt;r.big=Math.max(0,r.big-dt);r.x+=r.vx*dt;r.y+=r.vy*dt;r.trav+=Math.hypot(r.vx,r.vy)*dt;
   r.h=Math.abs(Math.sin(r.t*7))*(r.big>0?16:7);
   for(const c of R.cars){if(r.hit[c.id]||c.z>5||r.h>4)continue;if(Math.hypot(c.x-r.x,c.y-r.y)<(ART.img.wl_roo_run?28:24)){r.hit[c.id]=1;c.vx*=0.5;c.vy*=0.5;c.a+=rnd(-0.5,0.5);r.vx*=1.8;r.vy*=1.8;r.big=0.8;puff(r.x,r.y,T.dust,6);
-    if(c.isP){R.shake=Math.max(R.shake,3);R.floats.push({x:r.x,y:r.y-20,txt:r.kind==='emu'?'SQUAWK!':'BOING!',col:'#ffcd00',life:1})}barry(r.kind==='emu'?'emu':'roo')}}
+    if(c.isP){R.shake=Math.max(R.shake,3);R.floats.push({x:r.x,y:r.y-20,txt:r.kind==='emu'?'SQUAWK!':'BOING!',col:'#ffcd00',life:1});SND.play(r.kind==='emu'?'emu':'roo')}barry(r.kind==='emu'?'emu':'roo')}}
   if(r.trav>2*(WALL+20)+40){R.roo=null;R.rooT=rnd(9,15)}
+}
+function sndFrame(){
+  if(!SND.on)return;SND.loops();const p=R.pl,sp=Math.hypot(p.vx,p.vy),fx=Math.cos(p.a),fy=Math.sin(p.a),ls=Math.abs(-p.vx*fy+p.vy*fx),live=R.phase!=='grid'&&!R.paused&&mode==='race';
+  let pack=0;for(const c of R.cars)if(c!==p){const d=Math.hypot(c.x-p.x,c.y-p.y);pack+=Math.max(0,1-d/260)*Math.min(1,Math.hypot(c.vx,c.vy)/200)}
+  SND.update({on:live&&!(p.fin&&R.done>2.5),spd:sp,gas:!!p.gasOn,boost:p.nitroT>0,air:p.z>1,slip:p.z<1?ls:0,pack:Math.min(1,pack/2.2),crowdOn:live&&!!R.crowd,crowd:R.crowd?R.crowd.ex:0});
 }
 function updRace(dt){
   R.shake=Math.max(0,R.shake-dt*18);
@@ -907,7 +1012,8 @@ function updRace(dt){
   if(R.fx)updFx(dt);if(R.debris&&ART.img.debris)updDebris(dt);
   if(R.crowd)crowdUpd(dt);
   if(R.phase==='grid')return;
-  if(R.phase==='count'){R.t-=dt;if(R.t<=0){R.phase='go';pad.classList.remove('hints');crowdEvent('go')}return}
+  sndFrame();
+  if(R.phase==='count'){const b=Math.ceil(R.t);R.t-=dt;if(R.t<=0){R.phase='go';pad.classList.remove('hints');crowdEvent('go');SND.play('go')}else if(Math.ceil(R.t)<b&&b<=3)SND.play('beep');return}
   updRivals(dt);
   R.time+=dt;
   R.pickT-=dt;
@@ -919,13 +1025,13 @@ function updRace(dt){
     const a=cs[i],b=cs[j];if(Math.abs(a.z-b.z)>12)continue;
     const dx=b.x-a.x,dy=b.y-a.y,d2=dx*dx+dy*dy;
     if(d2<900&&d2>0.01){const d=Math.sqrt(d2),nx=dx/d,ny=dy/d,o=(30-d)/2;a.x-=nx*o;a.y-=ny*o;b.x+=nx*o;b.y+=ny*o;
-      const rv=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;if(rv<0){const J=-rv*0.85;a.vx-=nx*J;a.vy-=ny*J;b.vx+=nx*J;b.vy+=ny*J;if(J>30){hurt(a,J*DMG.bump);hurt(b,J*DMG.bump);const pl=a.isP?a:b.isP?b:null,o=pl===a?b:a;if(pl&&o.crashT>0&&!(o.rammedT>R.time)){o.rammedT=R.time+2;crowdEvent('ram',o.x/2);opDelta(o.id,-20);R.pen+=25*(G.karma<-35?1.4:1);radio(o.id,'hit')}}if((a.isP||b.isP)&&J>30)R.shake=Math.max(R.shake,2);
-        const hd=Math.abs(wrapA(a.a-b.a));if(J>60&&hd>0.55&&hd<2.6&&a.crashT<=0&&b.crashT<=0)crash(a,b,J)}}
+      const rv=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;if(rv<0){const J=-rv*0.85;a.vx-=nx*J;a.vy-=ny*J;b.vx+=nx*J;b.vy+=ny*J;if(J>30){hurt(a,J*DMG.bump);hurt(b,J*DMG.bump);const pl=a.isP?a:b.isP?b:null,o=pl===a?b:a;if(pl&&o.crashT>0&&!(o.rammedT>R.time)){o.rammedT=R.time+2;crowdEvent('ram',o.x/2);opDelta(o.id,-20);R.pen+=25*(G.karma<-35?1.4:1);radio(o.id,'hit')}}if((a.isP||b.isP)&&J>30){R.shake=Math.max(R.shake,2);SND.play('bump',J/90)}
+        const hd=Math.abs(wrapA(a.a-b.a)),pl=a.isP?a:b.isP?b:null,need=CRASH.minJ+(pl?G.stats.grit*CRASH.gritJ:0);if(J>need&&hd>CRASH.hdMin&&hd<CRASH.hdMax&&a.crashT<=0&&b.crashT<=0)crash(a,b,J)}}
   }
   for(const p of R.pick){p.t+=dt;for(const c of cs){if(p.got)break;if(c.z<10&&Math.hypot(c.x-p.x,c.y-p.y)<24){p.got=true;
-    if(p.type==='spanner'){c.dmg=Math.max(0,c.dmg-35);c.dmgVis=Math.min(c.dmgVis,c.dmg);c.lastStage=dstage(c);if(c.isP){R.picks++;R.floats.push({x:p.x,y:p.y,txt:'REPAIRED',col:'#9fd3ee',life:1})}}
-    else if(p.type==='nitro'){c.nitro=Math.min(9,c.nitro+1);if(c.isP){R.picks++;R.floats.push({x:p.x,y:p.y,txt:'+NITRO',col:'#5fd37e',life:1})}}
-    else if(c.isP){const amt=Math.round(rnd(40,120)*(1+G.race*0.12));R.cash+=amt;R.picks++;R.floats.push({x:p.x,y:p.y,txt:'+$'+amt,col:'#ffcd00',life:1})}
+    if(p.type==='spanner'){c.dmg=Math.max(0,c.dmg-35);c.dmgVis=Math.min(c.dmgVis,c.dmg);c.lastStage=dstage(c);if(c.isP){R.picks++;R.floats.push({x:p.x,y:p.y,txt:'REPAIRED',col:'#9fd3ee',life:1});SND.play('spanner')}}
+    else if(p.type==='nitro'){c.nitro=Math.min(9,c.nitro+1);if(c.isP){R.picks++;R.floats.push({x:p.x,y:p.y,txt:'+NITRO',col:'#5fd37e',life:1});SND.play('pnitro')}}
+    else if(c.isP){const amt=Math.round(rnd(40,120)*(1+G.race*0.12));R.cash+=amt;R.picks++;R.floats.push({x:p.x,y:p.y,txt:'+$'+amt,col:'#ffcd00',life:1});SND.play('cash')}
     burst(p.x,p.y,p.type==='nitro'?'#5fd37e':p.type==='spanner'?'#9fd3ee':'#ffcd00',10,120,2)}}}
   R.pick=R.pick.filter(p=>!p.got);
   if(R.pl.fin){R.done+=dt;if(R.done>4||cs.every(c=>c.fin))endRace()}
@@ -971,7 +1077,7 @@ function drawRace(){
 const BARRY={crash:['And they\'ve come together!','Oh, that\'s gonna leave a mark!','Panel beaters, start your engines!'],roo:['Skippy wants a lap!','Roo on the circuit!'],emu:['An emu! Of course there\'s an emu!'],
   lead:['New leader, folks!','We have a new race leader!'],final:['Final lap! Hold onto your pies!','Last time around!'],flag:['Black flag! Stewards have had enough!'],
   win:['The Rookie takes it! Unbelievable!'],yowie:['The Yowie is on the move!','Lock up your pies, the Yowie\'s coming!'],shunt:['Door to door! Ooh!','That\'s a bit of argy-bargy!']};
-function barry(k){if(!R||(R.barryCD||0)>R.time||!BARRY[k])return;R.tick={txt:pick(BARRY[k]),t:3.6};R.barryCD=R.time+4.5}
+function barry(k){if(!R||(R.barryCD||0)>R.time||!BARRY[k])return;SND.play(k==='final'?'final':'barry');R.tick={txt:pick(BARRY[k]),t:3.6};R.barryCD=R.time+4.5}
 function hudImg(k,x,y,sc=2){const im=ART.img['hud_'+k];if(!im)return false;ctx.imageSmoothingEnabled=false;ctx.drawImage(im,x,y,im.width*sc,im.height*sc);return true}
 /* Big Channel 8 banners, centred on screen. The Batch13 art has its words painted flush left, so the
    game covers them and draws the words centred. Set BANNER_TEXT_BAKED=true when art with centred words arrives. */
@@ -1070,7 +1176,7 @@ const SCENE_IMG={};
 let bgKind='title';
 titleImg.onload=()=>{if(mode!=='race')drawBg(bgKind)};
 function setMode(m,bg){
-  mode=m;scr.classList.toggle('menu',m==='menu');scr.classList.toggle('title',m==='title');ov.hidden=m==='race';
+  mode=m;SND.musVol();scr.classList.toggle('menu',m==='menu');scr.classList.toggle('title',m==='title');ov.hidden=m==='race';
   const playing=m==='race'&&TOUCH;scr.classList.toggle('playing',playing);pad.hidden=!playing;document.documentElement.style.overflow=playing?'hidden':'';
   if(!playing){ptrs.clear();syncTS();stickEl.classList.remove('on')}
   if(m!=='race'){bgKind=bg||(m==='title'?'title':'track');drawBg(bgKind);scr.scrollIntoView({block:'nearest'})}
@@ -1101,9 +1207,13 @@ let NOTES=null;
 try{fetch('../devnotes.json',{cache:'no-cache'}).then(r=>r.ok?r.json():null).then(d=>{NOTES=d&&Array.isArray(d.notes)?d.notes:null;renderWN()}).catch(()=>{})}catch(e){}
 function renderWN(){const el=document.getElementById('whatsnew');if(!el||!NOTES||!NOTES.length)return;const n=NOTES[0];
   el.innerHTML=`<details class="card wn"><summary><b>What’s new in v${esc(n.version)}</b><span class="muted">· ${esc(n.title)}</span></summary><ul>${(n.items||[]).map(i=>`<li><span class="wtag ${esc(i.tag)}">${esc(i.tag)}</span>${esc(i.text)}</li>`).join('')}</ul><a href="../#notes" style="color:var(--gold)">All dev notes</a></details>`}
-const ctlUI=()=>TOUCH?`<div class="card" style="margin-top:14px"><h3>Phone controls</h3>
+const sndUI=()=>{const c=SND.cfg,lv=v=>v===0?'Off':v<.5?'Low':v<.9?'Med':'High',nx=v=>v===0?.35:v<.5?.7:v<.9?1:0;
+  return`<div class="card" style="margin-top:14px"><h3>Sound</h3><div class="seg"><button class="btn sm" data-act="snd:mute" aria-pressed="${c.mute}">${c.mute?'Sound off':'Sound on'}</button>
+  <button class="btn sm" data-act="snd:sfx:${nx(c.sfx)}">Effects: ${lv(c.sfx)}</button><button class="btn sm" data-act="snd:music:${nx(c.music)}">Music: ${lv(c.music)}</button></div>
+  <p class="muted" style="margin:0">Press M during a race to mute.</p></div>`};
+const ctlCard=()=>(TOUCH?`<div class="card" style="margin-top:14px"><h3>Phone controls</h3>
   <div class="seg"><button class="btn sm" data-act="ctl:stick" aria-pressed="${CTL.mode==='stick'}">Drag to steer</button><button class="btn sm" data-act="ctl:buttons" aria-pressed="${CTL.mode==='buttons'}">Buttons</button><button class="btn sm" data-act="ctl:lefty" aria-pressed="${CTL.lefty}">Left-handed</button></div>
-  <p class="muted" style="margin:0">${CTL.mode==='stick'?'Put your thumb down anywhere on the steering side and point where you want to go. Gas is automatic; hold BRAKE to slow or reverse, tap NITRO to boost.':'Big ◀ ▶ on the steering side. Rest your thumb on GAS and roll it left onto NITRO.'} Turn your phone sideways for the biggest track.</p></div>`:'';
+  <p class="muted" style="margin:0">${CTL.mode==='stick'?'Put your thumb down anywhere on the steering side and point where you want to go. Gas is automatic; hold BRAKE to slow or reverse, tap NITRO to boost.':'Big ◀ ▶ on the steering side. Rest your thumb on GAS and roll it left onto NITRO.'} Turn your phone sideways for the biggest track.</p></div>`:''),ctlUI=()=>ctlCard()+sndUI();
 function applyCtl(){pad.className=(CTL.mode==='stick'?'m-stick':'m-buttons')+(CTL.lefty?' lefty':'');
   document.getElementById('hintL').textContent=CTL.mode==='stick'?'Drag to steer':'Hold to steer';
   document.getElementById('hintR').textContent=CTL.mode==='stick'?'Gas is automatic. Tap NITRO or SHUNT':'Hold GAS, roll to NITRO';
@@ -1226,7 +1336,7 @@ function resume(){
   showGarage();
 }
 ov.addEventListener('click',e=>{
-  const b=e.target.closest('[data-act]');if(!b||b.disabled)return;const a=b.dataset.act;
+  const b=e.target.closest('[data-act]');if(!b||b.disabled)return;const a=b.dataset.act;SND.init();SND.play('click');
   if(a==='menu')showMenu();
   else if(a==='new'){G=fresh();save();setMode('menu');showEvent(nextEvent())}
   else if(a==='cont'){G=load();resume()}
@@ -1237,8 +1347,9 @@ ov.addEventListener('click',e=>{
   else if(a.startsWith('upg:')){const k=a.slice(4),l=G.upg[k],cost=Math.round(UPC[l]*discount()/10)*10;if(l<5&&G.money>=cost){G.money-=cost;G.upg[k]++;showGarage()}}
   else if(a==='nitro'){const cost=Math.round(150*discount()/10)*10;if(G.nitro<9&&G.money>=cost){G.money-=cost;G.nitro++;showGarage()}}
   else if(a==='race')startRace();
+  else if(a.startsWith('snd:')){const [,k,v]=a.split(':');if(k==='mute')SND.set('mute',!SND.cfg.mute);else SND.set(k,+v);b.closest('.card').outerHTML=sndUI()}
   else if(a.startsWith('ctl:')){const v=a.slice(4);if(v==='lefty')CTL.lefty=!CTL.lefty;else CTL.mode=v;applyCtl();
-    b.closest('.card').outerHTML=ctlUI()}
+    b.closest('.card').outerHTML=ctlCard()}
   else if(a==='after'){G.race>=SEASON?(G.flags.yowieBeaten!==undefined&&G.flags.yowieRevealed===undefined?showYowieReveal():showEnding()):(setMode('menu'),showEvent(nextEvent()))}
   else if(a==='ending')showEnding();
 });
@@ -1246,6 +1357,7 @@ ov.addEventListener('click',e=>{
 /* ---------- INPUT + LOOP ---------- */
 const GAMEKEYS=['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'];
 addEventListener('keydown',e=>{
+  if(e.code==='KeyM'&&!e.repeat){SND.set('mute',!SND.cfg.mute)}
   if(mode==='title'&&(e.code==='Enter'||e.code==='Space')){e.preventDefault();showMenu();return}
   if(mode!=='race')return;
   if(GAMEKEYS.includes(e.code))e.preventDefault();
@@ -1298,7 +1410,7 @@ function loop(now){
   requestAnimationFrame(loop);
 }
 showTitle();requestAnimationFrame(loop);
-window.__A8={get G(){return G},get R(){return R},TRACKS,TS,ART,SPRITES,DMG,spawnDebris,gridChoice,doShunt,aggr,crowdEvent};
+window.__A8={get G(){return G},get R(){return R},TRACKS,TS,ART,SPRITES,DMG,spawnDebris,gridChoice,doShunt,aggr,crowdEvent,SND,CRASH,updRace:dt=>updRace(dt)};
 loadArt().catch(e=>console.warn('Aussie 8: art load failed',e));
 }
 </script>

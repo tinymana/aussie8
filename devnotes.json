@@ -2,6 +2,37 @@
   "_howto": "Newest first. Add an entry at the top each time you push an update; the website and the in-game 'What's new' both read this file. tag: new | improved | fixed.",
   "notes": [
     {
+      "version": "0.9",
+      "date": "2026-11-27",
+      "title": "Sound, and kinder crashes",
+      "items": [
+        {
+          "tag": "new",
+          "text": "Sound! A growling V8 that revs with your speed and roars on nitro, tyre scrub in the slides, the pack rumbling past, crunching crashes, wall thumps, landings, pickups, the countdown, roos, Stewards sirens and a crowd that cheers, gasps and boos with the race. All made live in the browser."
+        },
+        {
+          "tag": "new",
+          "text": "Sound settings on the menu (effects and music volume), and M mutes during a race."
+        },
+        {
+          "tag": "improved",
+          "text": "Fewer crashes: it now takes a harder, more side-on hit to wreck, Grit makes your ute tougher still, and crashes spin you for less time."
+        },
+        {
+          "tag": "improved",
+          "text": "Wreck parts on the track slow down whoever drives over them, then break apart. Parts nobody hits blink out after about 25 seconds, so the track no longer fills up."
+        },
+        {
+          "tag": "improved",
+          "text": "A badly damaged ute loses a little top speed and weaves slightly. Grab a spanner to straighten it out."
+        },
+        {
+          "tag": "improved",
+          "text": "Duke is now the blond champion with the sunglasses."
+        }
+      ]
+    },
+    {
       "version": "0.8",
       "date": "2026-11-25",
       "title": "Race-day dressing",
