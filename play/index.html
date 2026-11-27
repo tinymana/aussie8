@@ -179,6 +179,7 @@ table.board .btn{padding:4px 8px;font-size:11px}
 .board.laps td:first-child{width:auto}
 .dedication{margin:16px 0 0;font-size:13px;color:rgba(251,248,242,.7);font-style:normal}
 .reveal{display:flex;gap:16px;align-items:flex-end}.reveal .yfull{height:180px;width:auto;image-rendering:pixelated;flex:none}@media (max-width:600px){.reveal{flex-direction:column;align-items:center}.reveal .yfull{height:140px}}
+.pimg.wide{width:108px}.react .pimg.wide{width:72px}
 </style>
 </head>
 <body>
@@ -351,6 +352,12 @@ function placeProps(g,t){
       if(![[0,0],[-w/2,0],[w/2,0],[0,-h],[-w/2,-h/2],[w/2,-h/2]].every(([dx,dy])=>dW(ax+dx,ay+dy)>WALL+26))continue;
       if(!clear(ax,ay-h/2,Math.max(w,h)/2+10))continue;
       shadow(Math.round(ax),Math.round(ay),w*.9);g.drawImage(im,Math.round(ax-w/2),Math.round(ay-h));taken.push([ax,ay-h/2,Math.max(w,h)/2]);used.add(k)}}
+  {const BB=(ARTM&&ARTM.billboards||[]).filter(b=>ART.img['bb_'+b.id]),r3=seeded(t.seed+911);let placed=0;
+   for(let i=0;i<500&&placed<2&&BB.length;i++){const b=BB[(Math.floor(r3()*BB.length)+placed*5)%BB.length],im=ART.img['bb_'+b.id],w=60,h=16,ph=6;
+     const ax=8+w/2+r3()*(AW-16-w),ay=44+h+ph+r3()*(AH-66-h-ph);
+     if(![[0,0],[-w/2,0],[w/2,0],[-w/2,-h-ph],[w/2,-h-ph],[0,-h-ph]].every(([dx,dy])=>dW(ax+dx,ay+dy)>WALL+24))continue;if(!clear(ax,ay-h/2,w/2+8))continue;
+     const x0=Math.round(ax-w/2),y0=Math.round(ay-h-ph);shadow(Math.round(ax),Math.round(ay),w*.8);g.fillStyle='#2a2430';g.fillRect(x0+8,y0+h,2,ph);g.fillRect(x0+w-10,y0+h,2,ph);
+     g.fillStyle='#0c0b0e';g.fillRect(x0-1,y0-1,w+2,h+2);g.drawImage(im,x0,y0,w,h);taken.push([ax,ay-h/2,w/2]);placed++}}
   const side=E?Object.keys(E.trackside).filter(k=>ART.img['ev_'+k]):[];
   for(let i=0;i<260&&n<16;i++){
     const ax=10+r()*(AW-20),ay=48+r()*(AH-48-30),d=dW(ax,ay);
@@ -453,7 +460,7 @@ const TRUCKS={you:['#f2efe6','#a9a49a','#ffffff','#00843d','#ffcd00'],duke:['#d8
 let STEW=[];{const r=rotSprites(truckArt('#f2f2ee','#a0a0a0','#ffffff','#1d4a72','#e63946'));STEW=[r,r]}
 const SPRITES={};for(const k in TRUCKS){const c=TRUCKS[k],r=rotSprites(truckArt(c[0],c[1],c[2],c[3],c[4]));SPRITES[k]=[r,r,r,r]}
 const RIVALS=[{id:'duke',name:'Duke Vance',tag:'DUKE',skill:14},{id:'shazza',name:'Shazza Kelly',tag:'SHAZ',skill:10},{id:'tash',name:'Tash Kowalski',tag:'TASH',skill:8},{id:'sal',name:'Sal Vitale',tag:'SAL',skill:7},{id:'thommo',name:'Thommo Price',tag:'THOM',skill:4},{id:'yowie',name:'The Yowie',tag:'YOWIE',skill:17},{id:'earl',name:'Big Earl',tag:'EARL',skill:0}];
-const NAMES={you:'You'},COLORS={you:'#f2efe6'};RIVALS.forEach(r=>{NAMES[r.id]=r.name;COLORS[r.id]=TRUCKS[r.id][0]});
+const NAMES={you:'You',barry:'Barry Doolan',biscuit:'Biscuit',gazza:'Gazza',lou_tran:'Lou Tran',pemberton:'Chief Steward Pemberton',windbreakers:'The Windbreakers',hank:'Hank Booker'},COLORS={you:'#f2efe6'};RIVALS.forEach(r=>{NAMES[r.id]=r.name;COLORS[r.id]=TRUCKS[r.id][0]});
 /* Road Rash layer: each rival's opinion of the player (-100..100) times their temperament
    sets how they race you. Duke's opinion is the existing G.rival meter. */
 const NUM={duke:1,sal:2,shazza:3,tash:4,thommo:5,yowie:6,earl:7};   // truck numbers (canon: last season's finishing order)
@@ -486,6 +493,7 @@ async function loadArt(){
   for(const k in ARTM.radio)J.push(loadImg('rd_'+k,ARTM.radio[k]));
   for(const k in ARTM.hud)J.push(loadImg('hud_'+k,ARTM.hud[k]));
   if(ARTM.extra)for(const k in ARTM.extra)J.push(loadImg('ex_'+k,ARTM.extra[k]));
+  if(ARTM.billboards)for(const b of ARTM.billboards)J.push(loadImg('bb_'+b.id,b.src));
   if(ARTM.env)for(const grp of ['trackside','structures'])for(const k in ARTM.env[grp])J.push(loadImg('ev_'+k,ARTM.env[grp][k]));
   if(ARTM.announce)for(const k of ['final_lap','race_finished'])if(ARTM.announce[k])J.push(loadImg('an_'+k,ARTM.announce[k].src));
   if(ARTM.stadium){const S=ARTM.stadium;J.push(loadImg('st_crowd',S.crowd.src));S.bg.forEach((q,i)=>J.push(loadImg('st_bg'+i,q)));S.stands.forEach((q,i)=>J.push(loadImg('st_stand'+i,q)));for(const k in S.props)J.push(loadImg('st_'+k,S.props[k]))}
@@ -608,7 +616,7 @@ const EVENTS=[
  {id:'yowie_pies',pri:1,when:()=>G.race>=2,title:'Pies at dawn',text:'You wake to find a meat pie on your bonnet, still warm. Across the paddock, the Yowie gives you a slow nod and limps back to his trailer.',
   choices:[
    {t:'Nod back and eat the pie',tag:'good',fx:{karma:3,xp:20,flag:'yowieFriend',opinion:{yowie:12}},res:'Best pie of your life. The Yowie growls approvingly.'},
-   {t:'Follow him to his trailer',tag:'risky',run:()=>G.stats.charm>=2?{fx:{flag:'sawBiscuit',opinion:{yowie:4}},res:'Through the trailer window you see a red heeler asleep on a fur suit.'}:{fx:{karma:-2,opinion:{yowie:-6}},res:'Gazza steps out of nowhere. “Nothing to see here, mate.”'}},
+   {t:'Follow him to his trailer',tag:'risky',run:()=>G.stats.charm>=2?{fx:{flag:'sawBiscuit',opinion:{yowie:4}},res:'Through the trailer window you see a blue heeler asleep on a fur suit.'}:{fx:{karma:-2,opinion:{yowie:-6}},res:'Gazza steps out of nowhere. “Nothing to see here, mate.”'}},
    {t:'Sell the pie to Thommo for his stream (+$40)',tag:'bad',fx:{money:40,karma:-4,aff:{june:-4},opinion:{yowie:-15,thommo:8}},res:'Thommo eats it live. The Yowie is watching.'}]},
  {id:'quiet',repeat:true,title:'Open road',text:'A quiet stretch of highway between tracks. The sun is going down orange over the desert and there’s nothing on the schedule till morning.',
   choices:[
@@ -717,12 +725,12 @@ function updRivals(dt){
     for(const c of R.cars){if(c.isP)continue;const ci=rk.indexOf(c),was=R.ranks[c.id];if(was!=null&&was<R.ranks.you&&ci>pi)radio(c.id,'passed');R.ranks[c.id]=ci}R.ranks.you=pi}
   /* the Stewards: dirty driving fills a meter; when full their ute hunts you down for a black flag */
   R.pen=Math.max(0,R.pen-dt*1.5);
-  if(!R.ute&&R.pen>=100&&!pl.fin&&!R.net&&!R.tt){const p=pointAt(R.T,pl.s-140);R.ute={s:pl.s-140,x:p.x,y:p.y,a:Math.atan2(p.ty,p.tx),t:0,off:0};R.floats.push({x:pl.x,y:pl.y-30,txt:'STEWARDS!',col:'#e63946',life:1.4});buzz([30,40,30]);SND.play('siren')}
+  if(!R.ute&&R.pen>=100&&!pl.fin&&!R.net&&!R.tt){const p=pointAt(R.T,pl.s-140);R.ute={s:pl.s-140,x:p.x,y:p.y,a:Math.atan2(p.ty,p.tx),t:0,off:0};R.floats.push({x:pl.x,y:pl.y-30,txt:'STEWARDS!',col:'#e63946',life:1.4});buzz([30,40,30]);SND.play('siren');stewardCall('ute')}
   if(R.ute){const u=R.ute;u.t+=dt;const gap=(pl.dist%R.T.L+R.T.L)%R.T.L-((u.s%R.T.L)+R.T.L)%R.T.L,g2=((gap%R.T.L)+R.T.L)%R.T.L;
     if(g2>60&&g2<R.T.L/2){u.s+=Math.max(260,Math.hypot(pl.vx,pl.vy)*1.25)*dt;const p=pointAt(R.T,u.s),pn=nearest(R.T,pl.x,pl.y,pl.hint);u.off+=(pn.d-u.off)*Math.min(1,dt*3);
       const nx=p.x-p.ty*u.off,ny=p.y+p.tx*u.off;u.a=Math.atan2(ny-u.y,nx-u.x);u.x=nx;u.y=ny}
     else{const dx=pl.x-u.x,dy=pl.y-u.y,d=Math.hypot(dx,dy)||1,sp=Math.max(220,Math.hypot(pl.vx,pl.vy)*1.2);u.a=Math.atan2(dy,dx);u.x+=dx/d*sp*dt;u.y+=dy/d*sp*dt;u.s=nearest(R.T,u.x,u.y,null).s}
-    if(Math.hypot(pl.x-u.x,pl.y-u.y)<32){R.flags++;R.fine+=100;pl.flagT=2.5;R.pen=0;R.ute=null;barry('flag');SND.play('flag');if(R.crowd)R.crowd.cd.pen=0;crowdEvent('pen');R.floats.push({x:pl.x,y:pl.y-30,txt:'BLACK FLAG!',col:'#fbf8f2',life:1.6});R.shake=Math.max(R.shake,4);buzz(80)}
+    if(Math.hypot(pl.x-u.x,pl.y-u.y)<32){R.flags++;R.fine+=100;pl.flagT=2.5;R.pen=0;R.ute=null;barry('flag');SND.play('flag');stewardCall('flag');if(R.crowd)R.crowd.cd.pen=0;crowdEvent('pen');R.floats.push({x:pl.x,y:pl.y-30,txt:'BLACK FLAG!',col:'#fbf8f2',life:1.6});R.shake=Math.max(R.shake,4);buzz(80)}
     else if(u.t>12){R.ute=null;R.pen=60}}
   if(pl.flagT>0)pl.flagT-=dt;
 }
@@ -758,6 +766,9 @@ function aiInput(c,dt){
   return{gas,brake,steer,nitro:!c.isP&&c.nitro>0&&curv<0.15&&Math.random()<dt*0.35,shunt:wantShunt};
 }
 const NOINP={gas:false,brake:false,steer:0,nitro:false};
+const STEWARD={ute:['Stewards here. That\'s enough argy-bargy, #8. Ute\'s on its way.','This is Pemberton. One more bump and you\'re parked, #8.','Race control to #8: we saw that. Ute dispatched.'],
+  flag:['Black flag, #8. Pull it back. Hundred-dollar fine.','Pemberton here. You\'ve been told. Black flag.']};
+function stewardCall(k){if(!R||!R.pl)return;R.radio={id:'pemberton',txt:pick(STEWARD[k]),t:3.2,angry:true};R.radioG=3;SND.play('radio')}
 /* ---------- SOUND: every effect and both songs are synthesised live with WebAudio (no files). Set MUSIC_FILE to
    play a recorded soundtrack from play/music/ instead of the built-in songs. ---------- */
 const MUSIC_FILE=null;   // e.g. 'music/aussie8_theme.mp3'
@@ -1019,7 +1030,8 @@ function drawStadium(g,C,L,ox,oy){
     if(C&&C.wave>0){const wt=t-C.wave-f.x/150;if(wt>0&&wt<.75){a='wave';hop=true}}
     const fr=(fr0+f.ph)%4,dy=hop&&(fr===1||fr===2)?-1:0;
     g.drawImage(im,(acts.indexOf(a)*4+fr)*10,f.f*12,10,12,f.x,f.fy-11+dy,10,12);
-    if(a==='photo'&&fr===2&&(f.ph&1)){g.fillStyle='#fff';g.fillRect(f.x+6,f.fy-6,3,1);g.fillRect(f.x+7,f.fy-7,1,3)}}
+    if(a==='photo'&&fr===2&&(f.ph&1)){g.fillStyle='#fff';g.fillRect(f.x+6,f.fy-6,3,1);g.fillRect(f.x+7,f.fy-7,1,3)}
+    if(C&&C.wow&&C.wow.t>t&&f.h0<.45&&Math.abs(f.x+5-C.wow.x)<100&&((t*10|0)%3)){const bx0=f.x+3,by0=f.fy-17+dy;g.fillStyle='#0c0b0e';g.fillRect(bx0-1,by0-1,3,7);g.fillStyle='#ffcd00';g.fillRect(bx0,by0,1,3);g.fillRect(bx0,by0+4,1,1)}}
   g.restore();
 }
 function crowdNew(T){const L=stadLayout(T),full=L.ti===TRACKS.length-1;
@@ -1028,6 +1040,7 @@ function crowdEvent(k,ax){
   const C=R&&R.crowd,e=CRE[k];if(!C||!e)return;
   if((C.cd[k]||0)>C.t)return;C.cd[k]=C.t+e.cd;C.ex=Math.min(1,C.ex+e.ex);C.n++;
   if(k==='win'||k==='podium')C.flash=C.t+2;
+  if(k==='crash')C.wow={x:ax==null?240:ax,t:C.t+1};
   {const sk=e.a==='boo'?'boo':k==='crash'||k==='close'?'ooh':e.a==='cheer'||e.a==='victory'||k==='final'?'cheer':null;if(sk)SND.play(sk,e.r?.55:1)}
   const ox=ax==null?240:ax,sp=e.r?360:520;
   for(const f of C.fans){const d=Math.abs(f.x+5-ox);if(e.r&&d>e.r)continue;
@@ -1106,6 +1119,7 @@ function updRace(dt){
   for(const c of R.cars){if(c.remote)continue;physics(c,c.isP&&!c.fin&&!c.auto?playerInput():aiInput(c,dt),dt)}
   if(R.net)liveTick(dt);
   updRoo(dt);lapTrack();
+  if(R.time>(R.sponsorT??(R.sponsorT=18+Math.random()*10))){R.sponsorT=R.time+32+Math.random()*16;barry('sponsor')}
   const cs=R.cars;
   for(let i=0;i<cs.length;i++)for(let j=i+1;j<cs.length;j++){
     const a=cs[i],b=cs[j];if(Math.abs(a.z-b.z)>12||(a.remote&&b.remote))continue;const ka=a.remote?0:b.remote?2:1,kb=b.remote?0:a.remote?2:1;
@@ -1164,6 +1178,8 @@ function drawRace(){
 const BARRY={crash:['And they\'ve come together!','Oh, that\'s gonna leave a mark!','Panel beaters, start your engines!'],roo:['Skippy wants a lap!','Roo on the circuit!'],emu:['An emu! Of course there\'s an emu!'],
   lead:['New leader, folks!','We have a new race leader!'],final:['Final lap! Hold onto your pies!','Last time around!'],flag:['Black flag! Stewards have had enough!'],
   win:['The Rookie takes it! Unbelievable!'],yowie:['The Yowie is on the move!','Lock up your pies, the Yowie\'s coming!'],shunt:['Door to door! Ooh!','That\'s a bit of argy-bargy!']};
+const SPONSOR=['This lap is brought to you by Kanga Tyres. Grip like a roo on a hot tin roof!','Tin Roo Racing Fuel: if it\'s good enough for the Yowie, it\'s good enough for you.','Emu Lager. The official drink of sitting down after this.','Spinifex Suspension, because the Nullarbor isn\'t as flat as they say.','Bushfire Motor Oil. Keeps her slick when it\'s forty in the shade.','Crocodile Tools. They bite back.','Red Dust Motors, Alice Springs. Tell \'em Barry sent ya.','Outback Batteries. Still cranking after the third roo.','Bullbar 4x4. For when the roo doesn\'t move.','Uluru Resorts. Where the sunset never misses.','Sundown Caravans. Slow down, you\'re on holidays.'];
+BARRY.sponsor=SPONSOR;
 function barry(k){if(!R||(R.barryCD||0)>R.time||!BARRY[k])return;SND.play(k==='final'?'final':'barry');R.tick={txt:pick(BARRY[k]),t:3.6};R.barryCD=R.time+4.5}
 function hudImg(k,x,y,sc=2){const im=ART.img['hud_'+k];if(!im)return false;ctx.imageSmoothingEnabled=false;ctx.drawImage(im,x,y,im.width*sc,im.height*sc);return true}
 /* Big Channel 8 banners, centred on screen. The Batch13 art has its words painted flush left, so the
@@ -1191,7 +1207,7 @@ function drawBroadcast(){
   if(ART.img.hud_damage_bar_empty){ctx.font='9px "Press Start 2P",monospace';ctx.textAlign='right';ctx.textBaseline='middle';
     hudImg('damage_bar_empty',mx,my,3);const dw=Math.round(64*pl.dmgVis/100);if(dw>0&&ART.img.hud_damage_bar)ctx.drawImage(ART.img.hud_damage_bar,0,0,dw,8,mx,my,dw*3,24);ctx.fillStyle='#fbf8f2';ctx.fillText('DMG',mx-8,my+12);
     if(R.pen>1||R.ute){hudImg('penalty_bar_empty',mx,my+30,3);const pw=Math.round(64*Math.min(100,R.pen)/100);if(pw>0&&ART.img.hud_penalty_bar)ctx.drawImage(ART.img.hud_penalty_bar,0,0,pw,8,mx,my+30,pw*3,24);ctx.fillStyle=R.ute?'#e63946':'#fbf8f2';ctx.fillText('STW',mx-8,my+42);if(R.ute)hudImg('flag_black',mx-74,my+28,2)}}
-  if(R.tick){R.tick.t-=1/60;const ty=TOUCH?H-36:H-74;if(hudImg('ticker',0,ty,2)){ctx.textAlign='left';ctx.textBaseline='middle';ctx.font='11px "Press Start 2P",monospace';ctx.fillStyle='#ffcd00';ctx.fillText('BARRY:',84,ty+16);ctx.fillStyle='#fbf8f2';ctx.fillText(R.tick.txt,170,ty+16)}if(R.tick.t<=0)R.tick=null}
+  if(R.tick){R.tick.t-=1/60;const ty=TOUCH?H-36:H-74;if(hudImg('ticker',0,ty,2)){ctx.textAlign='left';ctx.textBaseline='middle';ctx.font='11px "Press Start 2P",monospace';const bh=ART.img.rd_barry;if(bh){ctx.imageSmoothingEnabled=false;ctx.drawImage(bh,120,ty+2,28,28)}ctx.fillStyle='#ffcd00';ctx.fillText('BARRY:',bh?156:84,ty+16);ctx.fillStyle='#fbf8f2';ctx.fillText(R.tick.txt,bh?242:170,ty+16)}if(R.tick.t<=0)R.tick=null}
 }
 function drawRadio(){
   if(!R.radio)return;const r=R.radio,x=14,y=TOUCH?76:16,head=ART.img['rd_'+r.id],al=Math.min(1,r.t*3);
@@ -1278,12 +1294,13 @@ function portrait(id,mood='neutral',cls='pimg'){
   if(!m&&PLACEHOLDER[mood]&&P[PLACEHOLDER[mood]]){m=PLACEHOLDER[mood];ph=true}
   if(!m){m='neutral';ph=mood!=='neutral'}
   const nm=(CREW[id]&&CREW[id].short)||NAMES[id]||id;
+  if(id==='windbreakers')cls+=' wide';
   return `<img class="${cls}${ph?' ph':''}" src="${artUrl(P[m])}" alt="${nm}" title="${nm}${ph?` (placeholder: no ${mood} art yet)`:''}">`;
 }
 const face=(id,mood)=>portrait(id,mood)||`<span class="face" style="--c:${CREW[id].color}" title="${CREW[id].short}">${CREW[id].short[0]}</span>`;
 /* which art each story event uses: its own card (Batch09) or a location (Batch10), plus who is speaking */
 const EVENT_BG={stranded:'bush_camp',june_intro:'paddock',dex_intro:'roadhouse',duke_bribe:'paddock',garage_night:'pit_garage_night',benefit:'flying_doctor_strip',casino:'gold_coast_nightlife',rosa_shop:'rosas_garage',rosa_repay:'rosas_garage',dex_debt:'dexs_gambling_shed',june_doubt:'paddock',reporter:'ch8_interview',hank_return:'hanks_homestead',hank_revenge:'pit_garage_night',duke_diner:'roadhouse',quiet:'bush_camp',yowie_pies:'paddock'};
-const EVENT_SPEAKER={duke_bribe:['duke','smug'],duke_diner:['duke','angry'],rosa_shop:['rosa','sad'],rosa_repay:['rosa','happy'],yowie_pies:['yowie','calm'],june_intro:['june','neutral'],june_doubt:['june','neutral'],dex_intro:['dex','neutral'],dex_debt:['dex','neutral']};
+const EVENT_SPEAKER={duke_bribe:['duke','smug'],duke_diner:['duke','angry'],rosa_shop:['rosa','sad'],rosa_repay:['rosa','happy'],yowie_pies:['yowie','calm'],june_intro:['june','focused'],june_doubt:['june','surprised'],dex_intro:['dex','happy'],dex_debt:['dex','neutral','windbreakers','neutral'],stranded:['hank','sad'],hank_return:['hank','neutral'],hank_revenge:['rosa','angry','hank','angry']};
 const sceneUrl=k=>ARTM&&ARTM.scenes[k]?artUrl(ARTM.scenes[k]):'';
 function eventArt(id){const e=ARTM&&ARTM.events[id];if(e)return `<img class="evcard" src="${artUrl(e)}" alt="">`;const sc=sceneUrl(EVENT_BG[id]);return sc?`<img class="evcard" src="${sc}" alt="">`:''}
 const pips=(n,max=5)=>`<span class="pips">${Array.from({length:max},(_,i)=>`<i class="${i<n?'on':''}"></i>`).join('')}</span>`;
@@ -1556,7 +1573,7 @@ function showEvent(ev){
   const crewNow=Object.keys(CREW).filter(inCrew);
   setMode('menu','scene:'+(EVENT_BG[ev.id]||'paddock'));const sp=EVENT_SPEAKER[ev.id];
   ov.innerHTML=`<div class="panel">${eventArt(ev.id)}<p class="kicker">${G.race===0?'Before the season':'After race '+G.race+' of '+SEASON}</p>
-  ${sp&&portrait(sp[0],sp[1])?`<div class="speaker">${portrait(sp[0],sp[1])}<h2 style="margin:0">${ev.title}</h2></div>`:`<h2>${ev.title}</h2>`}<p class="story">${ev.text}</p>
+  ${sp&&portrait(sp[0],sp[1])?`<div class="speaker">${portrait(sp[0],sp[1])}${sp[2]?portrait(sp[2],sp[3])||'':''}<h2 style="margin:0">${ev.title}</h2></div>`:`<h2>${ev.title}</h2>`}<p class="story">${ev.text}</p>
   ${crewNow.length?`<div class="riders">${crewNow.map(face).join('')}<span class="muted">Your crew is watching.</span></div>`:''}
   <div class="choices">${ev.choices.map((c,i)=>{const ok=!c.req||c.req();return`<button class="choice ${c.tag}" data-act="ch:${i}" ${ok?'':'disabled'}><span class="tag">${TAGS[c.tag]}</span><span>${c.t}</span>${ok?'':`<small>${c.reqT}</small>`}</button>`}).join('')}</div></div>`;
 }
@@ -1645,8 +1662,8 @@ function showYowieReveal(){
   ov.innerHTML=`<div class="panel"><p class="kicker">Presentation night · after the final round</p>
   <div class="reveal">${ARTM&&ARTM.extra&&ARTM.extra.yowie_full?`<img class="yfull" src="${artUrl(ARTM.extra.yowie_full)}" alt="The Yowie, arms folded, in his racing harness">`:''}
   <div><div class="speaker">${portrait('yowie','surprised')||''}<h2 style="margin:0">The Yowie takes off the helmet</h2></div>
-  <p class="story">You beat him at the crossover. In the floodlights behind the grandstand, the Yowie stops, growls once, unbuckles the harness and pulls the fur helmet off. A white beard. A crooked grin under a battered bush hat. Biscuit the red heeler barks from the cab.</p></div></div>
-  <div class="speaker">${portrait('hank','neutral')||''}${portrait('hank_1994','neutral')||''}<p class="story" style="margin:0"><b>${REVEAL.name}</b>, the first champion of the Aussie 8 <span class="muted">(right: Channel 8 archive photo, 1994)</span>.<br>“${REVEAL.line}”</p></div>
+  <p class="story">You beat him at the crossover. In the floodlights behind the grandstand, the Yowie stops, growls once, unbuckles the harness and pulls the fur helmet off. A white beard. A crooked grin under a battered bush hat. Biscuit the blue heeler barks from the cab.</p></div></div>
+  <div class="speaker">${portrait('hank','neutral')||''}${portrait('hank_1994','neutral')||''}${portrait('biscuit','neutral')||''}<p class="story" style="margin:0"><b>${REVEAL.name}</b>, the first champion of the Aussie 8 <span class="muted">(beside him: the Channel 8 archive photo from 1994, and Biscuit)</span>.<br>“${REVEAL.line}”</p></div>
   <div class="actions"><button class="btn" data-act="ending">See how your season ends</button></div></div>`;
 }
 function resume(){
@@ -1742,7 +1759,7 @@ function loop(now){
   requestAnimationFrame(loop);
 }
 showTitle();requestAnimationFrame(loop);
-window.__A8={get G(){return G},get R(){return R},TRACKS,TS,ART,SPRITES,DMG,spawnDebris,gridChoice,doShunt,aggr,crowdEvent,SND,CRASH,updRace:dt=>updRace(dt),liveStart:g=>liveStart(g),liveState:p=>liveState(p),LIVE,NET};
+window.__A8={get G(){return G},get R(){return R},TRACKS,TS,ART,SPRITES,DMG,spawnDebris,gridChoice,doShunt,aggr,crowdEvent,SND,CRASH,updRace:dt=>updRace(dt),liveStart:g=>liveStart(g),liveState:p=>liveState(p),LIVE,NET,EVENTS};
 loadArt().catch(e=>console.warn('Aussie 8: art load failed',e));
 }
 </script>

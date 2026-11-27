@@ -244,6 +244,48 @@ if CREW_SHEET.exists():
     extra['yowie_full'] = save(ccutout(2, 1, 150), 'ui/yowie_full.png')
     ok('walkie-talkie icon (radio box), full-body Yowie (finale)', 'art/ui/{walkie,yowie_full}.png', 'crew sheet row 3', 'cut out on transparency')
 
+# ---------------------------------------------------------------- wishlist batch (Batch19), kept in tools/art_src/batch19
+# Portraits come on a pale backdrop; it is flood-filled from the edges and replaced with the dark portrait backdrop so they
+# match the crew sheet. The crew-sheet neutrals stay (already approved); Batch19 adds the moods and the new characters.
+B19 = REPO / 'tools' / 'art_src' / 'batch19'
+billboards = []
+if B19.exists():
+    from collections import deque
+    def darkbg(img, bg=(24, 22, 40), tol=212, sat=45):
+        a = np.array(img.convert('RGB')).astype(np.int16)
+        light = (a.min(axis=2) >= tol) & ((a.max(axis=2) - a.min(axis=2)) < sat)
+        h, w = light.shape; m = np.zeros((h, w), bool); q = deque()
+        for x in range(w):
+            for y in (0, h - 1):
+                if light[y, x] and not m[y, x]: m[y, x] = 1; q.append((y, x))
+        for y in range(h):
+            for x in (0, w - 1):
+                if light[y, x] and not m[y, x]: m[y, x] = 1; q.append((y, x))
+        while q:
+            y, x = q.popleft()
+            for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                ny, nx = y + dy, x + dx
+                if 0 <= ny < h and 0 <= nx < w and light[ny, nx] and not m[ny, nx]: m[ny, nx] = 1; q.append((ny, nx))
+        a[m] = bg
+        return Image.fromarray(a.astype(np.uint8)).convert('RGBA')
+    P19 = lambda f: darkbg(Image.open(B19 / 'portraits' / f))
+    MOODS19 = {'rosa': ['angry', 'sad', 'surprised'], 'dex': ['happy', 'angry'], 'june': ['focused', 'surprised'], 'hank': ['sad', 'angry']}
+    for cid, moods in MOODS19.items():
+        portraits.setdefault(cid, {})
+        for m in moods: portraits[cid][m] = save(P19(f'{cid}_{m}.png'), f'portraits/{cid}_{m}.png')
+    ok('portrait moods: Rosa angry/sad/surprised, Dex happy/angry, June focused/surprised, Hank sad/angry', 'art/portraits/*_{mood}.png', 'BATCH19 portraits', 'crew-sheet neutrals kept; Dex "laugh" is happy; June "focused" is a new mood')
+    for cid, f in (('barry', 'barry_doolan_neutral'), ('biscuit', 'biscuit_neutral'), ('gazza', 'gazza_neutral'), ('lou_tran', 'lou_tran_neutral'), ('pemberton', 'pemberton_neutral'), ('windbreakers', 'windbreakers_neutral')):
+        portraits[cid] = {'neutral': save(P19(f + '.png'), f'portraits/{cid}_neutral.png')}
+    ok('portraits: Barry Doolan, Biscuit, Gazza, Lou Tran, Chief Steward Pemberton, the Windbreakers (group, 144x96)', 'art/portraits/*_neutral.png', 'BATCH19 portraits')
+    radio['pemberton'] = save(P19('pemberton_neutral.png').crop((14, 6, 82, 74)).resize((32, 32), Image.LANCZOS), 'radio/pemberton.png')
+    radio['barry'] = save(P19('barry_doolan_neutral.png').crop((10, 0, 80, 70)).resize((32, 32), Image.LANCZOS), 'radio/barry.png')
+    ok('radio heads: Pemberton (Stewards calls), Barry (Channel 8 ticker)', 'art/radio/{pemberton,barry}.png', 'BATCH19 portraits, face crops')
+    for f in sorted((B19 / 'billboards').glob('*.png')):
+        billboards.append({'id': f.stem, 'src': save(Image.open(f).convert('RGBA'), f'billboards/{f.name}')})
+    ok(f'billboards: {len(billboards)} fictional sponsors (120x32)', 'art/billboards/*.png', 'BATCH19 billboards', 'shown on posts around the tracks (decorative) and read out by Barry')
+    held.append(('BATCH19 crowd/*.png (idle, cheer, boo, surprised tiles)', 'Static section tiles that would pop against the animated Batch15 crowd. The wreck reaction draws a "!!!" over the nearest fans instead, after the surprised tile.'))
+    held.append(('BATCH19 preview.png', 'Sample sheet, not a runtime sprite.'))
+
 # ---------------------------------------------------------------- RPG locations (Batch10 + two CORE scenes)
 scenes = {}
 for k in ['paddock', 'roadhouse', 'rosas_garage', 'dexs_gambling_shed', 'outback_casino', 'gold_coast_nightlife', 'bush_camp', 'channel8_race_control', 'flying_doctor_strip', 'hanks_homestead', 'scrap_yard', 'mining_town']:
@@ -319,7 +361,7 @@ if B15.exists():
     ok('stadium bleachers (4) + props (TV camera, banner)', 'art/stadium/*.png', 'BATCH15 stands/*.png, props/camera.png, banner_blank.png')
     held.append(('BATCH15 props floodlight, flagpole, speaker', 'The Uluru painting already has floodlights and flags; the speaker reads as a grey lollipop among the fans.'))
     held.append(('BATCH15 preview.png', 'Sample composite, not a runtime sprite (as the batch notes say).'))
-    missing.append(('Crowd "surprise" reaction frames', 'Wrecks use the rail lean then a cheer as the cartoon "ooh"; a dedicated surprise action would read better.'))
+    missing.append(('Crowd "surprised" animation frames (10x12, 4 frames, like Batch15)', 'Wrecks use the rail lean, a drawn "!!!" and then a cheer.'))
 else:
     held.append(('BATCH15 stadium crowd', f'Not found at {B15}; the game keeps the Batch08 backdrop strip.'))
 
@@ -374,8 +416,7 @@ if ENV.exists():
 
 # ---------------------------------------------------------------- missing artwork
 missing += [
-    ('Portraits: Gazza, Lou Tran, Chief Steward Pemberton, Barry Doolan, Biscuit, the Windbreakers', 'Game falls back to coloured initials.'),
-    ('Moods for Rosa (angry, sad, surprised), Dex, June and Hank in the crew-sheet style', 'One pose each; other moods show it with the placeholder frame.'),
+    ('More moods: June sad, Hank happy, Dex sad/smug, and moods for Barry, Pemberton and the new faces', 'The nearest pose is shown with the placeholder frame.'),
     ('Mood sets for the six rivals, Marge and Rick (angry, happy, sad, smug, surprised)', 'Neutral is shown; reactions that should be angry are marked with a red frame as a labelled placeholder.'),
     ('Angry radio heads for all rivals', 'Calm head plus red frame placeholder.'),
     
@@ -391,7 +432,7 @@ manifest = {
     'debris': {'src': 'debris.png', 'size': 16, 'variants': 3, 'types': DEBRIS},
     'fx': fx_manifest, 'wildlife': wild_manifest, 'pickups': pick,
     'backdrops': bd, 'props': props, 'portraits': portraits, 'radio': radio,
-    'stadium': stadium, 'announce': announce, 'env': env, 'extra': extra, 'scenes': scenes, 'events': events, 'endings': endings, 'hud': hud, 'badges': badges, 'choices': choices,
+    'stadium': stadium, 'announce': announce, 'env': env, 'extra': extra, 'billboards': billboards, 'scenes': scenes, 'events': events, 'endings': endings, 'hud': hud, 'badges': badges, 'choices': choices,
     'placeholders': {'rosa.angry': 'serious', 'rosa.sad': 'serious', 'radio.angry': 'calm + red frame', 'portrait.mood': 'neutral + frame tint'},
 }
 (OUT / 'manifest.js').write_text('// Generated by tools/curate_art.py. Do not edit by hand.\nwindow.A8_ART=' + json.dumps(manifest, separators=(',', ':')) + ';\n')

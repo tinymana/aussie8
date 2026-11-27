@@ -2,6 +2,37 @@
   "_howto": "Newest first. Add an entry at the top each time you push an update; the website and the in-game 'What's new' both read this file. tag: new | improved | fixed.",
   "notes": [
     {
+      "version": "1.3",
+      "date": "2026-11-27",
+      "title": "The whole cast",
+      "items": [
+        {
+          "tag": "new",
+          "text": "Faces for Barry Doolan, Chief Steward Pemberton, Biscuit the heeler, Gazza, Lou Tran and the Windbreakers, plus new moods for Rosa, Dex, June and Hank."
+        },
+        {
+          "tag": "new",
+          "text": "Chief Steward Pemberton gets on the radio when the Stewards come for you or wave the black flag."
+        },
+        {
+          "tag": "new",
+          "text": "Barry's face is on the Channel 8 ticker, and every so often he reads a word from the sponsors."
+        },
+        {
+          "tag": "new",
+          "text": "Sponsor billboards around the tracks: Kanga Tyres, Emu Lager, Tin Roo Racing Fuel, Bushfire Motor Oil and more (all made up)."
+        },
+        {
+          "tag": "improved",
+          "text": "Story scenes can show two faces: Dex with the Windbreakers on his back, Rosa fuming with Hank in the frame. Hank, June and Dex now show their own moods in their scenes."
+        },
+        {
+          "tag": "improved",
+          "text": "The fans nearest a wreck throw up a “!!!” before they cheer."
+        }
+      ]
+    },
+    {
       "version": "1.2",
       "date": "2026-11-27",
       "title": "New faces",
