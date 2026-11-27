@@ -178,6 +178,7 @@ table.board .btn{padding:4px 8px;font-size:11px}
 .riders.lobby{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.riders.lobby .pill{border:2px solid;padding:6px 10px}
 .board.laps td:first-child{width:auto}
 .dedication{margin:16px 0 0;font-size:13px;color:rgba(251,248,242,.7);font-style:normal}
+.reveal{display:flex;gap:16px;align-items:flex-end}.reveal .yfull{height:180px;width:auto;image-rendering:pixelated;flex:none}@media (max-width:600px){.reveal{flex-direction:column;align-items:center}.reveal .yfull{height:140px}}
 </style>
 </head>
 <body>
@@ -484,6 +485,7 @@ async function loadArt(){
   for(const k in ARTM.props)J.push(loadImg('pr_'+k,ARTM.props[k]));
   for(const k in ARTM.radio)J.push(loadImg('rd_'+k,ARTM.radio[k]));
   for(const k in ARTM.hud)J.push(loadImg('hud_'+k,ARTM.hud[k]));
+  if(ARTM.extra)for(const k in ARTM.extra)J.push(loadImg('ex_'+k,ARTM.extra[k]));
   if(ARTM.env)for(const grp of ['trackside','structures'])for(const k in ARTM.env[grp])J.push(loadImg('ev_'+k,ARTM.env[grp][k]));
   if(ARTM.announce)for(const k of ['final_lap','race_finished'])if(ARTM.announce[k])J.push(loadImg('an_'+k,ARTM.announce[k].src));
   if(ARTM.stadium){const S=ARTM.stadium;J.push(loadImg('st_crowd',S.crowd.src));S.bg.forEach((q,i)=>J.push(loadImg('st_bg'+i,q)));S.stands.forEach((q,i)=>J.push(loadImg('st_stand'+i,q)));for(const k in S.props)J.push(loadImg('st_'+k,S.props[k]))}
@@ -1193,10 +1195,11 @@ function drawBroadcast(){
 }
 function drawRadio(){
   if(!R.radio)return;const r=R.radio,x=14,y=TOUCH?76:16,head=ART.img['rd_'+r.id],al=Math.min(1,r.t*3);
-  ctx.save();ctx.globalAlpha=al;ctx.font='12px "Press Start 2P",monospace';const tw=Math.max(ctx.measureText(r.txt).width,ctx.measureText(NAMES[r.id]).width)+28;
+  ctx.save();ctx.globalAlpha=al;ctx.font='12px "Press Start 2P",monospace';const tw=Math.max(ctx.measureText(r.txt).width,ctx.measureText(NAMES[r.id]).width)+28+(ART.img.ex_walkie?30:0);
   ctx.fillStyle='rgba(12,6,20,.9)';ctx.fillRect(x,y,76+tw,72);ctx.fillStyle=r.angry?'#e63946':'#ffcd00';ctx.fillRect(x,y,76+tw,3);
   ctx.fillStyle=r.angry?'#e63946':'#ffcd00';ctx.fillRect(x+4,y+4,68,68);   /* red frame = "angry" placeholder: no angry radio art yet */
   if(head){ctx.imageSmoothingEnabled=false;ctx.drawImage(head,x+6,y+6,64,64)}else{ctx.fillStyle=COLORS[r.id];ctx.fillRect(x+6,y+6,64,64)}
+  {const wk=ART.img.ex_walkie;if(wk){ctx.imageSmoothingEnabled=false;const ww=wk.width*.6,wh=wk.height*.6;ctx.drawImage(wk,x+76+tw-ww-8,y+36-wh/2,ww,wh)}}
   ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillStyle='#ffcd00';ctx.font='10px "Press Start 2P",monospace';ctx.fillText(NAMES[r.id].toUpperCase(),x+84,y+22);
   ctx.fillStyle='#fbf8f2';ctx.font='12px "Press Start 2P",monospace';ctx.fillText(r.txt,x+84,y+48);ctx.restore();
 }
@@ -1280,7 +1283,7 @@ function portrait(id,mood='neutral',cls='pimg'){
 const face=(id,mood)=>portrait(id,mood)||`<span class="face" style="--c:${CREW[id].color}" title="${CREW[id].short}">${CREW[id].short[0]}</span>`;
 /* which art each story event uses: its own card (Batch09) or a location (Batch10), plus who is speaking */
 const EVENT_BG={stranded:'bush_camp',june_intro:'paddock',dex_intro:'roadhouse',duke_bribe:'paddock',garage_night:'pit_garage_night',benefit:'flying_doctor_strip',casino:'gold_coast_nightlife',rosa_shop:'rosas_garage',rosa_repay:'rosas_garage',dex_debt:'dexs_gambling_shed',june_doubt:'paddock',reporter:'ch8_interview',hank_return:'hanks_homestead',hank_revenge:'pit_garage_night',duke_diner:'roadhouse',quiet:'bush_camp',yowie_pies:'paddock'};
-const EVENT_SPEAKER={duke_bribe:['duke','smug'],duke_diner:['duke','angry'],rosa_shop:['rosa','sad'],rosa_repay:['rosa','happy'],yowie_pies:['yowie','calm']};
+const EVENT_SPEAKER={duke_bribe:['duke','smug'],duke_diner:['duke','angry'],rosa_shop:['rosa','sad'],rosa_repay:['rosa','happy'],yowie_pies:['yowie','calm'],june_intro:['june','neutral'],june_doubt:['june','neutral'],dex_intro:['dex','neutral'],dex_debt:['dex','neutral']};
 const sceneUrl=k=>ARTM&&ARTM.scenes[k]?artUrl(ARTM.scenes[k]):'';
 function eventArt(id){const e=ARTM&&ARTM.events[id];if(e)return `<img class="evcard" src="${artUrl(e)}" alt="">`;const sc=sceneUrl(EVENT_BG[id]);return sc?`<img class="evcard" src="${sc}" alt="">`:''}
 const pips=(n,max=5)=>`<span class="pips">${Array.from({length:max},(_,i)=>`<i class="${i<n?'on':''}"></i>`).join('')}</span>`;
@@ -1637,11 +1640,13 @@ function showEnding(){
    A real person is not used here. */
 const REVEAL={name:'Hank Booker',line:'Thirty years after the crossover crash, I had to know if I could still do it. Took a rookie to catch me.'};
 function showYowieReveal(){
+  NAMES.hank=REVEAL.name;
   G.flags.yowieRevealed=G.race;save();setMode('menu','scene:paddock');
   ov.innerHTML=`<div class="panel"><p class="kicker">Presentation night · after the final round</p>
-  <div class="speaker">${portrait('yowie','surprised')||''}<h2 style="margin:0">The Yowie takes off the helmet</h2></div>
-  <p class="story">You beat him at the crossover. In the floodlights behind the grandstand, the Yowie stops, growls once, and pulls the fur helmet off. Grey stubble. A crooked grin. Biscuit the red heeler barks from the cab.</p>
-  <div class="speaker">${portrait('hank_1994','neutral')||''}<p class="story" style="margin:0"><b>${REVEAL.name}</b>, the first champion of the Aussie 8 <span class="muted">(Channel 8 archive photo, 1994)</span>.<br>“${REVEAL.line}”</p></div>
+  <div class="reveal">${ARTM&&ARTM.extra&&ARTM.extra.yowie_full?`<img class="yfull" src="${artUrl(ARTM.extra.yowie_full)}" alt="The Yowie, arms folded, in his racing harness">`:''}
+  <div><div class="speaker">${portrait('yowie','surprised')||''}<h2 style="margin:0">The Yowie takes off the helmet</h2></div>
+  <p class="story">You beat him at the crossover. In the floodlights behind the grandstand, the Yowie stops, growls once, unbuckles the harness and pulls the fur helmet off. A white beard. A crooked grin under a battered bush hat. Biscuit the red heeler barks from the cab.</p></div></div>
+  <div class="speaker">${portrait('hank','neutral')||''}${portrait('hank_1994','neutral')||''}<p class="story" style="margin:0"><b>${REVEAL.name}</b>, the first champion of the Aussie 8 <span class="muted">(right: Channel 8 archive photo, 1994)</span>.<br>“${REVEAL.line}”</p></div>
   <div class="actions"><button class="btn" data-act="ending">See how your season ends</button></div></div>`;
 }
 function resume(){

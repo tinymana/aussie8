@@ -188,6 +188,62 @@ radio['duke'] = save(rgba('PROFILE_ASSETS/profiles/duke.png').crop((14, 4, 82, 7
 ok('radio head: duke (blond)', 'art/radio/duke.png', 'PROFILE_ASSETS/profiles/duke.png', 'face cropped from the blond portrait until a drawn radio head arrives')
 ok('radio heads (calm): duke, sal, shazza, tash, thommo, earl, yowie', 'art/radio/*.png', 'BATCH13_BROADCAST_HUD/ui/radio_*_calm.png', 'calm only; angry is shown with a red frame, labelled placeholder')
 
+# ---------------------------------------------------------------- crew sheet (owner, Nov 2026): tools/art_src/batch18_crew_sheet.png
+# 6x3 grid of ~291 px cells on a light background. Row 1 blond Duke moods, row 2 Yowie moods (goggles, racing harness),
+# row 3 walkie-talkie, full-body Yowie, Rosa, Dex, June, Hank today. The light background is flood-filled from the cell
+# edges and replaced with the dark portrait backdrop (or made transparent for cut-outs).
+CREW_SHEET = REPO / 'tools' / 'art_src' / 'batch18_crew_sheet.png'
+extra = {}
+if CREW_SHEET.exists():
+    from collections import deque
+    ca = np.array(Image.open(CREW_SHEET).convert('RGBA')).astype(np.int16)
+    XS = [(2, 293), (298, 589), (594, 885), (889, 1180), (1185, 1476), (1481, 1772)]
+    YS = [(2, 293), (298, 589), (593, 885)]
+    def ccell(r, c, inset=3):
+        (x0, x1), (y0, y1) = XS[c], YS[r]
+        return ca[y0 + inset:y1 - inset, x0 + inset:x1 - inset].copy()
+    def bgmask(a, tol=222):
+        rgb = a[:, :, :3]; light = (rgb.min(axis=2) >= tol) & ((rgb.max(axis=2) - rgb.min(axis=2)) < 26)
+        h, w = light.shape; m = np.zeros((h, w), bool); q = deque()
+        for x in range(w):
+            for y in (0, h - 1):
+                if light[y, x] and not m[y, x]: m[y, x] = 1; q.append((y, x))
+        for y in range(h):
+            for x in (0, w - 1):
+                if light[y, x] and not m[y, x]: m[y, x] = 1; q.append((y, x))
+        while q:
+            y, x = q.popleft()
+            for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                ny, nx = y + dy, x + dx
+                if 0 <= ny < h and 0 <= nx < w and light[ny, nx] and not m[ny, nx]: m[ny, nx] = 1; q.append((ny, nx))
+        return m
+    def cportrait(r, c, size=96):
+        a = ccell(r, c); a[bgmask(a), :3] = (24, 22, 40); a[:, :, 3] = 255
+        return Image.fromarray(a.astype(np.uint8)).resize((size, size), Image.LANCZOS)
+    def ccutout(r, c, h):
+        a = ccell(r, c); a[:, :, 3] = np.where(bgmask(a), 0, 255); i = Image.fromarray(a.astype(np.uint8)); i = i.crop(i.getchannel('A').getbbox())
+        s = np.array(i.resize((round(i.width * h / i.height), h), Image.LANCZOS)); s[:, :, 3] = np.where(s[:, :, 3] > 120, 255, 0)
+        return Image.fromarray(s)
+    MOODS = ['neutral', 'happy', 'angry', 'smug', 'sad', 'surprised']
+    portraits['duke'] = {m: save(cportrait(0, i), f'portraits/duke_{m}.png') for i, m in enumerate(MOODS)}
+    portraits['yowie'] = {m: save(cportrait(1, i), f'portraits/yowie_{m}.png') for i, m in enumerate(MOODS)}
+    portraits['yowie']['calm'] = portraits['yowie']['neutral']
+    ok('portraits: blond Duke, all six moods', 'art/portraits/duke_*.png', 'crew sheet row 1', 'replaces the single profile portrait')
+    ok('portraits: Yowie, all six moods (goggles, racing harness)', 'art/portraits/yowie_*.png', 'crew sheet row 2', '"calm" uses neutral; replaces the PROFILE_ASSETS head crops')
+    rosa = save(cportrait(2, 2), 'portraits/rosa_neutral.png')
+    portraits['rosa'] = {'neutral': rosa, 'happy': rosa, 'smug': rosa}
+    ok('portrait: Rosa (new style)', 'art/portraits/rosa_neutral.png', 'crew sheet row 3', 'one smiling pose used for neutral, happy and smug; the old red-cap Rosa moods are retired so she looks the same everywhere')
+    held.append(('PROFILE_ASSETS rosa_01..06, yowie_01..06 expressions', 'Superseded by the crew sheet so each character looks the same in every mood.'))
+    for i, k in ((3, 'dex'), (4, 'june'), (5, 'hank')):
+        portraits[k] = {'neutral': save(cportrait(2, i), f'portraits/{k}_neutral.png')}
+    ok('portraits: Dex, June, Hank (today)', 'art/portraits/{dex,june,hank}_neutral.png', 'crew sheet row 3', 'neutral only')
+    radio['duke'] = save(Image.fromarray(np.where(bgmask(ccell(0, 0))[:, :, None], np.array([24, 22, 40, 255]), ccell(0, 0)).astype(np.uint8)).crop((55, 20, 255, 220)).resize((32, 32), Image.LANCZOS), 'radio/duke.png')
+    radio['yowie'] = save(Image.fromarray(np.where(bgmask(ccell(1, 0))[:, :, None], np.array([24, 22, 40, 255]), ccell(1, 0)).astype(np.uint8)).crop((40, 40, 250, 250)).resize((32, 32), Image.LANCZOS), 'radio/yowie.png')
+    ok('radio heads: duke, yowie (from the crew sheet)', 'art/radio/{duke,yowie}.png', 'crew sheet neutral faces, cropped')
+    extra['walkie'] = save(ccutout(2, 0, 40), 'ui/walkie.png')
+    extra['yowie_full'] = save(ccutout(2, 1, 150), 'ui/yowie_full.png')
+    ok('walkie-talkie icon (radio box), full-body Yowie (finale)', 'art/ui/{walkie,yowie_full}.png', 'crew sheet row 3', 'cut out on transparency')
+
 # ---------------------------------------------------------------- RPG locations (Batch10 + two CORE scenes)
 scenes = {}
 for k in ['paddock', 'roadhouse', 'rosas_garage', 'dexs_gambling_shed', 'outback_casino', 'gold_coast_nightlife', 'bush_camp', 'channel8_race_control', 'flying_doctor_strip', 'hanks_homestead', 'scrap_yard', 'mining_town']:
@@ -318,12 +374,11 @@ if ENV.exists():
 
 # ---------------------------------------------------------------- missing artwork
 missing += [
-    ('Portraits: Gazza, Hank (present day), Lou Tran, Chief Steward Pemberton, Barry Doolan, Biscuit, the Windbreakers', 'Game falls back to coloured initials.'),
-    ('Portraits: June and Dex on-model', 'Held back as off-model; initials used.'),
+    ('Portraits: Gazza, Lou Tran, Chief Steward Pemberton, Barry Doolan, Biscuit, the Windbreakers', 'Game falls back to coloured initials.'),
+    ('Moods for Rosa (angry, sad, surprised), Dex, June and Hank in the crew-sheet style', 'One pose each; other moods show it with the placeholder frame.'),
     ('Mood sets for the six rivals, Marge and Rick (angry, happy, sad, smug, surprised)', 'Neutral is shown; reactions that should be angry are marked with a red frame as a labelled placeholder.'),
     ('Angry radio heads for all rivals', 'Calm head plus red frame placeholder.'),
-    ('Blond Duke: expressions (angry, happy, sad, smug, surprised) and a drawn 32x32 radio head', 'Neutral portrait shown; radio head is cropped from it.'),
-    ('Rosa angry and sad', '"serious" used as a labelled stand-in.'),
+    
     ('Paddock standing sprites and idle animations', 'Only reference poses supplied; paddock uses portraits.'),
     ('Duke event cards (envelope, roadhouse) and Hank racing-cam card', 'Held back as off-model; backgrounds plus portraits used.'),
     ('Finale reveal art for an original (fictional) character', 'Reveal uses the Yowie portrait and Hank\'s fictional canon until replaced.'),
@@ -336,7 +391,7 @@ manifest = {
     'debris': {'src': 'debris.png', 'size': 16, 'variants': 3, 'types': DEBRIS},
     'fx': fx_manifest, 'wildlife': wild_manifest, 'pickups': pick,
     'backdrops': bd, 'props': props, 'portraits': portraits, 'radio': radio,
-    'stadium': stadium, 'announce': announce, 'env': env, 'scenes': scenes, 'events': events, 'endings': endings, 'hud': hud, 'badges': badges, 'choices': choices,
+    'stadium': stadium, 'announce': announce, 'env': env, 'extra': extra, 'scenes': scenes, 'events': events, 'endings': endings, 'hud': hud, 'badges': badges, 'choices': choices,
     'placeholders': {'rosa.angry': 'serious', 'rosa.sad': 'serious', 'radio.angry': 'calm + red frame', 'portrait.mood': 'neutral + frame tint'},
 }
 (OUT / 'manifest.js').write_text('// Generated by tools/curate_art.py. Do not edit by hand.\nwindow.A8_ART=' + json.dumps(manifest, separators=(',', ':')) + ';\n')

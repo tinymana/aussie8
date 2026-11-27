@@ -2,6 +2,29 @@
   "_howto": "Newest first. Add an entry at the top each time you push an update; the website and the in-game 'What's new' both read this file. tag: new | improved | fixed.",
   "notes": [
     {
+      "version": "1.2",
+      "date": "2026-11-27",
+      "title": "New faces",
+      "items": [
+        {
+          "tag": "new",
+          "text": "Blond Duke gets a full set of moods (cocky, grinning, snarling, smug, sulking and shocked), and so does the Yowie in his goggles and racing harness."
+        },
+        {
+          "tag": "new",
+          "text": "New portraits for Rosa, Dex, June and Hank. Dex and June now show their faces in their story scenes."
+        },
+        {
+          "tag": "improved",
+          "text": "The finale shows the Yowie in his harness before the helmet comes off, then Hank as he is today next to his 1994 archive photo."
+        },
+        {
+          "tag": "improved",
+          "text": "A walkie-talkie sits in the corner of the rival radio box during races."
+        }
+      ]
+    },
+    {
       "version": "1.1",
       "date": "2026-11-27",
       "title": "Aussie music",
