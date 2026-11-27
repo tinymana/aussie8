@@ -1,0 +1,2 @@
+# Wildlife impact FX
+Use existing collision event and remove wildlife sprite once. Play impact_01 through 04 at 85 ms each, plus species burst 01 through 06 at 85 ms. Center at world collision point. Do not render a second truck. No physics changes. Dust and feathers optional. Generated crops are draft effects with approximate color-key transparency; inspect edges. Burst frames are procedural top-down overlays. No persistent animal remains.
