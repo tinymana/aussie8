@@ -2,6 +2,21 @@
   "_howto": "Newest first. Add an entry at the top each time you push an update; the website and the in-game 'What's new' both read this file. tag: new | improved | fixed.",
   "notes": [
     {
+      "version": "1.1",
+      "date": "2026-11-27",
+      "title": "Aussie music",
+      "items": [
+        {
+          "tag": "new",
+          "text": "Original music made right in the game: “Billabong Sunset” on the menus and “Red Dirt Run” in races, with didgeridoo, clapsticks, a pub-rock chug and a chiptune lead."
+        },
+        {
+          "tag": "new",
+          "text": "Aussie 8 is dedicated to Ivan “Ironman” Stewart and Super Off Road, the arcade classic that inspired it."
+        }
+      ]
+    },
+    {
       "version": "1.0",
       "date": "2026-11-27",
       "title": "Aussie 8 goes online",

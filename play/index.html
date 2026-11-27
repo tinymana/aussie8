@@ -177,6 +177,7 @@ table.board .btn{padding:4px 8px;font-size:11px}
 .roomcode{font-family:'Press Start 2P',monospace;font-size:clamp(28px,7vw,56px);color:var(--gold);letter-spacing:.2em;margin:6px 0}
 .riders.lobby{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.riders.lobby .pill{border:2px solid;padding:6px 10px}
 .board.laps td:first-child{width:auto}
+.dedication{margin:16px 0 0;font-size:13px;color:rgba(251,248,242,.7);font-style:normal}
 </style>
 </head>
 <body>
@@ -755,21 +756,44 @@ function aiInput(c,dt){
   return{gas,brake,steer,nitro:!c.isP&&c.nitro>0&&curv<0.15&&Math.random()<dt*0.35,shunt:wantShunt};
 }
 const NOINP={gas:false,brake:false,steer:0,nitro:false};
-/* ---------- SOUND: every effect is synthesised live with WebAudio (no files). The owner's soundtrack plays from
-   MUSIC_FILE once it is added to play/music/; until then the game is silent between effects. ---------- */
+/* ---------- SOUND: every effect and both songs are synthesised live with WebAudio (no files). Set MUSIC_FILE to
+   play a recorded soundtrack from play/music/ instead of the built-in songs. ---------- */
 const MUSIC_FILE=null;   // e.g. 'music/aussie8_theme.mp3'
+/* Two original songs: "Billabong Sunset" (menus) and "Red Dirt Run" (races). E minor, didgeridoo drone with
+   rhythmic toots, clapsticks, a chiptune pub-rock chug, square-wave bass and a pulse lead with echo.
+   Notes are MIDI numbers; a part's steps are 16ths; leads are [step, note, length in 16ths] per bar. */
+const SONGS={
+  menu:{bpm:96,drone:41.2,echo:.35,prog:[40,36,43,38],
+    sections:[{bars:4,didge:.5,sticks:1,bass:1},{bars:8,didge:.4,sticks:1,bass:1,lead:'a',hat:1},{bars:8,didge:.4,sticks:1,bass:1,lead:'b',hat:1,kick:1},{bars:4,didge:.7,sticks:1}],loopFrom:1,
+    bass:[0,null,null,null,7,null,null,null,12,null,null,null,7,null,null,null],
+    sticks:[2,0,0,0,1,0,0,0,2,0,0,0,1,0,1,0],kick:[1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],hat:[0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],
+    didgeT:[1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0],
+    leads:{a:[[[0,71,4],[4,69,2],[6,67,2],[8,64,8]],[[0,67,4],[4,69,2],[6,71,2],[8,72,4],[12,71,4]],[[0,74,6],[6,71,2],[8,67,4],[12,69,4]],[[0,66,4],[4,69,4],[8,74,4],[12,72,2],[14,71,2]]],
+           b:[[[0,76,3],[3,74,3],[6,71,2],[8,74,8]],[[0,72,4],[4,71,2],[6,69,2],[8,67,8]],[[0,71,2],[2,74,2],[4,79,4],[8,78,4],[12,74,4]],[[0,76,8],[8,74,2],[10,71,2],[12,69,4]]]},
+    leadWave:'triangle',leadVol:.13},
+  race:{bpm:148,drone:41.2,echo:.22,prog:[40,40,38,36,38,38,40,40],
+    sections:[{bars:4,didge:.7,sticks:1,bass:1,kick:1},{bars:8,didge:.35,sticks:1,bass:1,chug:1,kick:1,snare:1,hat:1,lead:'a'},{bars:8,didge:.35,sticks:1,bass:1,chug:1,kick:1,snare:1,hat:1,lead:'b'},{bars:2,didge:.9,sticks:1,kick:1}],loopFrom:1,
+    bass:[0,null,0,12,0,null,0,12,0,null,0,12,10,null,7,null],
+    chug:[1,0,1,1,0,1,1,0,1,0,1,1,0,1,0,0],
+    sticks:[2,0,1,0,2,0,1,0,2,0,1,0,2,0,1,1],kick:[1,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0],snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,1],hat:[1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1],
+    didgeT:[1,0,0,1,0,0,1,0,1,0,0,1,0,0,1,0],
+    leads:{a:[[[0,76,2],[2,74,2],[4,71,4],[8,69,2],[10,71,2],[12,74,4]],[[0,74,2],[2,71,2],[4,69,4],[8,66,2],[10,69,2],[12,71,4]],[[0,72,4],[4,71,2],[6,69,2],[8,67,4],[12,64,4]],[[0,66,2],[2,69,2],[4,74,6],[12,71,2],[14,69,2]]],
+           b:[[[0,79,3],[3,76,3],[6,74,2],[8,76,8]],[[0,78,3],[3,74,3],[6,71,2],[8,74,8]],[[0,76,2],[2,79,2],[4,76,2],[6,74,2],[8,72,4],[12,71,4]],[[0,69,4],[4,71,4],[8,74,4],[12,78,4]]]},
+    leadWave:'square',leadVol:.075}};
+const mtof=m=>440*Math.pow(2,(m-69)/12);
 const SND=(()=>{
-  let ac=null,sfx,mus,nb,L=null;const last={};
+  let ac=null,sfx,mg,nb,L=null;const last={};const M={on:false,song:null};
   const cfg=(()=>{try{return Object.assign({sfx:.8,music:.6,mute:false},JSON.parse(localStorage.getItem('aussie8-sound')||'{}'))}catch(e){return{sfx:.8,music:.6,mute:false}}})();
   const save=()=>{try{localStorage.setItem('aussie8-sound',JSON.stringify(cfg))}catch(e){}};
   const music=new Audio();music.loop=true;music.preload='none';let musicOK=true,musicWant=false;
   music.addEventListener('error',()=>{musicOK=false});
-  const musVol=()=>{music.volume=cfg.mute?0:cfg.music*(mode==='race'?.55:1)};
+  const musLevel=()=>cfg.mute?0:cfg.music*(mode==='race'?.55:1);
+  const musVol=()=>{music.volume=musLevel();if(mg)mg.gain.setTargetAtTime(musLevel()*1.8,ac.currentTime,.2);if(ac&&musicWant&&!MUSIC_FILE)songStart(mode==='race'?'race':'menu')};
   function init(){
     if(ac){if(ac.state==='suspended')ac.resume();return}
     const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;ac=new AC();
     const comp=ac.createDynamicsCompressor();comp.threshold.value=-16;comp.ratio.value=5;comp.connect(ac.destination);
-    sfx=ac.createGain();sfx.gain.value=cfg.mute?0:cfg.sfx;sfx.connect(comp);
+    sfx=ac.createGain();sfx.gain.value=cfg.mute?0:cfg.sfx;sfx.connect(comp);mg=ac.createGain();mg.gain.value=0;mg.connect(comp);
     nb=ac.createBuffer(1,ac.sampleRate*2,ac.sampleRate);const d=nb.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
     if(musicWant)playMusic();
   }
@@ -834,7 +858,41 @@ const SND=(()=>{
     L.pkg.gain.setTargetAtTime(s.on?s.pack*.16:0,t,.15);
     L.crg.gain.setTargetAtTime(s.crowdOn?.025+s.crowd*.075:0,t,.35);L.cr.frequency.setTargetAtTime(500+s.crowd*600,t,.4);
   }
-  function playMusic(){musicWant=true;if(!musicOK||!MUSIC_FILE)return;if(!music.src)music.src=MUSIC_FILE;musVol();const p=music.play();if(p&&p.catch)p.catch(()=>{})}
+  function playMusic(){musicWant=true;if(!ac)return;if(!MUSIC_FILE){musVol();return}if(!musicOK)return;if(!music.src)music.src=MUSIC_FILE;musVol();const p=music.play();if(p&&p.catch)p.catch(()=>{})}
+  // ---- the built-in songs: a look-ahead step sequencer
+  function mt(type,f0,f1,dur,vol,t,dest,atk=.005){const o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.setValueAtTime(f0,t);if(f1!==f0)o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);
+    g.gain.setValueAtTime(1e-4,t);g.gain.exponentialRampToValueAtTime(vol,t+atk);g.gain.exponentialRampToValueAtTime(1e-4,t+dur);o.connect(g);g.connect(dest||mg);o.start(t);o.stop(t+dur+.03);return o}
+  function mh(dur,vol,type,f0,q,t){const n=ac.createBufferSource(),f=ac.createBiquadFilter(),g=ac.createGain();n.buffer=nb;f.type=type;f.frequency.value=f0;f.Q.value=q;
+    g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(1e-4,t+dur);n.connect(f);f.connect(g);g.connect(mg);n.start(t,Math.random()*1.5);n.stop(t+dur+.02)}
+  function songStart(name){
+    if(M.on&&M.song===name)return;songStop();const S=SONGS[name],t=ac.currentTime+.08;Object.assign(M,{on:true,song:name,S,step:0,t});
+    // didgeridoo: two detuned saws through a moving vocal formant, breathing with the beat
+    const o1=ac.createOscillator(),o2=ac.createOscillator(),f=ac.createBiquadFilter(),lp=ac.createBiquadFilter(),g=ac.createGain(),l=ac.createOscillator(),lg=ac.createGain();
+    o1.type=o2.type='sawtooth';o1.frequency.value=S.drone;o2.frequency.value=S.drone*1.006;f.type='bandpass';f.Q.value=5;f.frequency.value=380;lp.type='lowpass';lp.frequency.value=1100;
+    g.gain.value=0;l.frequency.value=S.bpm/60/4;lg.gain.value=140;l.connect(lg);lg.connect(f.frequency);[o1,o2].forEach(o=>o.connect(f));f.connect(lp);lp.connect(g);g.connect(mg);[o1,o2,l].forEach(o=>o.start(t));
+    const dl=ac.createDelay(1),fb=ac.createGain(),dw=ac.createGain();dl.delayTime.value=60/S.bpm*.75;fb.gain.value=.3;dw.gain.value=S.echo;dl.connect(fb);fb.connect(dl);dl.connect(dw);dw.connect(mg);
+    M.d={o1,o2,f,g,l,dl};M.timer=setInterval(songTick,25);
+  }
+  function songStop(){if(!M.on)return;clearInterval(M.timer);const t=ac.currentTime;try{M.d.g.gain.cancelScheduledValues(t);M.d.g.gain.setTargetAtTime(0,t,.08);[M.d.o1,M.d.o2,M.d.l].forEach(o=>o.stop(t+.5))}catch(e){}M.on=false;M.song=null}
+  function songTick(){if(!M.on)return;const S=M.S,sp=60/S.bpm/4;while(M.t<ac.currentTime+.15){songStep(S,M.step,M.t,sp);M.t+=sp;M.step++}}
+  function songStep(S,step,t,sp){
+    const total=S.sections.reduce((a,x)=>a+x.bars,0),head=S.sections.slice(0,S.loopFrom).reduce((a,x)=>a+x.bars,0);
+    let bar=Math.floor(step/16);if(bar>=total)bar=head+(bar-head)%(total-head);
+    let sec=null,bi=bar;for(const x of S.sections){if(bi<x.bars){sec=x;break}bi-=x.bars}
+    const st=step%16,root=S.prog[bi%S.prog.length],D=M.d;
+    if(st===0)D.g.gain.setTargetAtTime(sec.didge*.16,t,.08);   // the didge holds its one note under every chord
+    if(S.didgeT[st]&&sec.didge){D.g.gain.setValueAtTime(sec.didge*.26,t);D.g.gain.setTargetAtTime(sec.didge*.16,t+sp,.06);D.f.frequency.setValueAtTime(820,t);D.f.frequency.setTargetAtTime(360,t,.07)}
+    if(sec.sticks&&S.sticks[st])mt('triangle',S.sticks[st]===2?2350:1900,S.sticks[st]===2?2200:1800,.045,.11,t);
+    if(sec.kick&&S.kick[st])mt('sine',150,42,.16,.42,t);
+    if(sec.snare&&S.snare[st]){mh(.13,.22,'bandpass',1900,.9,t);mt('triangle',190,140,.07,.12,t)}
+    if(sec.hat&&S.hat[st])mh(.03,st%4===0?.09:.05,'highpass',7500,.7,t);
+    if(sec.bass&&S.bass[st]!=null){const f=mtof(root+S.bass[st]);mt('square',f,f,sp*1.7,.07,t);mt('triangle',f,f,sp*1.9,.12,t)}
+    if(sec.chug&&S.chug[st]){const f=mtof(root+12),lp=ac.createBiquadFilter();lp.type='lowpass';lp.frequency.value=1300;lp.connect(mg);
+      mt('square',f,f,sp*.75,.05,t,lp);mt('square',f*1.4983,f*1.4983,sp*.75,.04,t,lp);mt('sawtooth',f/2,f/2,sp*.75,.04,t,lp)}
+    if(sec.lead){for(const [s0,m,len] of S.leads[sec.lead][bi%4])if(s0===st){const f=mtof(m),d=len*sp,o=mt(S.leadWave,f,f,d,S.leadVol,t,null,.01);
+      const v=ac.createOscillator(),vg=ac.createGain();v.frequency.value=5.5;vg.gain.value=f*.012;v.connect(vg);vg.connect(o.frequency);v.start(t+Math.min(.15,d*.5));v.stop(t+d+.03);
+      const send=ac.createGain();send.gain.value=.6;const g2=ac.createGain();g2.gain.setValueAtTime(S.leadVol*.7,t);g2.gain.exponentialRampToValueAtTime(1e-4,t+d);o.connect(g2);g2.connect(send);send.connect(D.dl)}}
+  }
   function set(k,v){cfg[k]=v;save();if(sfx)sfx.gain.value=cfg.mute?0:cfg.sfx;musVol()}
   const silence=()=>update({on:false,spd:0,gas:false,boost:false,air:false,slip:0,pack:0,crowdOn:false,crowd:0});
   return{init,play,loops,update,silence,playMusic,musVol,set,cfg,get on(){return!!ac&&!cfg.mute}};
@@ -1487,7 +1545,7 @@ function showMenu(){
     <div class="key"><b>The crossover</b>Figure-8 tracks cross themselves. Time it badly and you get T-boned into a spin.</div>
     <div class="key"><b>Shunt</b>E or X (or SHUNT on phones) bumps the truck beside you. Rivals remember, and so do the Stewards.</div>
     <div class="key"><b>Between races</b>Upgrade the truck, level your driver and make choices that stick.</div>
-  </div><div id="whatsnew"></div>${ctlUI()}</div>`;
+  </div><div id="whatsnew"></div>${ctlUI()}<p class="dedication">Dedicated to Ivan “Ironman” Stewart and <i>Super Off Road</i>, the arcade classic that inspired Aussie 8.</p></div>`;
   renderWN();
 }
 function showEvent(ev){
@@ -1571,6 +1629,7 @@ function showEnding(){
   ov.innerHTML=`<div class="panel">${EK&&ARTM&&ARTM.endings[EK]?`<img class="endart" src="${artUrl(ARTM.endings[EK])}" alt="${title}">`:''}<p class="kicker">Season over</p><div class="title-logo" style="font-size:clamp(20px,4.4vw,40px)">${title.toUpperCase()}</div>
   ${lines.map(l=>`<p class="story" style="margin-bottom:10px">${l}</p>`).join('')}
   <div class="pills" style="margin-top:12px"><span class="pill">Karma ${k}</span><span class="pill">Duke ${G.rival}</span><span class="pill">Level ${G.lvl}</span><span class="pill">$${G.money.toLocaleString()}</span></div>
+  <p class="dedication">Dedicated to Ivan “Ironman” Stewart and <i>Super Off Road</i>, the arcade classic that inspired Aussie 8.</p>
   <div class="actions"><button class="btn" data-act="new">Start a new season</button><button class="btn ghost" data-act="title">Title screen</button></div></div>`;
 }
 /* The reveal only happens after the player beats the Yowie in the final round.
