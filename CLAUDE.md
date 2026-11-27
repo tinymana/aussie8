@@ -3,7 +3,7 @@
 ## Publishing (owner's standing instruction)
 
 - **Always push.** After every update, commit and push straight to `main` without asking first. GitHub Pages serves `main` at https://tinymana.github.io/aussie8/, so a push is how changes go live. Tell the owner once it is up (a hard refresh may be needed).
-- The repo is `tinymana/aussie8` (formerly `ianroland/aussie8`; the old URL redirects).
+- The repo is `tinymana/aussie8` (formerly `ianroland/aussie8`; the old URL redirects). From Claude sessions, push to `https://github.com/ianroland/aussie8` (the redirecting URL); the session's git proxy may only be authorized for that name.
 - Add an entry to `devnotes.json` (newest first) for player-visible changes; the site and the in-game "What's new" read it.
 
 ## Working on the game
