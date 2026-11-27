@@ -2,6 +2,25 @@
   "_howto": "Newest first. Add an entry at the top each time you push an update; the website and the in-game 'What's new' both read this file. tag: new | improved | fixed.",
   "notes": [
     {
+      "version": "2.1",
+      "date": "2026-11-27",
+      "title": "Ka-boing!",
+      "items": [
+        {
+          "tag": "new",
+          "text": "Hit a roo or an emu and it goes off in a cartoon blast of red dirt and fur or feathers, then sails off spinning over the scrub, dazed but fine. KA-BOING!"
+        },
+        {
+          "tag": "improved",
+          "text": "A cleaner Channel 8 LIVE bug in the top-right corner, with a blinking red dot."
+        },
+        {
+          "tag": "improved",
+          "text": "Outline buttons on the menus now have a purple background so they’re easier to see."
+        }
+      ]
+    },
+    {
       "version": "2.0",
       "date": "2026-11-27",
       "title": "Cloud saves, weekly challenge, trophies and Season 2",
