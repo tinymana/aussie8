@@ -106,3 +106,12 @@ The script copies only reviewed assets under the game's own names, builds sprite
 ## Credits
 
 Title art supplied by the project owner. Game code written with Claude.
+
+### Online
+
+Online features run on the owner's **tiny-mana-jams** Supabase project, in their own `aussie8` schema (nothing is shared with Typlympics or the other games there).
+
+- `supabase/functions/aussie8/index.ts`: the edge function, deployed as-is. Actions: `enter` (name + PIN, like Typlympics), `me`, `submit_lap` (Time Trial best lap + ghost, checked against the fastest a truck can go), `submit_race`, `board`, `ghost`, `signout`.
+- `supabase/migrations/`: the schema. The API roles have no access to it; only the function does.
+- Live races use Supabase Realtime broadcast on channel `aussie8:<ROOM>` with the publishable key; each player broadcasts their own truck 15 times a second, the host also broadcasts the AI rivals. `play/vendor/supabase-2.119.2.js` is the supabase-js browser build (MIT).
+

@@ -155,6 +155,28 @@ td.n{text-align:right;white-space:nowrap}
 .foot{color:var(--mute);font-size:13px;margin-top:12px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 @media(max-width:600px){.ov{padding:14px}.story{font-size:16px}}
 @media(prefers-reduced-motion:reduce){.press{animation:none}}
+
+.title-logo img{display:block;width:min(420px,80%);height:auto;margin:4px 0 8px}
+.panel.jam{text-align:center}.jam h2{font-family:'Press Start 2P',monospace;font-size:clamp(16px,3vw,24px);color:var(--gold);letter-spacing:.06em}
+.jam-who{font-family:'Press Start 2P',monospace;color:#fbf8f2;margin:0}
+.jam-slots{display:flex;gap:6px;justify-content:center;margin:14px 0 8px;flex-wrap:wrap}
+.jam-slots span{font-family:'Press Start 2P',monospace;font-size:clamp(16px,3.4vw,26px);width:1.5em;padding:.35em 0;border-bottom:4px solid var(--gold);color:#fbf8f2;background:rgba(0,0,0,.25)}
+.jam-slots.pin span{width:2em}
+.jam-keys{display:grid;gap:6px;margin:12px auto;max-width:520px}.jam-keys.name{grid-template-columns:repeat(9,1fr)}.jam-keys.pin{grid-template-columns:repeat(3,1fr);max-width:300px}
+.jk{font-family:'Press Start 2P',monospace;font-size:14px;min-height:44px;border:2px solid #4a3a66;background:#241938;color:#fbf8f2;border-radius:6px;cursor:pointer}
+.jk:hover,.jk:focus-visible{border-color:var(--gold);color:var(--gold)}.jk:active{transform:translateY(1px)}.jk.wide{font-size:10px}
+.jam-keys.name .jk.wide{grid-column:span 3}
+.trackpick{display:flex;align-items:center;gap:10px}.trackpick h2{margin:0;flex:1;text-align:center}
+.boards{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media (max-width:700px){.boards{grid-template-columns:1fr}}
+table.board{width:100%;border-collapse:collapse;font-size:14px}table.board td{padding:5px 6px;border-bottom:1px solid rgba(255,255,255,.08)}
+table.board td:first-child{width:2.2em;color:var(--gold)}table.board tr.me td{background:rgba(255,205,0,.12);color:#fff}
+table.board .btn{padding:4px 8px;font-size:11px}
+.tracks{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+#toast{position:fixed;left:50%;bottom:18px;transform:translate(-50%,40px);opacity:0;transition:.25s;background:#120a1e;color:#fbf8f2;border:2px solid var(--gold);padding:10px 16px;border-radius:8px;z-index:99;max-width:90vw;font-size:14px;pointer-events:none}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+.roomcode{font-family:'Press Start 2P',monospace;font-size:clamp(28px,7vw,56px);color:var(--gold);letter-spacing:.2em;margin:6px 0}
+.riders.lobby{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.riders.lobby .pill{border:2px solid;padding:6px 10px}
+.board.laps td:first-child{width:auto}
 </style>
 </head>
 <body>
@@ -489,7 +511,7 @@ function fresh(){return{money:400,karma:0,race:0,xp:0,lvl:1,sp:1,stats:{hand:0,g
   crew:{rosa:{in:true,aff:10,met:true,left:null},dex:{in:false,aff:0,met:false,left:null},june:{in:false,aff:0,met:false,left:null}},
   rival:0,opinion:{shazza:0,tash:0,sal:0,thommo:0,yowie:0,earl:0},flags:{},used:[],points:Object.fromEntries(['you',...RIVALS.map(r=>r.id)].map(k=>[k,0])),stage:'event'}}
 let G=null,R=null,mode='title',curEv=null,lastRes=null;
-const save=()=>{try{localStorage.setItem(SAVE,JSON.stringify(G))}catch(e){}};
+const save=()=>{if(G&&G.trial)return;try{localStorage.setItem(SAVE,JSON.stringify(G))}catch(e){}};
 function migrate(g){
   if(!g||!g.points)return g;
   if(g.points.gazza!=null&&g.points.yowie==null)g.points.yowie=g.points.gazza;   // the Yowie took Gazza's #6 seat
@@ -633,12 +655,14 @@ function mkCar(d,g,T,isP){
   else{c.st={max:194+G.race*5.5+d.skill,acc:250+G.race*6,turn:3.4,grip:7.5};if(d.id==='duke'&&G.flags.dukeSab!==undefined)c.st.max*=0.86}
   return c;
 }
+function newRace(T,cars,pl){const r={T,cars,pl,phase:'count',t:3.2,time:0,order:[],pick:[],pickT:3,parts:[],floats:[],shake:0,cash:0,picks:0,done:0,paused:false,roo:null,rooT:rnd(6,10),crashes:0,fx:[],debris:[],opD:{},pen:0,ute:null,flags:0,fine:0,radio:null,radioCD:{},radioG:3,rankT:0,ranks:{}};
+  r.layer=mkc(AW,AH);r.layer.getContext('2d').drawImage(T.img,0,0);r.crowd=null;return r}
 function startRace(){
   const T=trackFor(G.race),grid=[];for(let row=0;row<4;row++)for(const o of [-20,20])grid.push([T.L-40-row*56-(o>0?18:0),o]);
   const cars=[],slots=[0,1,2,3,4,6,7];RIVALS.forEach((r,i)=>cars.push(mkCar(r,grid[slots[i]],T,false)));
   const pl=mkCar({id:'you',name:'You',tag:'YOU'},grid[5],T,true);cars.push(pl);
-  R={T,cars,pl,phase:'count',t:3.2,time:0,order:[],pick:[],pickT:3,parts:[],floats:[],shake:0,cash:0,picks:0,done:0,paused:false,roo:null,rooT:rnd(6,10),crashes:0,fx:[],debris:[],opD:{},pen:0,ute:null,flags:0,fine:0,radio:null,radioCD:{},radioG:3,rankT:0,ranks:{}};
-  R.layer=mkc(AW,AH);R.layer.getContext('2d').drawImage(T.img,0,0);R.crowd=stadOK()?crowdNew(T):null;
+  R=newRace(T,cars,pl);
+  R.crowd=stadOK()?crowdNew(T):null;
   setMode('race');if(document.activeElement)document.activeElement.blur();if(TOUCH)pad.classList.add('hints');
   gridMoment();
 }
@@ -683,14 +707,14 @@ function doShunt(c){
 function updRivals(dt){
   R.radioG=Math.max(0,R.radioG-dt);if(R.radio){R.radio.t-=dt;if(R.radio.t<=0)R.radio=null}
   const pl=R.pl;
-  for(const c of R.cars){if(c.isP)continue;c.shuntCD-=dt;if(c.rage>0&&c.rage<999)c.rage=Math.max(0,c.rage-dt);
+  for(const c of R.cars){if(c.isP||c.human)continue;c.shuntCD-=dt;if(c.rage>0&&c.rage<999)c.rage=Math.max(0,c.rage-dt);
     const d=Math.hypot(c.x-pl.x,c.y-pl.y);if(d<52&&!pl.fin){c.alongT+=dt;if(c.alongT>0.8){radio(c.id,'along');c.alongT=-6}}else if(c.alongT>0)c.alongT=0}
   R.rankT-=dt;if(R.rankT<=0&&R.phase==='go'){R.rankT=0.5;const rk=rank(),pi=rk.indexOf(pl);
     if(R.leader&&R.leader!==rk[0].id){barry(rk[0].id==='yowie'?'yowie':'lead');crowdEvent('lead',rk[0].x/2)}R.leader=rk[0].id;
     for(const c of R.cars){if(c.isP)continue;const ci=rk.indexOf(c),was=R.ranks[c.id];if(was!=null&&was<R.ranks.you&&ci>pi)radio(c.id,'passed');R.ranks[c.id]=ci}R.ranks.you=pi}
   /* the Stewards: dirty driving fills a meter; when full their ute hunts you down for a black flag */
   R.pen=Math.max(0,R.pen-dt*1.5);
-  if(!R.ute&&R.pen>=100&&!pl.fin){const p=pointAt(R.T,pl.s-140);R.ute={s:pl.s-140,x:p.x,y:p.y,a:Math.atan2(p.ty,p.tx),t:0,off:0};R.floats.push({x:pl.x,y:pl.y-30,txt:'STEWARDS!',col:'#e63946',life:1.4});buzz([30,40,30]);SND.play('siren')}
+  if(!R.ute&&R.pen>=100&&!pl.fin&&!R.net&&!R.tt){const p=pointAt(R.T,pl.s-140);R.ute={s:pl.s-140,x:p.x,y:p.y,a:Math.atan2(p.ty,p.tx),t:0,off:0};R.floats.push({x:pl.x,y:pl.y-30,txt:'STEWARDS!',col:'#e63946',life:1.4});buzz([30,40,30]);SND.play('siren')}
   if(R.ute){const u=R.ute;u.t+=dt;const gap=(pl.dist%R.T.L+R.T.L)%R.T.L-((u.s%R.T.L)+R.T.L)%R.T.L,g2=((gap%R.T.L)+R.T.L)%R.T.L;
     if(g2>60&&g2<R.T.L/2){u.s+=Math.max(260,Math.hypot(pl.vx,pl.vy)*1.25)*dt;const p=pointAt(R.T,u.s),pn=nearest(R.T,pl.x,pl.y,pl.hint);u.off+=(pn.d-u.off)*Math.min(1,dt*3);
       const nx=p.x-p.ty*u.off,ny=p.y+p.tx*u.off;u.a=Math.atan2(ny-u.y,nx-u.x);u.x=nx;u.y=ny}
@@ -812,7 +836,8 @@ const SND=(()=>{
   }
   function playMusic(){musicWant=true;if(!musicOK||!MUSIC_FILE)return;if(!music.src)music.src=MUSIC_FILE;musVol();const p=music.play();if(p&&p.catch)p.catch(()=>{})}
   function set(k,v){cfg[k]=v;save();if(sfx)sfx.gain.value=cfg.mute?0:cfg.sfx;musVol()}
-  return{init,play,loops,update,playMusic,musVol,set,cfg,get on(){return!!ac&&!cfg.mute}};
+  const silence=()=>update({on:false,spd:0,gas:false,boost:false,air:false,slip:0,pack:0,crowdOn:false,crowd:0});
+  return{init,play,loops,update,silence,playMusic,musVol,set,cfg,get on(){return!!ac&&!cfg.mute}};
 })();
 ['pointerdown','keydown','touchstart'].forEach(t=>addEventListener(t,()=>{SND.init();SND.playMusic()},{capture:true,passive:true}));
 function physics(c,inp,dt){
@@ -1018,14 +1043,15 @@ function updRace(dt){
   R.time+=dt;
   R.pickT-=dt;
   if(R.pickT<=0&&R.pick.length<4){R.pickT=rnd(4,8);const p=pointAt(R.T,rnd(0,R.T.L)),o=rnd(-28,28);const q=Math.random();R.pick.push({type:q<0.5?'cash':q<0.88||!ART.img.pk_spanner?'nitro':'spanner',x:p.x-p.ty*o,y:p.y+p.tx*o,t:0})}
-  for(const c of R.cars)physics(c,c.isP&&!c.fin&&!c.auto?playerInput():aiInput(c,dt),dt);
-  updRoo(dt);
+  for(const c of R.cars){if(c.remote)continue;physics(c,c.isP&&!c.fin&&!c.auto?playerInput():aiInput(c,dt),dt)}
+  if(R.net)liveTick(dt);
+  updRoo(dt);lapTrack();
   const cs=R.cars;
   for(let i=0;i<cs.length;i++)for(let j=i+1;j<cs.length;j++){
-    const a=cs[i],b=cs[j];if(Math.abs(a.z-b.z)>12)continue;
+    const a=cs[i],b=cs[j];if(Math.abs(a.z-b.z)>12||(a.remote&&b.remote))continue;const ka=a.remote?0:b.remote?2:1,kb=b.remote?0:a.remote?2:1;
     const dx=b.x-a.x,dy=b.y-a.y,d2=dx*dx+dy*dy;
-    if(d2<900&&d2>0.01){const d=Math.sqrt(d2),nx=dx/d,ny=dy/d,o=(30-d)/2;a.x-=nx*o;a.y-=ny*o;b.x+=nx*o;b.y+=ny*o;
-      const rv=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;if(rv<0){const J=-rv*0.85;a.vx-=nx*J;a.vy-=ny*J;b.vx+=nx*J;b.vy+=ny*J;if(J>30){hurt(a,J*DMG.bump);hurt(b,J*DMG.bump);const pl=a.isP?a:b.isP?b:null,o=pl===a?b:a;if(pl&&o.crashT>0&&!(o.rammedT>R.time)){o.rammedT=R.time+2;crowdEvent('ram',o.x/2);opDelta(o.id,-20);R.pen+=25*(G.karma<-35?1.4:1);radio(o.id,'hit')}}if((a.isP||b.isP)&&J>30){R.shake=Math.max(R.shake,2);SND.play('bump',J/90)}
+    if(d2<900&&d2>0.01){const d=Math.sqrt(d2),nx=dx/d,ny=dy/d,o=(30-d)/2;a.x-=nx*o*ka;a.y-=ny*o*ka;b.x+=nx*o*kb;b.y+=ny*o*kb;
+      const rv=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;if(rv<0){const J=-rv*0.85;a.vx-=nx*J*Math.min(1,ka);a.vy-=ny*J*Math.min(1,ka);b.vx+=nx*J*Math.min(1,kb);b.vy+=ny*J*Math.min(1,kb);if(J>30){hurt(a,J*DMG.bump);hurt(b,J*DMG.bump);const pl=a.isP?a:b.isP?b:null,o=pl===a?b:a;if(pl&&o.crashT>0&&!(o.rammedT>R.time)){o.rammedT=R.time+2;crowdEvent('ram',o.x/2);opDelta(o.id,-20);R.pen+=25*(G.karma<-35?1.4:1);radio(o.id,'hit')}}if((a.isP||b.isP)&&J>30){R.shake=Math.max(R.shake,2);SND.play('bump',J/90)}
         const hd=Math.abs(wrapA(a.a-b.a)),pl=a.isP?a:b.isP?b:null,need=CRASH.minJ+(pl?G.stats.grit*CRASH.gritJ:0);if(J>need&&hd>CRASH.hdMin&&hd<CRASH.hdMax&&a.crashT<=0&&b.crashT<=0)crash(a,b,J)}}
   }
   for(const p of R.pick){p.t+=dt;for(const c of cs){if(p.got)break;if(c.z<10&&Math.hypot(c.x-p.x,c.y-p.y)<24){p.got=true;
@@ -1034,7 +1060,7 @@ function updRace(dt){
     else if(c.isP){const amt=Math.round(rnd(40,120)*(1+G.race*0.12));R.cash+=amt;R.picks++;R.floats.push({x:p.x,y:p.y,txt:'+$'+amt,col:'#ffcd00',life:1});SND.play('cash')}
     burst(p.x,p.y,p.type==='nitro'?'#5fd37e':p.type==='spanner'?'#9fd3ee':'#ffcd00',10,120,2)}}}
   R.pick=R.pick.filter(p=>!p.got);
-  if(R.pl.fin){R.done+=dt;if(R.done>4||cs.every(c=>c.fin))endRace()}
+  if(R.pl.fin){R.done+=dt;if(R.done>(R.net?20:4)||cs.every(c=>c.fin))endRace()}
 }
 const ri=Math.round;
 function drawRace(){
@@ -1048,6 +1074,7 @@ function drawRace(){
   bx.globalAlpha=1;
   if(R.fx)drawFx(false);if(R.debris&&ART.img.debris)drawDebris();
   const idx=a=>((ri(((a%(Math.PI*2))+Math.PI*2)%(Math.PI*2)/(Math.PI*2)*32))%32);
+  drawGhost(idx);
   for(const c of R.cars){const a=A(c.x,c.y),S=SPRITES[c.id][dstage(c)];bx.drawImage(S.shadow[idx(c.a)],ri(a.x-15+2+c.z*0.2),ri(a.y-15+3+c.z*0.25))}
   const WK=r=>r.kind==='emu'?(r.big>0?'emu_evade':'emu_run'):(r.big>0?'roo_leap':'roo_run');
   if(R.roo&&ART.img['wl_'+WK(R.roo)]){const r=R.roo,a=A(r.x,r.y),k=WK(r),m=ARTM.wildlife[k],fr=Math.floor(r.t*(r.big>0?10:13))%m.n;
@@ -1070,7 +1097,7 @@ function drawRace(){
   const big=(txt,y,size,col)=>{ctx.font=size+'px "Press Start 2P",monospace';ctx.lineWidth=8;ctx.strokeStyle='#000';ctx.strokeText(txt,W/2,y);ctx.fillStyle='#00843d';ctx.fillText(txt,W/2+5,y+5);ctx.fillStyle=col;ctx.fillText(txt,W/2,y)};
   if(R.phase==='count'){big(T.name.toUpperCase(),H/2-80,20,'#fbf8f2');big('RACE '+(G.race+1)+' OF '+SEASON+(T.fig?' · FIGURE 8':' · LOOP'),H/2-50,12,'#ffc46b');big(String(Math.min(3,Math.ceil(R.t))),H/2+20,80,'#ffcd00')}
   else if(R.time<0.9)big('GO!',H/2,80,'#ffcd00');
-  drawBroadcast();drawRadio();
+  drawBroadcast();drawRadio();if(R.net)drawTags();
   if(R.paused){ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='rgba(20,10,34,.72)';ctx.fillRect(0,0,W,H);big('PAUSED',H/2-16,36,'#fbf8f2');ctx.font='16px Rubik,sans-serif';ctx.fillStyle='#fbf8f2';ctx.fillText('Press P or tap to resume',W/2,H/2+34)}
 }
 /* Channel 8 broadcast: live bug, grid lower third, final lap / race complete banners, Barry's ticker, damage + Stewards meters */
@@ -1138,6 +1165,7 @@ function drawHUD(){
   ctx.textAlign='left';
 }
 function endRace(){
+  if(R.tt)return endTT();if(R.net)return endNet();
   const rk=rank(),pi=rk.indexOf(R.pl);
   rk.forEach((c,i)=>{G.points[c.id]=(G.points[c.id]||0)+PTS[i]});
   const won=Math.round(PRIZE[pi]*(1+G.race*0.1)*dexMult()/10)*10,xp=XPP[pi]+R.picks*10;
@@ -1157,7 +1185,7 @@ function endRace(){
   if(dexMult()>1)notes.push('Dex squeezed an extra 20% out of the purse.');
   if(juneBonus())notes.push('June’s spotting earned you '+juneBonus()+' bonus nitro this race.');
   if(G.race===SEASON-1){const yi=rk.findIndex(c=>c.id==='yowie');if(yi>=0&&pi<yi)G.flags.yowieBeaten=G.race}
-  const T=R.T;G.race++;G.stage=G.race>=SEASON?'end':'event';save();
+  const T=R.T;netRace(TRACKS.indexOf(T),R.pl.ft,pi+1);G.race++;G.stage=G.race>=SEASON?'end':'event';save();
   lastRes={rk:rk.map(c=>({id:c.id,ft:c.fin?c.ft:null})),pi,won,cash:R.cash,xp,lv,notes,track:T.name};
   showResults();
 }
@@ -1176,7 +1204,7 @@ const SCENE_IMG={};
 let bgKind='title';
 titleImg.onload=()=>{if(mode!=='race')drawBg(bgKind)};
 function setMode(m,bg){
-  mode=m;SND.musVol();scr.classList.toggle('menu',m==='menu');scr.classList.toggle('title',m==='title');ov.hidden=m==='race';
+  mode=m;SND.musVol();if(m!=='race')SND.silence();scr.classList.toggle('menu',m==='menu');scr.classList.toggle('title',m==='title');ov.hidden=m==='race';
   const playing=m==='race'&&TOUCH;scr.classList.toggle('playing',playing);pad.hidden=!playing;document.documentElement.style.overflow=playing?'hidden':'';
   if(!playing){ptrs.clear();syncTS();stickEl.classList.remove('on')}
   if(m!=='race'){bgKind=bg||(m==='title'?'title':'track');drawBg(bgKind);scr.scrollIntoView({block:'nearest'})}
@@ -1219,12 +1247,238 @@ function applyCtl(){pad.className=(CTL.mode==='stick'?'m-stick':'m-buttons')+(CT
   document.getElementById('hintR').textContent=CTL.mode==='stick'?'Gas is automatic. Tap NITRO or SHUNT':'Hold GAS, roll to NITRO';
   const sb=pad.querySelector('.shn');if(sb)sb.classList.toggle('art',!!(ARTM&&ARTM.hud.btn_shunt));
   try{localStorage.setItem('aussie8-ctl',JSON.stringify(CTL))}catch(e){}}
+/* ---------- ONLINE (tiny-mana-jams Supabase, `aussie8` edge function) ----------
+   Sign-in is arcade style like Typlympics: a name and a four-digit PIN. Best Laps come from Time Trial, where
+   everyone drives the same standard truck and each best lap stores its ghost. Best Races come from season races. */
+const NET={url:'https://epvpekylasvxoipxyvku.supabase.co/functions/v1/aussie8',sb:'https://epvpekylasvxoipxyvku.supabase.co',key:'sb_publishable_TLoH_YF1GCoDR4ts-hPLnQ_N12xZ-YT',
+  me:(()=>{try{return JSON.parse(localStorage.getItem('aussie8-online')||'null')}catch(e){return null}})(),
+  keep(){try{this.me?localStorage.setItem('aussie8-online',JSON.stringify(this.me)):localStorage.removeItem('aussie8-online')}catch(e){}},
+  async call(action,body={}){let r;
+    try{r=await fetch(this.url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({action},body))})}
+    catch(e){throw Object.assign(new Error('Can’t reach the Aussie 8 server. Check your connection.'),{code:'offline'})}
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok){if(j.error==='signed_out'){this.me=null;this.keep()}throw Object.assign(new Error(j.message||'Something went wrong. Try again.'),{code:j.error||'server'})}
+    return j}};
+const fmtMs=ms=>{ms=Math.max(0,Math.round(ms));const m=Math.floor(ms/60000),s=((ms%60000)/1000).toFixed(2);return m?m+':'+s.padStart(5,'0'):s};
+function toast(msg,ms=3200){let t=document.getElementById('toast');if(!t){t=document.createElement('div');t.id='toast';document.body.appendChild(t)}
+  t.textContent=msg;t.classList.add('on');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('on'),ms)}
+// a loaner truck for Time Trial and online races; never saved, so the season is untouched
+let HOME_G=null;
+function borrowG(){if(!HOME_G)HOME_G={g:G};G=Object.assign(fresh(),{upg:{eng:3,tire:3,shk:3},stats:{hand:2,grit:2,nerve:2,charm:0},nitro:3,trial:true})}
+function returnG(){if(HOME_G){G=HOME_G.g;HOME_G=null}}
+/* laps and ghosts: every race times each lap and samples the player every 100 ms as [x, y, angle x 100] */
+function lapTrack(){
+  const p=R.pl,T=R.T;if(!R.lt)R.lt={n:0,t0:0,gs:[],next:0,laps:[]};const L=R.lt;if(R.phase!=='go')return;
+  while(R.time>=L.next){L.gs.push(Math.round(p.x),Math.round(p.y),Math.round(p.a*100));L.next+=0.1}
+  const lap=Math.floor(p.dist/T.L);
+  if(lap>L.n&&lap<=LAPS){const ms=Math.round((R.time-L.t0)*1000);L.laps.push({ms,ghost:L.gs});L.n=lap;L.t0=R.time;L.gs=[];L.next=R.time;
+    const best=L.laps.every(l=>l.ms>=ms);R.floats.push({x:p.x,y:p.y-34,txt:'LAP '+fmtMs(ms)+(best&&L.laps.length>1?' BEST':''),col:best?'#5fd37e':'#9fd3ee',life:1.8});
+    if(R.tt){const g=R.tt.g;if(g){const d=ms-g.lap_ms;R.floats.push({x:p.x,y:p.y-54,txt:(d<=0?'-':'+')+fmtMs(Math.abs(d))+' '+g.name,col:d<=0?'#5fd37e':'#e63946',life:2.2})}R.tt.ghostT0=R.time}}
+}
+function drawGhost(idx){
+  const g=R.tt&&R.tt.g;if(!g||R.phase!=='go')return;const arr=g.ghost,n=arr.length/3;if(n<2)return;
+  const t=(R.time-(R.tt.ghostT0||0))/((g.step_ms||100)/1000),i=Math.min(n-1,Math.floor(t)),j=Math.min(n-1,i+1),f=Math.min(1,Math.max(0,t-i));
+  const x=arr[i*3]+(arr[j*3]-arr[i*3])*f,y=arr[i*3+1]+(arr[j*3+1]-arr[i*3+1])*f,a=A(x,y);
+  bx.globalAlpha=t>=n-1?0.18:0.45;bx.drawImage(SPRITES.you[0].spr[idx(arr[i*3+2]/100)],ri(a.x-15),ri(a.y-15));bx.globalAlpha=1;
+}
+function netRace(ti,ft,place){if(!NET.me||!(ft>0))return;
+  NET.call('submit_race',{token:NET.me.token,track:ti,race_ms:Math.round(ft*1000),place}).then(r=>{if(r.improved)toast('New best race on '+TRACKS[ti].name+': '+fmtMs(ft*1000)+' · on the online board')}).catch(e=>toast(e.message))}
+/* ---- arcade sign-in */
+let SI=null;
+function showSignIn(after){SI={step:'name',name:NET.me?NET.me.name:'',pin:'',msg:'',busy:false,after:after||showOnline};drawSignIn()}
+function drawSignIn(){
+  setMode('menu','title');const nm=SI.step==='name';
+  const keys=nm?[...'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789','SPC','DEL','END']:['1','2','3','4','5','6','7','8','9','DEL','0','END'];
+  const slots=nm?Array.from({length:10},(_,i)=>SI.name[i]&&SI.name[i]!==' '?SI.name[i]:i<SI.name.length?'·':'_'):Array.from({length:4},(_,i)=>i<SI.pin.length?'●':'_');
+  ov.innerHTML=`<div class="panel jam"><p class="kicker">Aussie 8 online</p><h2>${nm?'ENTER YOUR NAME':'ENTER YOUR PIN'}</h2>
+  ${nm?'':`<p class="jam-who">${esc(SI.name)}</p>`}<div class="jam-slots ${nm?'':'pin'}">${slots.map(c=>`<span>${esc(c)}</span>`).join('')}</div>
+  <p class="muted">${nm?'Up to 10 letters or numbers. A new name makes a new driver. A name you already own needs its PIN.':'Four digits. It is the only way back into this name, on any device, so pick one you will remember.'}</p>
+  <div class="jam-keys ${nm?'name':'pin'}">${keys.map(k=>`<button class="jk${k.length>1?' wide':''}" data-act="jk:${k}" ${SI.busy?'disabled':''}>${k==='SPC'?'SPACE':k}</button>`).join('')}</div>
+  ${SI.msg?`<p class="note" role="alert">${esc(SI.msg)}</p>`:''}
+  <div class="actions"><button class="btn ghost" data-act="${nm?'online':'jk:BACK'}">Back</button></div></div>`;
+}
+function jamKey(k){
+  if(!SI||SI.busy)return;SI.msg='';
+  if(SI.step==='name'){
+    if(k==='DEL')SI.name=SI.name.slice(0,-1);
+    else if(k==='SPC'){if(SI.name&&!SI.name.endsWith(' ')&&SI.name.length<10)SI.name+=' '}
+    else if(k==='END'){SI.name=SI.name.trim();if(!SI.name){SI.msg='Enter a name first.'}else{SI.step='pin';SI.pin=''}}
+    else if(/^[A-Z0-9]$/.test(k)&&SI.name.length<10)SI.name+=k;
+  }else{
+    if(k==='BACK'){SI.step='name'}
+    else if(k==='DEL')SI.pin=SI.pin.slice(0,-1);
+    else if(/^[0-9]$/.test(k)&&SI.pin.length<4){SI.pin+=k;if(SI.pin.length===4)k='END'}
+    if(k==='END'){if(SI.pin.length<4){SI.msg='The PIN is four digits.'}else{signIn();return}}
+  }
+  drawSignIn();
+}
+async function signIn(){
+  SI.busy=true;drawSignIn();
+  try{const r=await NET.call('enter',{name:SI.name,pin:SI.pin});NET.me={token:r.token,name:r.driver.name,id:r.driver.id};NET.keep();
+    SND.play('win');toast(r.created?'Welcome to the grid, '+r.driver.name+'!':'Welcome back, '+r.driver.name+'!');const after=SI.after;SI=null;after()}
+  catch(e){SI.busy=false;SI.pin='';SI.msg=e.message;if(e.code==='wrong_pin'||e.code==='locked')SI.step='pin';if(e.code==='bad_name'||e.code==='name_taken')SI.step='name';SND.play('flag');drawSignIn()}
+}
+/* ---- online hub */
+function showOnline(){
+  SI=null;setMode('menu','title');const me=NET.me;
+  ov.innerHTML=`<div class="panel"><p class="kicker">Aussie 8 online</p><h2>${me?'Driving as '+esc(me.name):'Sign in to go online'}</h2>
+  <p class="story">${me?'Your best laps and races go on the world boards automatically.':'Pick a name and a four-digit PIN, arcade style. Use the same name and PIN on any device.'}</p>
+  <div class="actions">${me?`<button class="btn ghost sm" data-act="signout">Sign out</button>`:`<button class="btn" data-act="signin">Sign in</button>`}</div>
+  <div class="keys">
+    <div class="key"><b>Leaderboards</b>The fastest laps and races on every track.<br><button class="btn sm" data-act="boards:0">Leaderboards</button></div>
+    <div class="key"><b>Time Trial</b>Just you, the track and a ghost. Everyone drives the same truck, so laps are fair.<br><button class="btn sm" data-act="tt">Time Trial</button></div>
+    <div class="key"><b>Race friends</b>Make a room, share the code, race live.<br><button class="btn sm" data-act="lobby" ${me?'':'disabled'}>${me?'Race friends':'Sign in first'}</button></div>
+  </div><div class="actions"><button class="btn ghost" data-act="menu">Back</button></div></div>`;
+}
+/* ---- leaderboards */
+let BOARD_T=0;
+async function showBoards(ti){
+  BOARD_T=(ti+TRACKS.length)%TRACKS.length;const T=TRACKS[BOARD_T],me=NET.me;setMode('menu','title');
+  const head=`<p class="kicker">Leaderboards</p><div class="trackpick"><button class="btn sm ghost" data-act="boards:${BOARD_T-1}" aria-label="Previous track">◀</button><h2>${esc(T.name)}</h2><button class="btn sm ghost" data-act="boards:${BOARD_T+1}" aria-label="Next track">▶</button></div>`;
+  ov.innerHTML=`<div class="panel">${head}<p class="muted">Loading…</p></div>`;
+  let d;try{d=await NET.call('board',{track:BOARD_T})}catch(e){if(mode==='menu')ov.innerHTML=`<div class="panel">${head}<p class="note">${esc(e.message)}</p><div class="actions"><button class="btn ghost" data-act="online">Back</button></div></div>`;return}
+  if(BOARD_T!==d.track)return;
+  const rows=(list,ghost)=>list.length?list.map((r,i)=>`<tr class="${me&&r.id===me.id?'me':''}"><td>${i+1}</td><td>${esc(r.name)}</td><td>${fmtMs(r.ms)}</td><td>${ghost?`<button class="btn sm ghost" data-act="ttg:${BOARD_T}:${r.id}">Race ghost</button>`:r.place?ordinal(r.place):''}</td></tr>`).join(''):`<tr><td colspan="4" class="muted">No times yet. Be the first.</td></tr>`;
+  ov.innerHTML=`<div class="panel wide">${head}<div class="boards">
+    <div><h3>Best laps <small class="muted">Time Trial</small></h3><table class="board">${rows(d.laps,true)}</table></div>
+    <div><h3>Best races <small class="muted">Season, 4 laps</small></h3><table class="board">${rows(d.races,false)}</table></div></div>
+    <div class="actions"><button class="btn" data-act="ttt:${BOARD_T}">Time Trial here</button><button class="btn ghost" data-act="online">Back</button></div></div>`;
+}
+const ordinal=n=>{const v=n%100;return n+(v>=11&&v<=13?'th':({1:'st',2:'nd',3:'rd'}[n%10]||'th'))};
+/* ---- time trial */
+function showTT(){setMode('menu','title');
+  ov.innerHTML=`<div class="panel"><p class="kicker">Time Trial</p><h2>Pick a track</h2><p class="story">Four laps against the clock in a standard truck (engine, tyres and shocks at level 3, 3 nitro). Beat the ghost of the fastest driver, or your own.</p>
+  <div class="tracks">${TRACKS.map((t,i)=>`<button class="btn sm ${t.cx?'':'ghost'}" data-act="ttt:${i}">${esc(t.name)}${t.cx?' · 8':''}</button>`).join('')}</div>
+  <div class="actions"><button class="btn ghost" data-act="online">Back</button></div></div>`}
+async function showTTTrack(ti){
+  const T=TRACKS[ti];setMode('menu','title');ov.innerHTML=`<div class="panel"><p class="kicker">Time Trial</p><h2>${esc(T.name)}</h2><p class="muted">Finding ghosts…</p></div>`;
+  let d=null;try{d=await NET.call('board',{track:ti})}catch(e){}
+  const top=d&&d.laps[0],mine=d&&NET.me&&d.laps.find(r=>r.id===NET.me.id);
+  ov.innerHTML=`<div class="panel"><p class="kicker">Time Trial</p><h2>${esc(T.name)}</h2>
+  <div class="choices">${top?`<button class="choice good" data-act="ttg:${ti}:${top.id}"><span class="tag">Fastest</span><span>Race ${esc(top.name)}'s ghost · ${fmtMs(top.ms)}</span></button>`:''}
+  ${mine&&mine.id!==top.id?`<button class="choice good" data-act="ttg:${ti}:${mine.id}"><span class="tag">You</span><span>Race your own ghost · ${fmtMs(mine.ms)}</span></button>`:''}
+  <button class="choice" data-act="ttg:${ti}:-"><span class="tag">Solo</span><span>No ghost${d?'':' (offline)'}</span></button></div>
+  ${NET.me?'':'<p class="note">Not signed in: your laps won’t go on the board.</p>'}
+  <div class="actions"><button class="btn ghost" data-act="tt">Back</button></div></div>`}
+async function startTT(ti,gid){
+  let g=null;
+  if(gid&&gid!=='-'){ov.innerHTML=`<div class="panel"><p class="muted">Loading ghost…</p></div>`;try{g=await NET.call('ghost',{track:ti,driver_id:gid});g.id=gid}catch(e){toast(e.message)}}
+  borrowG();const T=TRACKS[ti],pl=mkCar({id:'you',name:NET.me?NET.me.name:'You',tag:'YOU'},[T.L-14,0],T,true);pl.nitro=3;pl.bonus=0;
+  R=newRace(T,[pl],pl);R.tt={ti,g,ghostT0:0};R.pickT=1e9;R.rooT=1e9;R.crowd=stadOK()?crowdNew(T):null;
+  setMode('race');if(document.activeElement)document.activeElement.blur();if(TOUCH)pad.classList.add('hints');
+}
+function endTT(){
+  const L=R.lt||{laps:[]},laps=L.laps.slice(0,LAPS),tt=R.tt,T=TRACKS[tt.ti],best=laps.reduce((b,l)=>!b||l.ms<b.ms?l:b,null),total=R.pl.ft*1000;
+  R=null;returnG();setMode('menu','title');
+  ov.innerHTML=`<div class="panel"><p class="kicker">Time Trial · ${esc(T.name)}</p><h2>${best?'Best lap '+fmtMs(best.ms):'Finished'}</h2>
+  <table class="board laps">${laps.map((l,i)=>`<tr class="${l===best?'me':''}"><td>Lap ${i+1}</td><td>${fmtMs(l.ms)}</td><td>${tt.g?((l.ms-tt.g.lap_ms<=0?'−':'+')+fmtMs(Math.abs(l.ms-tt.g.lap_ms))+' vs '+esc(tt.g.name)):''}</td></tr>`).join('')}
+  <tr><td><b>Total</b></td><td><b>${fmtMs(total)}</b></td><td></td></tr></table>
+  <p class="note" id="netnote">${NET.me?(best?'Sending your best lap to the board…':''):'Sign in to put your laps on the board.'}</p>
+  <div class="actions"><button class="btn" data-act="ttg:${tt.ti}:${tt.g?tt.g.id||'-':'-'}">Go again</button><button class="btn ghost" data-act="boards:${tt.ti}">Leaderboard</button><button class="btn ghost" data-act="online">Online</button></div></div>`;
+  if(NET.me&&best)NET.call('submit_lap',{token:NET.me.token,track:tt.ti,lap_ms:best.ms,ghost:best.ghost})
+    .then(r=>{const el=document.getElementById('netnote');if(el)el.textContent=r.improved?`New personal best! You're #${r.rank} on ${T.name}.`:`Your best here is ${fmtMs(r.best_ms)}, #${r.rank} on the board.`;if(r.improved)SND.play('win')})
+    .catch(e=>{const el=document.getElementById('netnote');if(el)el.textContent=e.message});
+}
+/* ---------- LIVE RACES with friends: Supabase Realtime broadcast on channel aussie8:<CODE> ----------
+   No server game loop: each player simulates their own truck and broadcasts it 15 times a second; everyone else
+   draws it smoothed (dead reckoning). The host also drives the AI rivals that fill the grid and broadcasts them.
+   Friendly racing, not anti-cheat: room codes are private to whoever you share them with. */
+const LIV=['you','duke','sal','shazza','tash','thommo','yowie','earl'],CODE_LETTERS='BCDFGHJKLMNPQRSTVWXZ';
+const LIVE={sb:null,ch:null,code:null,players:[],cfg:{track:0,fill:true},status:'',joinCode:''};
+function liveLib(){if(window.supabase&&window.supabase.createClient)return Promise.resolve();return new Promise((res,rej)=>{const sc=document.createElement('script');sc.src='vendor/supabase-2.119.2.js';sc.onload=()=>res();sc.onerror=()=>rej(new Error('Could not load online racing. Check your connection.'));document.head.appendChild(sc)})}
+const liveHost=()=>LIVE.players.length&&NET.me&&LIVE.players[0].id===NET.me.id;
+async function liveJoin(code){
+  await liveLib();if(LIVE.ch)await liveLeave(true);
+  LIVE.sb=LIVE.sb||window.supabase.createClient(NET.sb,NET.key,{auth:{persistSession:false,autoRefreshToken:false}});
+  LIVE.code=code;LIVE.at=Date.now();LIVE.status='Joining room '+code+'…';
+  const ch=LIVE.sb.channel('aussie8:'+code,{config:{broadcast:{self:false},presence:{key:NET.me.id}}});LIVE.ch=ch;
+  ch.on('presence',{event:'sync'},()=>{const st=ch.presenceState(),ps=[];for(const k in st){const m=st[k][0];if(m)ps.push(m)}ps.sort((a,b)=>a.at-b.at||(a.id<b.id?-1:1));LIVE.players=ps;
+      if(liveHost())ch.send({type:'broadcast',event:'cfg',payload:LIVE.cfg});if(mode==='menu'&&LIVE.inLobby)drawLobby()})
+    .on('broadcast',{event:'cfg'},({payload})=>{if(!liveHost()){LIVE.cfg=payload;if(mode==='menu'&&LIVE.inLobby)drawLobby()}})
+    .on('broadcast',{event:'go'},({payload})=>liveStart(payload))
+    .on('broadcast',{event:'s'},({payload})=>liveState(payload))
+    .subscribe(async st=>{
+      if(st==='SUBSCRIBED'){await ch.track({id:NET.me.id,name:NET.me.name,at:LIVE.at});LIVE.status=''}
+      else if(st==='CHANNEL_ERROR'||st==='TIMED_OUT'){LIVE.status='Could not reach the race server. Try again.'}
+      if(mode==='menu'&&LIVE.inLobby)drawLobby()});
+}
+async function liveLeave(quiet){const ch=LIVE.ch;LIVE.ch=null;LIVE.players=[];LIVE.code=null;LIVE.inLobby=false;if(ch){try{await ch.untrack()}catch(e){}try{await LIVE.sb.removeChannel(ch)}catch(e){}}if(!quiet)showOnline()}
+function showLobby(){
+  if(!NET.me)return showSignIn(showLobby);setMode('menu','title');LIVE.inLobby=true;
+  if(!LIVE.ch){const qs=new URLSearchParams(location.search).get('room');
+    ov.innerHTML=`<div class="panel jam"><p class="kicker">Race friends</p><h2>MAKE OR JOIN A ROOM</h2>
+    <p class="story">Make a room and send your friends the code. Up to 8 drivers; empty spots can be filled with the season's rivals.</p>
+    <div class="actions" style="justify-content:center"><button class="btn" data-act="room:new">Make a room</button></div>
+    <h3 style="margin-top:18px">Join with a code</h3><div class="jam-slots">${[0,1,2,3].map(i=>`<span>${esc(LIVE.joinCode[i]||'_')}</span>`).join('')}</div>
+    <div class="jam-keys name">${[...CODE_LETTERS,'DEL','JOIN'].map(k=>`<button class="jk${k.length>1?' wide':''}" data-act="rk:${k}">${k}</button>`).join('')}</div>
+    ${LIVE.status?`<p class="note">${esc(LIVE.status)}</p>`:''}
+    <div class="actions"><button class="btn ghost" data-act="online">Back</button></div></div>`;
+    if(qs&&/^[A-Z]{4}$/.test(qs.toUpperCase())&&!LIVE.triedQS){LIVE.triedQS=true;LIVE.joinCode=qs.toUpperCase();roomKey('JOIN')}
+    return}
+  drawLobby();
+}
+function roomKey(k){if(k==='DEL')LIVE.joinCode=LIVE.joinCode.slice(0,-1);else if(k==='JOIN'){if(LIVE.joinCode.length===4){const c=LIVE.joinCode;LIVE.joinCode='';liveJoin(c).then(drawLobby).catch(e=>{LIVE.status=e.message;showLobby()});return}}else if(LIVE.joinCode.length<4)LIVE.joinCode+=k;showLobby()}
+function drawLobby(){
+  if(!LIVE.inLobby||mode!=='menu')return;const host=liveHost(),c=LIVE.cfg,T=TRACKS[c.track],link=location.origin+location.pathname+'?room='+LIVE.code;
+  ov.innerHTML=`<div class="panel"><p class="kicker">Race friends · room</p><div class="roomcode">${esc(LIVE.code||'')}</div>
+  <p class="muted">Share the code, or this link: <a href="${esc(link)}" style="color:var(--gold)">${esc(link)}</a> <button class="btn sm ghost" data-act="room:copy">Copy link</button></p>
+  <div class="riders lobby">${LIVE.players.map((p,i)=>`<span class="pill" style="border-color:${COLORS[LIV[i]]||'#fff'}"><b style="color:${COLORS[LIV[i]]||'#fff'}">■</b> ${esc(p.name)}${i===0?' · host':''}${NET.me&&p.id===NET.me.id?' (you)':''}</span>`).join('')||'<span class="muted">Connecting…</span>'}</div>
+  <h3>Track: ${esc(T.name)}${T.cx?' · figure-8':''}</h3>
+  ${host?`<div class="tracks">${TRACKS.map((t,i)=>`<button class="btn sm ${i===c.track?'':'ghost'}" data-act="room:track:${i}">${esc(t.name)}</button>`).join('')}</div>
+    <div class="seg"><button class="btn sm" data-act="room:fill" aria-pressed="${c.fill}">${c.fill?'Rivals fill the grid':'Only humans'}</button></div>`
+    :`<p class="muted">${c.fill?'Rivals fill the empty spots.':'Humans only.'} The host picks the track and starts the race.</p>`}
+  ${LIVE.status?`<p class="note">${esc(LIVE.status)}</p>`:''}
+  <div class="actions">${host?`<button class="btn" data-act="room:go">Start race</button>`:''}<button class="btn ghost" data-act="room:leave">Leave room</button></div></div>`;
+}
+function roomAct(v){
+  if(v==='new'){let c='';for(let i=0;i<4;i++)c+=CODE_LETTERS[Math.floor(Math.random()*CODE_LETTERS.length)];liveJoin(c).then(drawLobby).catch(e=>{LIVE.status=e.message;showLobby()})}
+  else if(v==='leave')liveLeave();
+  else if(v==='copy'){const link=location.origin+location.pathname+'?room='+LIVE.code;(navigator.clipboard?navigator.clipboard.writeText(link):Promise.reject()).then(()=>toast('Link copied')).catch(()=>toast(link,6000))}
+  else if(!liveHost())return;
+  else if(v.startsWith('track:')){LIVE.cfg.track=+v.slice(6);LIVE.ch.send({type:'broadcast',event:'cfg',payload:LIVE.cfg});drawLobby()}
+  else if(v==='fill'){LIVE.cfg.fill=!LIVE.cfg.fill;LIVE.ch.send({type:'broadcast',event:'cfg',payload:LIVE.cfg});drawLobby()}
+  else if(v==='go'){const humans=LIVE.players.slice(0,8),grid=humans.map((p,i)=>({uid:p.id,liv:LIV[i],name:p.name}));
+    if(LIVE.cfg.fill)for(let i=humans.length;i<8;i++)grid.push({uid:'ai:'+LIV[i],liv:LIV[i],ai:true,name:(RIVALS.find(r=>r.id===LIV[i])||{}).name||LIV[i]});
+    const go={track:LIVE.cfg.track,grid,host:NET.me.id};LIVE.ch.send({type:'broadcast',event:'go',payload:go});liveStart(go)}
+}
+function liveStart(go){
+  if(!NET.me||!go.grid.some(g=>g.uid===NET.me.id))return;LIVE.inLobby=false;borrowG();
+  const T=TRACKS[go.track],slots=[];for(let row=0;row<4;row++)for(const o of [-20,20])slots.push([T.L-40-row*56-(o>0?18:0),o]);
+  const imHost=go.host===NET.me.id,cars=[];let pl=null;
+  go.grid.forEach((g,i)=>{const me=g.uid===NET.me.id,rv=RIVALS.find(r=>r.id===g.liv);
+    const c=mkCar(g.ai&&rv?rv:{id:g.liv,name:g.name,tag:g.name.slice(0,4)},slots[i],T,me);c.id=g.liv;c.uid=g.uid;c.name=g.ai&&rv?rv.name:g.name;c.nitro=3;c.bonus=0;
+    if(!g.ai)c.human=true;if(!me&&!(g.ai&&imHost)){c.remote=true;c.snap=null}if(me)pl=c;cars.push(c)});
+  R=newRace(T,cars,pl);R.net={host:imHost,sendT:0,code:LIVE.code};R.pickT=1e9;R.rooT=1e9;R.crowd=stadOK()?crowdNew(T):null;
+  setMode('race');if(document.activeElement)document.activeElement.blur();if(TOUCH)pad.classList.add('hints');
+}
+function liveTick(dt){
+  const N=R.net;N.sendT-=dt;
+  if(N.sendT<=0&&LIVE.ch){N.sendT=1/15;const mine=R.cars.filter(c=>!c.remote).map(c=>[c.id,ri(c.x),ri(c.y),Math.round(c.a*100),ri(c.vx),ri(c.vy),ri(c.z),ri(c.dist),ri(c.dmg),c.nitroT>0?1:0,c.fin?Math.round(c.ft*1000):0]);
+    LIVE.ch.send({type:'broadcast',event:'s',payload:{c:mine}})}
+  const k=1-Math.exp(-dt*14),now=performance.now();
+  for(const c of R.cars){if(!c.remote||!c.snap)continue;const s=c.snap,age=Math.min(0.3,(now-s.t)/1000);
+    c.x+=(s.x+s.vx*age-c.x)*k;c.y+=(s.y+s.vy*age-c.y)*k;c.a+=wrapA(s.a-c.a)*k;c.vx=s.vx;c.vy=s.vy;c.z=s.z;c.dist=s.dist;c.dmg=s.dmg;c.dmgVis=s.dmg;c.nitroT=s.n?0.2:0;
+    if(s.ft&&!c.fin){c.fin=true;c.ft=s.ft/1000;R.order.push(c)}}
+}
+function liveState(p){if(!R||!R.net||!p||!Array.isArray(p.c))return;const now=performance.now();
+  for(const e of p.c){const c=R.cars.find(q=>q.id===e[0]);if(!c||!c.remote)continue;
+    if(!c.snap){c.x=e[1];c.y=e[2];c.a=e[3]/100}c.snap={t:now,x:e[1],y:e[2],a:e[3]/100,vx:e[4],vy:e[5],z:e[6],dist:e[7],dmg:e[8],n:e[9],ft:e[10]}}}
+function drawTags(){ctx.font='14px "Press Start 2P",monospace';ctx.textAlign='center';ctx.textBaseline='bottom';ctx.lineWidth=4;ctx.strokeStyle='#000';
+  for(const c of R.cars){if(!c.human||c.isP)continue;const a=A(c.x,c.y),x=a.x*2,y=a.y*2-30-c.z*0.7;ctx.strokeText(c.name,x,y);ctx.fillStyle=COLORS[c.id]||'#fff';ctx.fillText(c.name,x,y)}}
+function endNet(){
+  const cars=R.cars.slice().sort((a,b)=>a.fin&&b.fin?a.ft-b.ft:a.fin?-1:b.fin?1:b.dist-a.dist),me=R.pl,pos=cars.indexOf(me)+1;
+  R=null;returnG();setMode('menu','title');LIVE.inLobby=false;
+  ov.innerHTML=`<div class="panel"><p class="kicker">Room ${esc(LIVE.code||'')} · results</p><h2>You finished ${ordinal(pos)}</h2>
+  <table class="board">${cars.map((c,i)=>`<tr class="${c===me?'me':''}"><td>${i+1}</td><td><b style="color:${COLORS[c.id]||'#fff'}">■</b> ${esc(c.name)}${c.human?'':' <small class="muted">AI</small>'}</td><td>${c.fin?fmtMs(c.ft*1000):'DNF'}</td></tr>`).join('')}</table>
+  <div class="actions">${LIVE.ch?`<button class="btn" data-act="lobby">Back to the room</button>`:''}<button class="btn ghost" data-act="room:leave">Leave room</button></div></div>`;
+  SND.play(pos===1?'win':'finish');
+}
 function showMenu(){
   setMode('menu','title');const s=load();
   ov.innerHTML=`<div class="panel"><p class="kicker">One season · eight trucks · four loops and four figure-8s</p>
-  <div class="title-logo">AUSSIE 8</div>
+  <div class="title-logo"><img src="wordmark.png" alt="Aussie 8"></div>
   <p class="story">Eight trophy trucks and eight red-dirt arenas from the Red Centre to the Daintree. Half are flat-out loops; the other half are figure-8s with a crossover where everybody meets. Then live with what you do between races. Help strangers or rob them, take the bribe or leak it. Your crew remembers every call, and they’ll walk if you push them too far.</p>
-  <div class="actions">${s&&s.race<SEASON?`<button class="btn" data-act="cont">Continue season (race ${s.race+1} of ${SEASON})</button><button class="btn ghost" data-act="new">New season</button>`:`<button class="btn" data-act="new">Start season</button>`}</div>
+  <div class="actions">${s&&s.race<SEASON?`<button class="btn" data-act="cont">Continue season (race ${s.race+1} of ${SEASON})</button><button class="btn ghost" data-act="new">New season</button>`:`<button class="btn" data-act="new">Start season</button>`}<button class="btn ghost" data-act="online">Online${NET.me?' · '+esc(NET.me.name):''}</button></div>
   <div class="keys">
     <div class="key"><b>Drive</b>Arrow keys or WASD. On phones, drag your thumb where you want to go, or switch to buttons below.</div>
     <div class="key"><b>Nitro</b>Space or Shift. Grab green N canisters on track for more.</div>
@@ -1347,6 +1601,17 @@ ov.addEventListener('click',e=>{
   else if(a.startsWith('upg:')){const k=a.slice(4),l=G.upg[k],cost=Math.round(UPC[l]*discount()/10)*10;if(l<5&&G.money>=cost){G.money-=cost;G.upg[k]++;showGarage()}}
   else if(a==='nitro'){const cost=Math.round(150*discount()/10)*10;if(G.nitro<9&&G.money>=cost){G.money-=cost;G.nitro++;showGarage()}}
   else if(a==='race')startRace();
+  else if(a==='online')showOnline();
+  else if(a==='signin')showSignIn();
+  else if(a==='signout'){const t=NET.me&&NET.me.token;NET.me=null;NET.keep();if(t)NET.call('signout',{token:t}).catch(()=>{});showOnline()}
+  else if(a.startsWith('jk:'))jamKey(a.slice(3));
+  else if(a.startsWith('boards:'))showBoards(+a.slice(7));
+  else if(a==='tt')showTT();
+  else if(a.startsWith('ttt:'))showTTTrack(+a.slice(4));
+  else if(a.startsWith('ttg:')){const [,ti,id]=a.split(':');startTT(+ti,id)}
+  else if(a==='lobby')showLobby();
+  else if(a.startsWith('room:'))roomAct(a.slice(5));
+  else if(a.startsWith('rk:'))roomKey(a.slice(3));
   else if(a.startsWith('snd:')){const [,k,v]=a.split(':');if(k==='mute')SND.set('mute',!SND.cfg.mute);else SND.set(k,+v);b.closest('.card').outerHTML=sndUI()}
   else if(a.startsWith('ctl:')){const v=a.slice(4);if(v==='lefty')CTL.lefty=!CTL.lefty;else CTL.mode=v;applyCtl();
     b.closest('.card').outerHTML=ctlCard()}
@@ -1357,6 +1622,7 @@ ov.addEventListener('click',e=>{
 /* ---------- INPUT + LOOP ---------- */
 const GAMEKEYS=['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'];
 addEventListener('keydown',e=>{
+  if(SI&&mode==='menu'){const k=e.key.toUpperCase();if(/^[A-Z0-9]$/.test(k))jamKey(k);else if(e.key==='Backspace')jamKey('DEL');else if(e.key==='Enter')jamKey('END');else if(e.key===' ')jamKey('SPC');else if(e.key==='Escape'&&SI.step==='pin')jamKey('BACK');else return;e.preventDefault();return}
   if(e.code==='KeyM'&&!e.repeat){SND.set('mute',!SND.cfg.mute)}
   if(mode==='title'&&(e.code==='Enter'||e.code==='Space')){e.preventDefault();showMenu();return}
   if(mode!=='race')return;
@@ -1406,11 +1672,11 @@ applyCtl();
 let last=performance.now();
 function loop(now){
   const dt=Math.min(0.033,(now-last)/1000);last=now;
-  if(mode==='race'&&R){if(!R.paused)updRace(dt);if(mode==='race')drawRace()}
+  if(mode==='race'&&R){if(!R.paused)updRace(dt);else SND.silence();if(mode==='race'&&R)drawRace()}
   requestAnimationFrame(loop);
 }
 showTitle();requestAnimationFrame(loop);
-window.__A8={get G(){return G},get R(){return R},TRACKS,TS,ART,SPRITES,DMG,spawnDebris,gridChoice,doShunt,aggr,crowdEvent,SND,CRASH,updRace:dt=>updRace(dt)};
+window.__A8={get G(){return G},get R(){return R},TRACKS,TS,ART,SPRITES,DMG,spawnDebris,gridChoice,doShunt,aggr,crowdEvent,SND,CRASH,updRace:dt=>updRace(dt),liveStart:g=>liveStart(g),liveState:p=>liveState(p),LIVE,NET};
 loadArt().catch(e=>console.warn('Aussie 8: art load failed',e));
 }
 </script>

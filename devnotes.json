@@ -2,6 +2,33 @@
   "_howto": "Newest first. Add an entry at the top each time you push an update; the website and the in-game 'What's new' both read this file. tag: new | improved | fixed.",
   "notes": [
     {
+      "version": "1.0",
+      "date": "2026-11-27",
+      "title": "Aussie 8 goes online",
+      "items": [
+        {
+          "tag": "new",
+          "text": "Sign in arcade style with a name and a four-digit PIN, the same way as Typlympics. It works on any device."
+        },
+        {
+          "tag": "new",
+          "text": "Online leaderboards for every track: Best Laps from Time Trial and Best Races from your season races."
+        },
+        {
+          "tag": "new",
+          "text": "Time Trial: four laps in a standard truck against the clock, chasing the ghost of the fastest driver on the board or your own best. Every lap shows how far ahead of or behind the ghost you are."
+        },
+        {
+          "tag": "new",
+          "text": "Race friends live: make a room, share the 4-letter code or link, and race up to 8 people at once. The host picks the track and can fill empty spots with the season's rivals."
+        },
+        {
+          "tag": "improved",
+          "text": "The Aussie 8 logo now heads the in-game menu too."
+        }
+      ]
+    },
+    {
       "version": "0.9",
       "date": "2026-11-27",
       "title": "Sound, and kinder crashes",
