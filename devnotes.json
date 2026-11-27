@@ -2,6 +2,33 @@
   "_howto": "Newest first. Add an entry at the top each time you push an update; the website and the in-game 'What's new' both read this file. tag: new | improved | fixed.",
   "notes": [
     {
+      "version": "1.4",
+      "date": "2026-11-27",
+      "title": "Back-paddock deals",
+      "items": [
+        {
+          "tag": "new",
+          "text": "Meet Gazza Reid, the Yowie’s “manager”: lend him money, dob him in, or ask the wrong question about who’s under the helmet. Later he runs a book behind the dunnies, and one night the Yowie’s helmet slips."
+        },
+        {
+          "tag": "new",
+          "text": "Side bets and dirty jobs that play out on race day: put $200 on yourself for a podium, or take the windbreakers’ envelope to put Sal in the wall. Sal finds out."
+        },
+        {
+          "tag": "new",
+          "text": "Lou Tran, Channel 8’s pit reporter, sticks a mic in your face after a podium, digs into the 1994 crash, and might show you crossover-cam footage of Shazza punting you."
+        },
+        {
+          "tag": "new",
+          "text": "Get a nickname from Barry, and he’ll use it when you take the lead or find the scenery."
+        },
+        {
+          "tag": "new",
+          "text": "Drive dirty and Chief Steward Pemberton comes calling: start the next race on penalty points, argue it, or slip him an envelope so the Stewards look the other way for two races."
+        }
+      ]
+    },
+    {
       "version": "1.3",
       "date": "2026-11-27",
       "title": "The whole cast",
