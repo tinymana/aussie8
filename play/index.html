@@ -1381,7 +1381,8 @@ function endTT(){
 }
 /* ---------- LIVE RACES with friends: Supabase Realtime broadcast on channel aussie8:<CODE> ----------
    No server game loop: each player simulates their own truck and broadcasts it 15 times a second; everyone else
-   draws it smoothed (dead reckoning). The host also drives the AI rivals that fill the grid and broadcasts them.
+   draws it smoothed (dead reckoning). The send rate drops from 15 to ~7 a second as the room fills, to stay inside
+   the Supabase free plan's Realtime limit (100 messages a second per project). The host also drives the AI rivals that fill the grid and broadcasts them.
    Friendly racing, not anti-cheat: room codes are private to whoever you share them with. */
 const LIV=['you','duke','sal','shazza','tash','thommo','yowie','earl'],CODE_LETTERS='BCDFGHJKLMNPQRSTVWXZ';
 const LIVE={sb:null,ch:null,code:null,players:[],cfg:{track:0,fill:true},status:'',joinCode:''};
@@ -1453,7 +1454,8 @@ function liveStart(go){
 }
 function liveTick(dt){
   const N=R.net;N.sendT-=dt;
-  if(N.sendT<=0&&LIVE.ch){N.sendT=1/15;const mine=R.cars.filter(c=>!c.remote).map(c=>[c.id,ri(c.x),ri(c.y),Math.round(c.a*100),ri(c.vx),ri(c.vy),ri(c.z),ri(c.dist),ri(c.dmg),c.nitroT>0?1:0,c.fin?Math.round(c.ft*1000):0]);
+  if(N.sendT<=0&&LIVE.ch){const hum=R.cars.filter(c=>c.human).length;N.sendT=1/Math.min(15,Math.max(6,Math.floor(60/hum)));   // keeps a full room under the free plan's 100 messages a second
+   const mine=R.cars.filter(c=>!c.remote).map(c=>[c.id,ri(c.x),ri(c.y),Math.round(c.a*100),ri(c.vx),ri(c.vy),ri(c.z),ri(c.dist),ri(c.dmg),c.nitroT>0?1:0,c.fin?Math.round(c.ft*1000):0]);
     LIVE.ch.send({type:'broadcast',event:'s',payload:{c:mine}})}
   const k=1-Math.exp(-dt*14),now=performance.now();
   for(const c of R.cars){if(!c.remote||!c.snap)continue;const s=c.snap,age=Math.min(0.3,(now-s.t)/1000);
