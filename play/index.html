@@ -468,7 +468,7 @@ const TRUCKS={you:['#f2efe6','#a9a49a','#ffffff','#00843d','#ffcd00'],duke:['#d8
 let STEW=[];{const r=rotSprites(truckArt('#f2f2ee','#a0a0a0','#ffffff','#1d4a72','#e63946'));STEW=[r,r]}
 const SPRITES={};for(const k in TRUCKS){const c=TRUCKS[k],r=rotSprites(truckArt(c[0],c[1],c[2],c[3],c[4]));SPRITES[k]=[r,r,r,r]}
 const RIVALS=[{id:'duke',name:'Duke Vance',tag:'DUKE',skill:14},{id:'shazza',name:'Shazza Kelly',tag:'SHAZ',skill:10},{id:'tash',name:'Tash Kowalski',tag:'TASH',skill:8},{id:'sal',name:'Sal Vitale',tag:'SAL',skill:7},{id:'thommo',name:'Thommo Price',tag:'THOM',skill:4},{id:'yowie',name:'The Yowie',tag:'YOWIE',skill:17},{id:'earl',name:'Big Earl',tag:'EARL',skill:0}];
-const NAMES={you:'You',barry:'Barry Doolan',biscuit:'Biscuit',gazza:'Gazza',lou_tran:'Lou Tran',pemberton:'Chief Steward Pemberton',windbreakers:'The Windbreakers',hank:'Hank Booker',rick:'Rick Vance',marge:'Marge Quill'},COLORS={you:'#f2efe6'};RIVALS.forEach(r=>{NAMES[r.id]=r.name;COLORS[r.id]=TRUCKS[r.id][0]});
+const NAMES={you:'You',june:'June',rosa:'Rosa',dex:'Dex',barry:'Barry Doolan',biscuit:'Biscuit',gazza:'Gazza',lou_tran:'Lou Tran',pemberton:'Chief Steward Pemberton',windbreakers:'The Windbreakers',hank:'Hank Booker',rick:'Rick Vance',marge:'Marge Quill'},COLORS={you:'#f2efe6'};RIVALS.forEach(r=>{NAMES[r.id]=r.name;COLORS[r.id]=TRUCKS[r.id][0]});
 /* Road Rash layer: each rival's opinion of the player (-100..100) times their temperament
    sets how they race you. Duke's opinion is the existing G.rival meter. */
 const NUM={duke:1,sal:2,shazza:3,tash:4,thommo:5,yowie:6,earl:7};   // truck numbers (canon: last season's finishing order)
@@ -827,9 +827,9 @@ function startRace(){
   const cars=[];let pl=null;
   order.forEach((id,i)=>{if(id==='you'){pl=mkCar({id:'you',name:'You',tag:'YOU'},grid[i],T,true);cars.push(pl)}else{const r=RIVALS.find(x=>x.id===id);if(r)cars.push(mkCar(r,grid[i],T,false))}});
   if(!pl){pl=mkCar({id:'you',name:'You',tag:'YOU'},grid[7],T,true);cars.push(pl)}
-  R=newRace(T,cars,pl);
+  R=newRace(T,cars,pl);preloadHeads([...cars.filter(c=>!c.isP).map(c=>c.id),'june','rosa','gazza']);
   {const fl=G.flags;   // paddock deals that follow you onto the grid
-   if(fl.penStart){R.pen=fl.penStart;delete fl.penStart;R.radio={id:'pemberton',txt:`You start on ${R.pen} penalty points, #8. Keep it clean.`,t:4,angry:true};R.radioG=4}
+   if(fl.penStart){R.pen=fl.penStart;delete fl.penStart;R.radio={id:'pemberton',txt:`You start on ${R.pen} penalty points, #8. Keep it clean.`,t:4,angry:true,prio:3,t0:0};R.radioG=4}
    if(fl.stewardsBought!==undefined&&G.race<fl.stewardsBought)R.penMult=0.5;
    if(fl.shazzaWatched!==undefined&&G.race-fl.shazzaWatched<=1){const sz=cars.find(c=>c.id==='shazza');if(sz)sz.tame=true}
    if(G.race===SEASON-1){if(fl.truthDuke!==undefined){const d=cars.find(c=>c.id==='duke');if(d)d.tame=true}if(fl.truthYowie!==undefined){const y=cars.find(c=>c.id==='yowie');if(y)y.tame=true}}}
@@ -860,10 +860,129 @@ function gridChoice(k){
   document.getElementById('gridpop').hidden=true;R.phase='count';
 }
 document.getElementById('gridpop').addEventListener('click',e=>{const b=e.target.closest('[data-grid]');if(b)gridChoice(b.dataset.grid)});
+/* ---------- ROAD RASH RADIO: rivals, crew and the bookie pop up mid-race ---------- */
+/* extra rival lines by situation. Arrays, or {low,mid,high} by how much they like you */
+const XLINES={
+ duke:{overtake:{low:['See ya, rookie!','That\'s where you belong.','Eat my dust, Eight.'],mid:['Coming through!','Watch and learn.'],high:['Sorry mate, racing!']},
+  laugh:['Ha! Dad\'s gonna love that.','Lost it, rookie?','Cameras got that one!'],wreck:['My paint! MY PAINT!','Who parked that there?!','Not on telly, not on telly...'],
+  final:{low:['Last lap. Last chance. Lose.','Say goodbye, rookie.'],mid:['One lap. Let\'s dance.'],high:['Last lap! Race you home!']},
+  leader:['Mirrors, rookie. I\'m in \'em.','Enjoy the view. Won\'t last.','That\'s MY spot.'],last:['Last? Even the Yowie\'s laughing.','Rookie\'s parked the ute!'],
+  bet:['That two hundred\'s mine, rookie.','Hope you can afford it, Eight.'],deal:['Remember our arrangement, rookie.','Factory seat\'s waiting. Ease off.'],
+  beaten:['This isn\'t over.','Lucky. Pure luck.','Dad\'s gonna kill me.'],beatyou:['Like I said. Back of the field.','Autographs after, rookie.']},
+ shazza:{overtake:{low:['Move! Told ya!','Bye bye, Rookie!'],mid:['Shazza\'s comin\' through!'],high:['Keep up, love!']},
+  laugh:['Ha! You right there, Rookie?','Get a tow truck!','Dirt nap!'],wreck:['Struth! Me axle!','Ya bloody mongrel track!','I\'m fine! I\'M FINE!'],
+  final:{low:['Last lap. I\'m gonna T-bone ya.'],mid:['Last lap, Rookie. Brave up.'],high:['Last lap! Send it!']},
+  leader:['Gonna run you down, Rookie!','I can smell your exhaust!'],last:['Dead last? Spare a thought!','Need a push, Rookie?'],
+  bet:['That hundred\'s mine, Rookie!','Easiest hundred I\'ll ever make!'],beaten:['Fine. FINE. Rematch.','Had a stone in me tyre.'],beatyou:['Pay up, Rookie!','Told ya! Ha!']},
+ tash:{overtake:{low:['Overtake probability: 100%.','Calculated.'],mid:['Better line. Noted.'],high:['Follow my apex.']},
+  laugh:['Oversteer. Textbook.','Wrong input.','Telemetry says ouch.'],wreck:['Sensor fault. Obviously.','That was NOT in the model.','Recalculating...'],
+  final:{low:['Final lap. You lose 87%.'],mid:['Final lap. Variables narrowing.'],high:['Final lap. Make it count.']},
+  leader:['Gap closing. Point four.','I have your braking data.'],last:['P8. Statistically rare.','Last. Fascinating.'],
+  bet:['I ran the odds. Pay me.'],beaten:['Anomaly. Logged.','Re-running the sim.'],beatyou:['As predicted.','Data wins.']},
+ sal:{overtake:{low:['Patience, kid. See?','Old dog, new tricks.'],mid:['Inside line, kid.'],high:['Watch my wheels, kid.']},
+  laugh:['Easy, kid. Breathe.','Seen that a thousand times.','Ouch. Shake it off.'],wreck:['Thirty years and I do THAT.','Bah! Me back!','Nobody saw that.'],
+  final:{low:['Last lap, kid. Let\'s see it.'],mid:['Last lap. Don\'t rush it.'],high:['Last lap. Bring it home, kid.']},
+  leader:['Plenty of track left, kid.','You\'re rushing, kid. I\'m not.'],last:['Back of the pack? Learn it.','Long race, kid. Keep going.'],
+  envelope:['Heard about the envelope, kid.','Somebody paid you for this?'],beaten:['Fair\'s fair, kid.','Good drive. Don\'t get cocky.'],beatyou:['Patience, kid. Every time.']},
+ thommo:{overtake:{low:['CLIPPED! Chat, clip that!','Smash that subscribe!'],mid:['Overtake for the stream!'],high:['Ride along, bro!']},
+  laugh:['Chat\'s spamming LOL, bro!','Instant replay!','Oof, ratio\'d by a wall!'],wreck:['Chat saw nothing!','Stream lag! STREAM LAG!','That\'s content, bro!'],
+  final:{low:['Last lap! Chat wants blood!'],mid:['Final lap, chat\'s hyped!'],high:['Last lap! Cinema, bro!']},
+  leader:['Bro, I\'m in your rearview!','Chat says you\'re cooked!'],last:['P8 arc, bro!','Comeback content incoming!'],
+  beaten:['Chat\'s calling it rigged!','Gonna edit that out.'],beatyou:['Thumbnail: ROOKIE OWNED!','GG, bro! GG!']},
+ yowie:{overtake:{low:['*ROAR*','*honks while passing*'],mid:['*victory grunt*'],high:['*waves a hairy hand*']},
+  laugh:['*wheezing laugh*','*points and laughs*'],wreck:['*confused growl*','*sad honk*'],
+  final:{low:['*cracks knuckles*'],mid:['*holds up one finger*'],high:['*double thumbs up*']},
+  leader:['*fills your mirrors*','*heavy breathing on radio*'],last:['*slow shake of head*'],
+  beaten:['*sad growl*','*throws pie*'],beatyou:['*chest pound*','*proud honk*']},
+ earl:{overtake:{low:['Some things you earn, son.'],mid:['Mind the old fella.'],high:['After you... no, after me.']},
+  laugh:['Back in my day we walked it off.','She\'ll be right, son.','Seen worse. Done worse.'],wreck:['Struth, me hip!','Who moved that rock?','Oi! Not me truck!'],
+  final:{low:['Last lap. Watch an old fella work.'],mid:['Last lap, son.'],high:['Last lap! Go on then!']},
+  leader:['I\'ve seen faster, son.','Knees still work, son.'],last:['Even I\'m ahead, son.','Dead last? Character building.'],
+  beaten:['Good on ya, son.','Hmph. Well earned.'],beatyou:['Experience, son.','Not bad for seventy.']}
+};
+/* the crew: June spots hazards, Rosa minds the truck, Gazza minds his money */
+const CREWRADIO={
+ june:{roo_l:['Roo coming in from the left!','Wildlife left! Left side!'],roo_r:['Roo coming in from the right!','Wildlife right! Right side!'],
+  emu_l:['EMU! Left side, left side!'],emu_r:['EMU! Right side! Mind it!'],wreck:['Wreck ahead! Go wide!','Crash up the road! Pick a side!','Pile-up ahead! Easy!'],
+  lead:['P1! You\'re leading! Hold it!','You\'re in front! Clean lines now!'],final1:['Last lap. Bring it home, Eight.','Final lap. Don\'t do anything stupid.'],
+  finalc:['Leader\'s in reach! Last lap!','Last lap! You can catch \'em!'],ute:['Stewards\' ute on your tail!','Ute behind you! Keep it clean!'],
+  win:['YOU DID IT! You did it!','Winner! I\'m crying on the radio!'],podium:['Podium! Nice driving!','Top three! Get in!']},
+ rosa:{d50:['That\'s a lot of panel gone, love.','Easy! I have to fix that!','You\'re rattling. Ease up.'],d80:['Steering\'s bent! Nurse it home!','She\'s barely holding, Eight!','Smoke! Bring her home in one piece!'],
+  fix:['Good grab. That\'ll hold her.','Spanner! That\'s my driver.'],nitro:['Nitro\'s gone. Drive smart.','Out of nitro. Pure driving now.']},
+ dex:{ok:['Odds are moving, champ!','Keep it up, I\'ve got money on this!']},
+ gazza:{bet:['Top three, son. Me money\'s on ya.','Remember the bet. Top three!'],out:['You\'re killing me, son! Top three!','Me nan\'s teeth are on this! MOVE!'],in:['That\'s it, son! Stay there!','Top three! Gazza\'s smilin\'!']}
+};
+const RMOOD={hit:'angry',wreck:'surprised',laugh:'smug',overtake:'smug',final:'neutral',leader:'smug',last:'happy',bet:'smug',deal:'smug',beaten:'sad',beatyou:'happy',passed:'surprised',low:'angry'};
+const PM=new Set();
+function radioHead(id,mood){   // mood portrait if the art exists, else the pixel radio head, else the neutral portrait
+  const P=ARTM&&ARTM.portraits&&ARTM.portraits[id];
+  const lazy=k=>{if(!ART.img[k]&&!PM.has(k)){PM.add(k);const path=P&&(k.endsWith('_n')?P.neutral:P[k.split('|')[1]]);if(path)loadImg(k,path)}return ART.img[k]};
+  if(mood&&P&&P[mood]&&P[mood]!==P.neutral){const im=lazy('pm|'+mood+'|'+id);if(im)return im}
+  return ART.img['rd_'+id]||(P?lazy('pm|neutral|'+id+'|_n'):null);
+}
+function preloadHeads(ids){for(const id of ids)for(const m of ['angry','surprised','smug','happy','sad','focused'])radioHead(id,m)}
+function say(id,txt,o={}){
+  if(!R||!txt||!NAMES[id])return false;const pr=o.prio||0,cur=R.radio;
+  if(R.radioG>0&&cur&&(cur.prio||0)>=pr)return false;
+  if(!o.force&&(R.radioCD[id]||0)>R.time)return false;
+  R.radio={id,txt,t:o.t||Math.min(4.2,Math.max(2.6,1+txt.length*0.07)),angry:!!o.angry,mood:o.mood||null,prio:pr,t0:R.time,crew:!!o.crew};
+  if(window.__radioLog)window.__radioLog.push([Math.round(R.time),id,R.radio.mood||'',txt]);SND.play(id==='yowie'?'growl':'radio');R.radioCD[id]=R.time+(o.cd||8);R.radioG=o.gap||2.5;return true;
+}
+function crew(id,k,o={}){
+  if(!R||R.tt||!CREWRADIO[id]||!CREWRADIO[id][k])return false;
+  if(G.crew&&G.crew[id]&&!G.crew[id].in)return false;
+  if(id==='gazza'&&!(G.flags&&G.flags.sideBet&&G.flags.sideBet.race===G.race))return false;
+  return say(id,pick(CREWRADIO[id][k]),Object.assign({prio:2,crew:true,cd:5,gap:2.2},o));
+}
+const spotter=()=>G.crew&&G.crew.june&&G.crew.june.in?'june':'rosa';   // no June yet? Rosa watches the monitors
+function spot(k,o){const id=spotter();if(id==='june')return crew('june',k,Object.assign({mood:/^(roo|emu|wreck|win)/.test(k)?'surprised':'focused'},o));if(R&&R.tt||G.crew&&G.crew.rosa&&!G.crew.rosa.in)return false;const t=CREWRADIO.june[k];return t?say('rosa',pick(t),Object.assign({prio:2,crew:true,cd:5,gap:2.2,mood:'surprised'},o)):false}
+/* one place that watches the race and decides who gets on the radio */
+function updChatter(dt){
+  const pl=R.pl;if(!pl||R.phase!=='go'||R.tt)return;const C=R.chat||(R.chat={crash:{},dmg:0,roo:null,last:0,final:false,top3:null,lead:false,nitro:pl.nitro,banter:6,rk:{},rkYou:null,q:[]});
+  const T=R.T,rk=rank(),pi=rk.indexOf(pl),lap=Math.floor(pl.dist/T.L)+1,ai=c=>!c.isP&&!c.human&&!c.uid;
+  C.banter-=dt;
+  const later=(s,fn)=>C.q.push({at:R.time+s,fn});for(let i=C.q.length-1;i>=0;i--)if(R.time>=C.q[i].at){const f=C.q[i].fn;C.q.splice(i,1);f()}
+  const rival=(c,kind,o={})=>{if(!ai(c)||C.banter>0&&!o.now)return false;const ok=radio(c.id,kind);if(ok)C.banter=o.gap||5;return ok};
+  /* pre-race deals come back to haunt you in the opening laps */
+  if(!C.deals&&R.time>4){C.deals=true;if(!R.net){const fl=G.flags||{};
+    if(fl.rivalBet&&fl.rivalBet.race===G.race){const c=R.cars.find(x=>x.id===fl.rivalBet.id);if(c)rival(c,'bet',{now:true})}
+    else if(fl.hit&&fl.hit.race===G.race&&fl.hit.id==='sal'){const c=R.cars.find(x=>x.id==='sal');if(c)rival(c,'envelope',{now:true})}
+    else if(G.race===SEASON-1&&fl.rickDeal!==undefined){const c=R.cars.find(x=>x.id==='duke');if(c)rival(c,'deal',{now:true})}
+    else if(fl.sideBet&&fl.sideBet.race===G.race)crew('gazza','bet',{prio:1})}}
+  /* crashes: yours make rivals laugh, theirs make them swear, and a wreck up the road gets a spotter call */
+  for(const c of R.cars){const was=C.crash[c.id]||0,now=c.crashT>0?1:0;C.crash[c.id]=now;if(!now||was)continue;
+    if(c.isP){const near=R.cars.filter(o=>ai(o)&&Math.hypot(o.x-pl.x,o.y-pl.y)<240).sort((a,b)=>Math.hypot(a.x-pl.x,a.y-pl.y)-Math.hypot(b.x-pl.x,b.y-pl.y))[0];if(near)rival(near,'laugh',{now:Math.random()<.6})}
+    else if(ai(c)){const ahead=c.dist-pl.dist;if(ahead>120&&ahead<420&&!pl.fin)spot('wreck',{force:true});else if(Math.hypot(c.x-pl.x,c.y-pl.y)<300)rival(c,'wreck',{now:true})}}
+  /* wildlife: the spotter calls the side it's coming from */
+  if(R.roo&&R.roo!==C.roo){C.roo=R.roo;const p=pointAt(T,pl.s),side=(R.roo.x-p.x)*(-p.ty)+(R.roo.y-p.y)*p.tx>0?'r':'l';spot((R.roo.kind==='emu'?'emu_':'roo_')+side,{cd:3})}
+  /* damage reports from Rosa */
+  const d=pl.dmg;if(d>=80&&C.dmg<80)crew('rosa','d80',{mood:'angry',angry:true});else if(d>=50&&C.dmg<50)crew('rosa','d50',{mood:'surprised'});
+  if(d<C.dmg-20)crew('rosa','fix',{prio:1,mood:'happy'});C.dmg=d;
+  if(pl.nitro===0&&C.nitro>0&&!pl.fin)crew('rosa','nitro',{prio:1});C.nitro=pl.nitro;
+  if(R.ute&&!C.ute)later(3.6,()=>{if(R.ute)spot('ute',{prio:1})});C.ute=!!R.ute;
+  if(pl.fin){if(!C.fin){C.fin=true;const n=R.order.indexOf(pl)+1;later(.3,()=>{if(n===1)spot('win',{prio:3,t:3.5,gap:1.6,force:true});else if(n<=3)spot('podium',{prio:3,gap:1.6,force:true})});
+      const beh=R.cars.filter(c=>ai(c)&&!c.fin).sort((a,b)=>b.dist-a.dist)[0],ahd=R.order.filter(c=>ai(c)).slice(-1)[0];
+      later(2.0,()=>{const c=n===1?beh:Math.random()<.5&&ahd?ahd:beh;if(!c)return;R.radioCD[c.id]=0;radio(c.id,c===ahd?'beatyou':'beaten')})}
+    const q=C.q;for(let i=q.length-1;i>=0;i--)if(R.time>=q[i].at){const f=q[i].fn;q.splice(i,1);f()}return}
+  /* leading / last / final lap / overtaken */
+  if(pi===0&&!C.lead&&R.time>8){C.lead=true;spot('lead',{prio:1})}else if(pi>1)C.lead=false;
+  if(pi===0){const ch=rk[1];if(ch&&ai(ch)&&pl.dist-ch.dist<90)rival(ch,'leader')}
+  if(pi===R.cars.length-1&&lap>=2&&R.time-C.last>25){C.last=R.time;const c=rk[pi-1];if(c)rival(c,'last')}
+  if(lap>=LAPS&&!C.final){C.final=true;if(pi===0)spot('final1',{prio:1,force:true});else if(pi<=2&&rk[0].dist-pl.dist<220)spot('finalc',{prio:1,force:true});
+    later(2.6,()=>{const c=R.cars.filter(o=>ai(o)&&!o.fin).sort((a,b)=>Math.abs(a.dist-pl.dist)-Math.abs(b.dist-pl.dist))[0];if(c){R.radioCD[c.id]=0;radio(c.id,'final')}})}
+  /* a rival gets past you: they gloat */
+  for(const c of R.cars){if(!ai(c))continue;const ci=rk.indexOf(c),w=C.rk[c.id];if(w!=null&&C.rkYou!=null&&w>C.rkYou&&ci<pi&&R.time>6&&!c.fin)rival(c,'overtake');C.rk[c.id]=ci}C.rkYou=pi;
+  /* Gazza sweats his money */
+  if(!R.net&&G.flags&&G.flags.sideBet&&G.flags.sideBet.race===G.race&&lap>=2){const t3=pi<3;if(C.top3!==null&&t3!==C.top3)crew('gazza',t3?'in':'out',{prio:1,cd:14,mood:t3?'happy':'angry'});C.top3=t3}
+}
 function radio(id,kind){
-  if(!R||!LINES[id]||R.radioG>0||(R.radioCD[id]||0)>R.time)return;
-  const l=aggr(id,R.cars.find(c=>c.id===id)?.rage>0),b=band(l),pool=kind==='hit'?LINES[id].hit:kind==='passed'?LINES[id]['passed_'+b]:LINES[id][b];
-  R.radio={id,txt:pick(pool),t:2.6,angry:kind==='hit'||l<=1};SND.play('radio');R.radioCD[id]=R.time+8;R.radioG=2.5;
+  if(!R||!LINES[id]||R.tt)return false;
+  const c=R.cars.find(c=>c.id===id);if(c&&(c.human||c.uid))return false;   // real people online speak for themselves
+  const l=aggr(id,c?.rage>0),b=band(l),L=LINES[id],X=XLINES[id]||{};let pool;
+  if(kind==='passed')pool=L['passed_'+b];else if(X[kind])pool=Array.isArray(X[kind])?X[kind]:X[kind][b]||X[kind].mid;else if(L[kind])pool=L[kind];else pool=L[b];
+  if(!pool||!pool.length)return false;
+  const mood=kind==='passed'?(b==='low'?'angry':b==='high'?'happy':'surprised'):RMOOD[kind]||(b==='low'?'angry':b==='high'?'happy':null);
+  return say(id,pick(pool),{angry:kind==='hit'||kind==='wreck'||(l<=1&&kind!=='beaten'),mood,prio:kind==='hit'?1:0});
 }
 function doShunt(c){
   if(c.shuntCD>0)return;c.shuntCD=c.isP?1.0:2.2;
@@ -879,6 +998,7 @@ function doShunt(c){
 }
 function updRivals(dt){
   R.radioG=Math.max(0,R.radioG-dt);if(R.radio){R.radio.t-=dt;if(R.radio.t<=0)R.radio=null}
+  updChatter(dt);
   const pl=R.pl;
   for(const c of R.cars){if(c.isP||c.human)continue;c.shuntCD-=dt;if(c.rage>0&&c.rage<999)c.rage=Math.max(0,c.rage-dt);
     const d=Math.hypot(c.x-pl.x,c.y-pl.y);if(d<52&&!pl.fin){c.alongT+=dt;if(c.alongT>0.8){radio(c.id,'along');c.alongT=-6}}else if(c.alongT>0)c.alongT=0}
@@ -930,7 +1050,7 @@ function aiInput(c,dt){
 const NOINP={gas:false,brake:false,steer:0,nitro:false};
 const STEWARD={ute:['Stewards here. That\'s enough argy-bargy, #8. Ute\'s on its way.','This is Pemberton. One more bump and you\'re parked, #8.','Race control to #8: we saw that. Ute dispatched.'],
   flag:['Black flag, #8. Pull it back. Hundred-dollar fine.','Pemberton here. You\'ve been told. Black flag.']};
-function stewardCall(k){if(!R||!R.pl)return;R.radio={id:'pemberton',txt:pick(STEWARD[k]),t:3.2,angry:true};R.radioG=3;SND.play('radio')}
+function stewardCall(k){if(!R||!R.pl)return;R.radio={id:'pemberton',txt:pick(STEWARD[k]),t:3.2,angry:true,prio:3,t0:R.time,mood:'neutral'};R.radioG=3;SND.play('radio')}
 /* ---------- SOUND: every effect and both songs are synthesised live with WebAudio (no files). Set MUSIC_FILE to
    play a recorded soundtrack from play/music/ instead of the built-in songs. ---------- */
 const MUSIC_FILE=null;   // e.g. 'music/aussie8_theme.mp3'
@@ -998,6 +1118,7 @@ const SND=(()=>{
     roo:()=>{tone('sine',210,720,.11,.28);tone('sine',720,170,.26,.24,.11)},
     emu:()=>{tone('square',900,1300,.06,.08);tone('square',1300,700,.09,.08,.07);tone('square',950,1250,.07,.07,.18)},
     radio:()=>{hiss(.09,.1,'bandpass',2100,1900,1.5);tone('square',1500,1500,.035,.04,.1)},
+    growl:()=>{hiss(.09,.1,'bandpass',2100,1900,1.5);tone('sawtooth',110,70,.45,.09,.08);tone('square',55,40,.45,.06,.08);hiss(.4,.07,'lowpass',500,200,1,.08)},
     barry:()=>notes('triangle',[784,1047],.1,.16,.07),
     siren:()=>{for(let i=0;i<3;i++){tone('sawtooth',700,980,.25,.045,i*.5);tone('sawtooth',980,700,.25,.045,i*.5+.25)}},
     flag:()=>{tone('square',330,200,.4,.11);tone('square',247,150,.4,.07,.05)},
@@ -1400,14 +1521,17 @@ function drawBroadcast(){
   if(R.tick){R.tick.t-=1/60;const ty=TOUCH?H-36:H-74;if(hudImg('ticker',0,ty,2)){ctx.textAlign='left';ctx.textBaseline='middle';ctx.font='11px "Press Start 2P",monospace';const bh=ART.img.rd_barry;if(bh){ctx.imageSmoothingEnabled=false;ctx.drawImage(bh,120,ty+2,28,28)}ctx.fillStyle='#ffcd00';ctx.fillText('BARRY:',bh?156:84,ty+16);ctx.fillStyle='#fbf8f2';ctx.fillText(R.tick.txt,bh?242:170,ty+16)}if(R.tick.t<=0)R.tick=null}
 }
 function drawRadio(){
-  if(!R.radio)return;const r=R.radio,x=14,y=TOUCH?76:16,head=ART.img['rd_'+r.id],al=Math.min(1,r.t*3);
-  ctx.save();ctx.globalAlpha=al;ctx.font='12px "Press Start 2P",monospace';const tw=Math.max(ctx.measureText(r.txt).width,ctx.measureText(NAMES[r.id]).width)+28+(ART.img.ex_walkie?30:0);
-  ctx.fillStyle='rgba(12,6,20,.9)';ctx.fillRect(x,y,76+tw,72);ctx.fillStyle=r.angry?'#e63946':'#ffcd00';ctx.fillRect(x,y,76+tw,3);
-  ctx.fillStyle=r.angry?'#e63946':'#ffcd00';ctx.fillRect(x+4,y+4,68,68);   /* red frame = "angry" placeholder: no angry radio art yet */
-  if(head){ctx.imageSmoothingEnabled=false;ctx.drawImage(head,x+6,y+6,64,64)}else{ctx.fillStyle=COLORS[r.id];ctx.fillRect(x+6,y+6,64,64)}
-  {const wk=ART.img.ex_walkie;if(wk){ctx.imageSmoothingEnabled=false;const ww=wk.width*.6,wh=wk.height*.6;ctx.drawImage(wk,x+76+tw-ww-8,y+36-wh/2,ww,wh)}}
-  ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillStyle='#ffcd00';ctx.font='10px "Press Start 2P",monospace';ctx.fillText(NAMES[r.id].toUpperCase(),x+84,y+22);
-  ctx.fillStyle='#fbf8f2';ctx.font='12px "Press Start 2P",monospace';ctx.fillText(r.txt,x+84,y+48);ctx.restore();
+  if(!R.radio)return;const r=R.radio,e=r.t0==null?9:R.time-r.t0,y=TOUCH?76:16,head=radioHead(r.id,r.mood),al=Math.min(1,r.t*3);
+  const x=14-Math.round(Math.max(0,1-e/0.16)*140),nm=(NAMES[r.id]||r.id).toUpperCase()+(r.crew?(r.id===spotter()&&r.prio>=2?'  · SPOTTER':'  · CREW'):'');
+  const col=r.angry?'#e63946':r.crew?'#00c35a':'#ffcd00',txt=e>=9?r.txt:r.txt.slice(0,Math.floor(e*48)+1);
+  ctx.save();ctx.globalAlpha=al;ctx.font='12px "Press Start 2P",monospace';const tw=Math.max(ctx.measureText(r.txt).width,ctx.measureText(nm).width*.84)+28+(ART.img.ex_walkie?30:0);
+  ctx.fillStyle='rgba(12,6,20,.9)';ctx.fillRect(x,y,76+tw,72);ctx.fillStyle=col;ctx.fillRect(x,y,76+tw,3);
+  ctx.fillRect(x+4,y+4,68,68);
+  if(head){ctx.imageSmoothingEnabled=head.width>40;ctx.drawImage(head,x+6,y+6,64,64);ctx.imageSmoothingEnabled=false}else{ctx.fillStyle=COLORS[r.id]||'#39304a';ctx.fillRect(x+6,y+6,64,64)}
+  if(e<0.12){ctx.fillStyle='rgba(255,255,255,'+(0.5-e*4)+')';for(let k=0;k<8;k++)ctx.fillRect(x+6,y+6+Math.random()*60,64,2)}   // radio static as the picture comes in
+  {const wk=ART.img.ex_walkie;if(wk){ctx.imageSmoothingEnabled=false;const ww=wk.width*.6,wh=wk.height*.6;ctx.drawImage(wk,x+76+tw-ww-8,y+36-wh/2+(e<1.2?Math.sin(e*40)*1.5:0),ww,wh)}}
+  ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillStyle=col==='#e63946'?'#ff8a92':col;ctx.font='10px "Press Start 2P",monospace';ctx.fillText(nm,x+84,y+22);
+  ctx.fillStyle='#fbf8f2';ctx.font='12px "Press Start 2P",monospace';ctx.fillText(txt,x+84,y+48);ctx.restore();
 }
 function drawHUD(){
   const p=R.pl,T=R.T,rk=rank(),pos=rk.indexOf(p)+1,lap=clamp(Math.floor(p.dist/T.L)+1,1,LAPS),y0=602;
@@ -2104,7 +2228,7 @@ function loop(now){
   requestAnimationFrame(loop);
 }
 showTitle();requestAnimationFrame(loop);if(NET.me)setTimeout(()=>cloudPull(true),1500);
-window.__A8={get G(){return G},get R(){return R},TRACKS,TS,ART,SPRITES,DMG,spawnDebris,gridChoice,doShunt,aggr,crowdEvent,SND,CRASH,updRace:dt=>updRace(dt),liveStart:g=>liveStart(g),liveState:p=>liveState(p),LIVE,NET,EVENTS,TROPHY,SET,PAD,padInput:i=>padInput(i),cloudPull:q=>cloudPull(q)};
+window.__A8={get G(){return G},get R(){return R},TRACKS,TS,ART,SPRITES,DMG,spawnDebris,gridChoice,doShunt,aggr,crowdEvent,SND,CRASH,updRace:dt=>updRace(dt),liveStart:g=>liveStart(g),liveState:p=>liveState(p),LIVE,NET,EVENTS,TROPHY,SET,PAD,padInput:i=>padInput(i),cloudPull:q=>cloudPull(q),say,radio:(i,k)=>radio(i,k),XLINES,CREWRADIO,radioHead};
 loadArt().catch(e=>console.warn('Aussie 8: art load failed',e));
 }
 </script>

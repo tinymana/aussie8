@@ -2,6 +2,29 @@
   "_howto": "Newest first. Add an entry at the top each time you push an update; the website and the in-game 'What's new' both read this file. tag: new | improved | fixed.",
   "notes": [
     {
+      "version": "2.2",
+      "date": "2026-11-27",
+      "title": "On the radio",
+      "items": [
+        {
+          "tag": "new",
+          "text": "Your rivals talk a lot more now. They gloat when they pass you, laugh when you spin out, swear when they wreck, taunt you on the last lap, and have something to say at the finish line."
+        },
+        {
+          "tag": "new",
+          "text": "Your crew is on the radio. June spots for you: which side a roo or emu is coming from, wrecks up ahead, when you take the lead. Rosa calls in when the truck is getting knocked about."
+        },
+        {
+          "tag": "new",
+          "text": "Paddock deals come back on race day. Bet a rival and they'll remind you about it, Sal has heard about the envelope, and if you bet with Gazza he'll sweat every place you gain or lose."
+        },
+        {
+          "tag": "improved",
+          "text": "Radio pop-ups slide in with a burst of static and type out their line. Faces change with the mood (smug, angry, shocked), and the Yowie growls instead of beeping."
+        }
+      ]
+    },
+    {
       "version": "2.1",
       "date": "2026-11-27",
       "title": "Ka-boing!",
