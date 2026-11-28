@@ -129,6 +129,11 @@ td.n{text-align:right;white-space:nowrap}
 .rivals .rv img.pt,.rivals .rv .pt{width:44px;height:44px;border-radius:8px;image-rendering:pixelated;object-fit:cover;background:var(--c,#3e2a55);display:grid;place-items:center;font-weight:800;color:#1a0f1f}
 .rivals .rv img.bd{width:96px;height:24px;image-rendering:pixelated}
 .rivals .rv small{display:block;color:var(--mute);font-size:13px}
+.rivals .rv small.grudge{color:#ff8a92}
+.radiohl{display:grid;grid-template-columns:48px minmax(0,1fr);gap:10px;align-items:center;margin-top:14px;padding:10px 12px;border-radius:10px;background:rgba(12,6,20,.7);border:2px solid #ffcd00}
+.radiohl img,.radiohl .pt{width:48px;height:48px;border-radius:6px;object-fit:cover;background:var(--c,#3e2a55)}
+.radiohl p{margin:2px 0;font-size:14px}.radiohl .k{font:9px 'Press Start 2P',monospace;color:#ffcd00;letter-spacing:.04em}
+.radiohl .you{color:#b9f5c8}
 #pad.lefty .act{transform:scaleX(-1)}#pad.lefty .act .pb,#pad.lefty .act .hint{transform:scaleX(-1)}#pad.lefty .act .pb.on{transform:scaleX(-1) scale(.9)}
 #pad.lefty .lr.l{left:auto;right:134px}#pad.lefty .lr.r{left:auto;right:18px}
 #stick{position:absolute;width:136px;height:136px;margin:-68px 0 0 -68px;border-radius:50%;border:3px solid rgba(255,255,255,.4);background:rgba(20,10,34,.35);display:none;pointer-events:none}
@@ -850,10 +855,10 @@ const portraitUrl=(id,mood)=>{const P=ARTM&&ARTM.portraits[id];return P?artUrl(P
 function gridMoment(){
   const gp=document.getElementById('gridpop');
   const pool=RIVALS.filter(r=>r.id!=='duke'||G.race>0),pi=R.cars.indexOf(R.pl),nb=R.cars[pi^1],   // whoever is lined up beside you
-    r=(nb&&RIVALS.find(x=>x.id===nb.id))||pool[(G.race*3+Math.floor(Math.random()*pool.length))%pool.length],l=aggr(r.id),L=LINES[r.id],ln=pick(L[band(l)]);
+    r=(nb&&RIVALS.find(x=>x.id===nb.id))||pool[(G.race*3+Math.floor(Math.random()*pool.length))%pool.length],l=aggr(r.id),L=LINES[r.id],g=grudgeOf(r.id),ln=g?pick(MEMLINES[r.id][g.k]).replace('{t}',shortTrack(g.t)):pick(L[band(l)]);if(g)R.gridGrudge=r.id;
   R.phase='grid';R.gridR=r.id;
   const img=portraitUrl(r.id,'neutral'),btn=(k,t)=>ARTM&&ARTM.choices[k]?`<button data-grid="${k}" aria-label="${t}"><img src="${artUrl(ARTM.choices[k])}" alt="${t}"></button>`:`<button class="txt" data-grid="${k}">${t}</button>`;
-  gp.innerHTML=`${img?`<img class="gpi" src="${img}" alt="">`:`<span class="gpi" style="background:${COLORS[r.id]}">${r.name.replace('The ','')[0]}</span>`}<div><b>#${NUM[r.id]} ${r.name.toUpperCase()}</b><small>Beside you on the grid · ${LEVELS[l]}</small><p>“${ln}”</p></div>
+  gp.innerHTML=`${img?`<img class="gpi" src="${img}" alt="">`:`<span class="gpi" style="background:${COLORS[r.id]}">${r.name.replace('The ','')[0]}</span>`}<div><b>#${NUM[r.id]} ${r.name.toUpperCase()}</b><small>Beside you on the grid · ${LEVELS[l]}${g?' · holds a grudge':''}</small><p>“${ln}”</p></div>
     <div class="gpc">${btn('taunt','Taunt')}${btn('encourage','Encourage')}${btn('ignore','Ignore')}</div>`;
   gp.hidden=false;
 }
@@ -892,21 +897,24 @@ function memo(id){R.memo=R.memo||{};return R.memo[id]||(R.memo[id]={hit:0,taunt:
 function talkBack(){
   const t=R.talk;R.talk=null;if(!t||!R.pl)return;const c=R.cars.find(x=>x.id===t.id);if(!c)return;
   const lv=band(aggr(t.id,c.rage>0)),friendly=lv==='high',k=friendly?'banter':'taunt';
-  R.radioG=0;say('you',pick(YOU_LINES[k]),{prio:4,cd:0,gap:1.4,t:2});
+  R.radioG=0;const mine=pick(YOU_LINES[k]);say('you',mine,{prio:4,cd:0,gap:1.4,t:2});const hl={id:t.id,you:mine,back:null,k};if(!friendly||!R.highlight)R.highlight=hl;
   if(friendly)opDelta(t.id,2);else{opDelta(t.id,-Math.max(1,4-G.stats.charm));c.rage=Math.max(c.rage,6);memo(t.id).taunt++;R.cash+=15;R.floats.push({x:R.pl.x,y:R.pl.y-30,txt:'SLEDGE! +$15',col:'#ffcd00',life:1.2});crowdEvent('ram',R.pl.x/2)}
   R.talkN=(R.talkN||0)+1;
-  (R.chat||{q:[]}).q.push({at:R.time+1.5,fn:()=>{R.radioCD[t.id]=0;R.radioG=0;say(t.id,pick(COMEBACK[t.id]?.[k]||['...']),{prio:4,angry:!friendly,mood:friendly?'happy':'angry',gap:2.2})}});
+  (R.chat||{q:[]}).q.push({at:R.time+1.5,fn:()=>{R.radioCD[t.id]=0;R.radioG=0;hl.back=pick(COMEBACK[t.id]?.[k]||['...']);say(t.id,hl.back,{prio:4,angry:!friendly,mood:friendly?'happy':'angry',gap:2.2})}});
   if(!friendly&&Math.random()<.5)(R.chat||{q:[]}).q.push({at:R.time+3.9,fn:()=>barry('sledge')});
 }
 function rememberRace(rk){   // called from endRace: each rival keeps one grudge from today
-  const pi=rk.indexOf(R.pl),t=R.T.name;G.mem=G.mem||{};
-  rk.forEach((c,i)=>{if(c.isP)return;const m=R.memo&&R.memo[c.id];let k=null;
+  const pi=rk.indexOf(R.pl),t=R.T.name;G.mem=G.mem||{};G.h2h=G.h2h||{};
+  rk.forEach((c,i)=>{if(c.isP)return;const h=G.h2h[c.id]||(G.h2h[c.id]={w:0,l:0});if(i>pi)h.w++;else h.l++;const m=R.memo&&R.memo[c.id];let k=null;
     if(m&&m.hit)k='hit';else if(m&&m.taunt)k='taunt';else if(Math.abs(i-pi)===1)k=i<pi?'lost':'beat';
     if(k)G.mem[c.id]={k,t,race:G.race};else delete G.mem[c.id]});
 }
+function grudgeOf(id){const m=G.mem&&G.mem[id];return m&&m.race===G.race-1&&MEMLINES[id]?m:null}
+const GRUDGE_TXT={hit:'Still sore about the ram at {t}',taunt:'Hasn’t forgotten your sledge at {t}',lost:'Beat you at {t} and won’t shut up about it',beat:'Wants revenge for {t}'};
+function h2hText(id){const h=G.h2h&&G.h2h[id];if(!h||!(h.w+h.l))return'';return h.w>h.l?`You lead ${h.w}–${h.l}`:h.w<h.l?`${NAMES[id].replace('The ','')} leads ${h.l}–${h.w}`:`Level at ${h.w}–${h.l}`}
 function grudgeCall(){   // early in the next race, one rival brings it up
   const fl=G.mem;if(!fl||R.net||R.tt)return;
-  const ids=R.cars.filter(c=>!c.isP&&fl[c.id]&&fl[c.id].race===G.race-1&&MEMLINES[c.id]).map(c=>c.id);if(!ids.length)return;
+  const ids=R.cars.filter(c=>!c.isP&&c.id!==R.gridGrudge&&fl[c.id]&&fl[c.id].race===G.race-1&&MEMLINES[c.id]).map(c=>c.id);if(!ids.length)return;
   const pri={hit:3,taunt:2,lost:1,beat:1},id=ids.sort((a,b)=>pri[fl[b].k]-pri[fl[a].k]||Math.random()-.5)[0],m=fl[id];
   const line=pick(MEMLINES[id][m.k]).replace('{t}',shortTrack(m.t));
   if(say(id,line,{prio:1,angry:m.k!=='beat',mood:m.k==='beat'?'surprised':m.k==='lost'?'smug':'angry'})){R.talk={id,until:R.time+3.4};
@@ -1017,7 +1025,7 @@ function updChatter(dt){
   if(R.ute&&!C.ute)later(3.6,()=>{if(R.ute)spot('ute',{prio:1})});C.ute=!!R.ute;
   if(pl.fin){if(!C.fin){C.fin=true;const n=R.order.indexOf(pl)+1;later(.3,()=>{if(n===1)spot('win',{prio:3,t:3.5,gap:1.6,force:true});else if(n<=3)spot('podium',{prio:3,gap:1.6,force:true})});
       const beh=R.cars.filter(c=>ai(c)&&!c.fin).sort((a,b)=>b.dist-a.dist)[0],ahd=R.order.filter(c=>ai(c)).slice(-1)[0];
-      later(2.0,()=>{const c=n===1?beh:Math.random()<.5&&ahd?ahd:beh;if(!c)return;R.radioCD[c.id]=0;radio(c.id,c===ahd?'beatyou':'beaten')})}
+      later(2.0,()=>{const c=n===1?beh:Math.random()<.5&&ahd?ahd:beh;if(!c)return;R.radioCD[c.id]=0;if(radio(c.id,c===ahd?'beatyou':'beaten')&&!R.highlight)R.highlight={id:c.id,back:R.radio.txt,k:'finish'}})}
     const q=C.q;for(let i=q.length-1;i>=0;i--)if(R.time>=q[i].at){const f=q[i].fn;q.splice(i,1);f()}return}
   /* leading / last / final lap / overtaken */
   if(pi===0&&!C.lead&&R.time>8){C.lead=true;spot('lead',{prio:1})}else if(pi>1)C.lead=false;
@@ -1663,7 +1671,7 @@ function endRace(){
   if(pi===0){unlock('first_win');if(!R.crashes)unlock('clean_win')}if(R.crashes>=3)unlock('survivor');if((R.nitroUsed||0)>=5)unlock('nitro5');
   G.podStreak=pi<=2?(G.podStreak||0)+1:0;if(G.podStreak>=3)unlock('podium3');
   const T=R.T;netRace(TRACKS.indexOf(T),R.pl.ft,pi+1);G.race++;G.stage=G.race>=SEASON?'end':'event';save();
-  lastRes={rk:rk.map(c=>({id:c.id,ft:c.fin?c.ft:null})),pi,won,cash:R.cash,xp,lv,notes,track:T.name};
+  lastRes={rk:rk.map(c=>({id:c.id,ft:c.fin?c.ft:null})),pi,won,cash:R.cash,xp,lv,notes,track:T.name,hl:R.highlight||null};
   showResults();
 }
 
@@ -2141,10 +2149,14 @@ function showGarage(){
     <h3 style="margin-top:20px">Season points</h3><table><tbody>${st.map((id,i)=>`<tr class="${id==='you'?'me':''}"><td>${i+1}</td><td><span class="dot" style="background:${COLORS[id]}"></span>${NAMES[id]}</td><td class="n">${G.points[id]}</td></tr>`).join('')}</tbody></table></div>
   </div>
   <div class="card" style="margin-top:12px"><h3>Crew</h3>${Object.keys(CREW).map(crewCard).join('')}</div>
-  <div class="card rivals" style="margin-top:12px"><h3>Rivals</h3>${RIVALS.slice().sort((x,y)=>NUM[x.id]-NUM[y.id]).map(r=>{const l=aggr(r.id),pu=portraitUrl(r.id,'neutral'),bd=ARTM&&ARTM.badges[LEVELS[l]];return `<div class="rv">${pu?`<img class="pt" src="${pu}" alt="">`:`<span class="pt" style="--c:${COLORS[r.id]}">${r.name.replace('The ','')[0]}</span>`}<div><b>#${NUM[r.id]} ${r.name}</b><small>Opinion of you: ${opinion(r.id)} · races you like a ${LEVELS[l]}</small></div>${bd?`<img class="bd" src="${artUrl(bd)}" alt="${LEVELS[l]}">`:`<span class="pill">${LEVELS[l]}</span>`}</div>`}).join('')}</div>
+  <div class="card rivals" style="margin-top:12px"><h3>Rivals</h3>${RIVALS.slice().sort((x,y)=>NUM[x.id]-NUM[y.id]).map(r=>{const l=aggr(r.id),pu=portraitUrl(r.id,'neutral'),bd=ARTM&&ARTM.badges[LEVELS[l]];return `<div class="rv">${pu?`<img class="pt" src="${pu}" alt="">`:`<span class="pt" style="--c:${COLORS[r.id]}">${r.name.replace('The ','')[0]}</span>`}<div><b>#${NUM[r.id]} ${r.name}</b><small>Opinion of you: ${opinion(r.id)} · races you like a ${LEVELS[l]}${h2hText(r.id)?' · '+h2hText(r.id):''}</small>${grudgeOf(r.id)?`<small class="grudge">⚡ ${esc(GRUDGE_TXT[grudgeOf(r.id).k].replace('{t}',shortTrack(grudgeOf(r.id).t)))}</small>`:''}</div>${bd?`<img class="bd" src="${artUrl(bd)}" alt="${LEVELS[l]}">`:`<span class="pill">${LEVELS[l]}</span>`}</div>`}).join('')}</div>
   ${ctlUI()}
   <div class="actions"><button class="btn" data-act="race">Race ${T.name}</button><button class="btn ghost" data-act="title">Title screen</button></div></div>`;
 }
+function radioHL(h){   // the radio moment of the race, as Channel 8 would replay it
+  if(!h||!h.back&&!h.you)return'';const pu=portraitUrl(h.id,h.k==='taunt'?'angry':'neutral')||portraitUrl(h.id,'neutral'),nm=NAMES[h.id];
+  const ttl=h.k==='taunt'?'SLEDGE OF THE RACE':h.k==='banter'?'BANTER OF THE RACE':'LAST WORD';
+  return`<div class="radiohl">${pu?`<img src="${pu}" alt="">`:`<span class="pt" style="--c:${COLORS[h.id]}"></span>`}<div><span class="k">📻 ${ttl}</span>${h.you?`<p class="you">You: “${esc(h.you)}”</p>`:''}${h.back?`<p>${esc(nm)}: “${esc(h.back)}”</p>`:''}</div></div>`}
 function showResults(){
   const r=lastRes;
   setMode('menu','scene:ch8_interview');
@@ -2152,6 +2164,7 @@ function showResults(){
   <table><thead><tr><th>Pos</th><th>Driver</th><th class="n">Time</th><th class="n">Points</th></tr></thead><tbody>
   ${r.rk.map((c,i)=>`<tr class="${c.id==='you'?'me':''}"><td>${ord(i+1)}</td><td><span class="dot" style="background:${COLORS[c.id]}"></span>${NAMES[c.id]}</td><td class="n">${c.ft!=null?fmtT(c.ft):'—'}</td><td class="n">+${PTS[i]}</td></tr>`).join('')}</tbody></table>
   <div class="pills" style="margin-top:14px"><span class="pill up">Purse +$${r.won}</span><span class="pill up">Pickups +$${r.cash}</span><span class="pill up">+${r.xp} XP</span>${r.lv?`<span class="pill up">Level up! +${r.lv} skill point</span>`:''}</div>
+  ${radioHL(r.hl)}
   ${r.notes.map(n=>`<div class="note">${n}</div>`).join('')}
   <div class="actions"><button class="btn" data-act="after">${G.race>=SEASON?'See how your season ends':'Continue'}</button></div></div>`;
 }

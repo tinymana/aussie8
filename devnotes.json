@@ -2,6 +2,25 @@
   "_howto": "Newest first. Add an entry at the top each time you push an update; the website and the in-game 'What's new' both read this file. tag: new | improved | fixed.",
   "notes": [
     {
+      "version": "2.4",
+      "date": "2026-11-27",
+      "title": "Rivalries you can see",
+      "items": [
+        {
+          "tag": "new",
+          "text": "Head-to-head records: the garage shows how you stack up against each rival this season (\"You lead 3–1\", \"Duke leads 2–0\")."
+        },
+        {
+          "tag": "new",
+          "text": "Grudges show in the garage too (\"Hasn’t forgotten your sledge at Red Centre\"). If a rival with a grudge lines up beside you, they bring it up on the grid."
+        },
+        {
+          "tag": "new",
+          "text": "The results screen replays the radio moment of the race: your best sledge and the comeback, or the last word from a rival at the flag."
+        }
+      ]
+    },
+    {
       "version": "2.3.1",
       "date": "2026-11-27",
       "title": "Clean wildlife hits",
