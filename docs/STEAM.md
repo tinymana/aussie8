@@ -33,6 +33,7 @@ To run without Steam, set `AUSSIE8_NO_STEAM=1`. The game also falls back to that
 npm run build:win     # dist/win-unpacked/Aussie 8.exe
 npm run build:mac     # dist/mac/Aussie 8.app   (Intel; see Mac notes)
 npm run build:linux   # dist/linux-unpacked/aussie8   (also covers Steam Deck)
+npm run build:win-portable   # dist/Aussie8-1.0.0-windows-portable.exe: one file to share for testing (not for Steam)
 ```
 
 Each `dist/...` folder is one Steam depot. Upload the **contents** of the folder.

@@ -13,7 +13,8 @@
     "build:win": "npm run prepare-game && electron-builder --win dir",
     "build:mac": "npm run prepare-game && electron-builder --mac dir",
     "build:linux": "npm run prepare-game && electron-builder --linux dir",
-    "build:all": "npm run prepare-game && electron-builder --win dir --linux dir --mac dir"
+    "build:all": "npm run prepare-game && electron-builder --win dir --linux dir --mac dir",
+    "build:win-portable": "npm run prepare-game && electron-builder --win portable"
   },
   "build": {
     "appId": "com.tinymana.aussie8",
@@ -57,7 +58,10 @@
     },
     "electronLanguages": [
       "en-US"
-    ]
+    ],
+    "portable": {
+      "artifactName": "Aussie8-${version}-windows-portable.exe"
+    }
   },
   "dependencies": {
     "steamworks.js": "^0.4.0"
