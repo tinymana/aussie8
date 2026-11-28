@@ -105,6 +105,9 @@ td.n{text-align:right;white-space:nowrap}
 .shn{width:92px;height:92px;border-radius:14px;right:150px;bottom:146px;border-color:#ffcd00;color:#ffe39a;font-size:10px;background:rgba(20,10,34,.55) center/contain no-repeat;image-rendering:pixelated}
 .shn.art{background-image:url(art/hud/btn_shunt.png);color:transparent;border:0;box-shadow:none}
 .shn.art.on{background-image:url(art/hud/btn_shunt_pressed.png);transform:none}
+.tlk.art{background:url(art/hud/btn_talk.png) center/contain no-repeat;image-rendering:pixelated;color:transparent;border:0;box-shadow:none;border-radius:0}
+#pad.talk .tlk.art{animation:tlka .45s infinite alternate}@keyframes tlka{to{filter:brightness(1.3)}}
+.tlk.art.on{background-image:url(art/hud/btn_talk_pressed.png);transform:none}
 #pad.m-stick .shn{right:150px;bottom:150px}
 @media (orientation:landscape){#pad.m-stick .brk{right:84px;bottom:154px;width:64px;height:64px}#pad.m-stick .shn{right:12px;bottom:154px;width:64px;height:64px}}
 /* portrait: the pedal zone is only the right half of a narrow screen, so every button stays inside it */
@@ -130,6 +133,7 @@ td.n{text-align:right;white-space:nowrap}
 .rivals .rv img.bd{width:96px;height:24px;image-rendering:pixelated}
 .rivals .rv small{display:block;color:var(--mute);font-size:13px}
 .rivals .rv small.grudge{color:#ff8a92}
+img.gb{width:16px;height:16px;image-rendering:pixelated;vertical-align:-3px;margin-right:4px}
 .radiohl{display:grid;grid-template-columns:48px minmax(0,1fr);gap:10px;align-items:center;margin-top:14px;padding:10px 12px;border-radius:10px;background:rgba(12,6,20,.7);border:2px solid #ffcd00}
 .radiohl img,.radiohl .pt{width:48px;height:48px;border-radius:6px;object-fit:cover;background:var(--c,#3e2a55)}
 .radiohl p{margin:2px 0;font-size:14px}.radiohl .k{font:9px 'Press Start 2P',monospace;color:#ffcd00;letter-spacing:.04em}
@@ -836,7 +840,7 @@ function startRace(){
   const cars=[];let pl=null;
   order.forEach((id,i)=>{if(id==='you'){pl=mkCar({id:'you',name:'You',tag:'YOU'},grid[i],T,true);cars.push(pl)}else{const r=RIVALS.find(x=>x.id===id);if(r)cars.push(mkCar(r,grid[i],T,false))}});
   if(!pl){pl=mkCar({id:'you',name:'You',tag:'YOU'},grid[7],T,true);cars.push(pl)}
-  R=newRace(T,cars,pl);preloadHeads([...cars.filter(c=>!c.isP).map(c=>c.id),'june','rosa','gazza']);radioHead('barry','portrait');
+  R=newRace(T,cars,pl);preloadHeads([...cars.filter(c=>!c.isP).map(c=>c.id),'june','rosa','gazza']);radioHead('barry','portrait');radioHead('barry','excited');
   {const fl=G.flags;   // paddock deals that follow you onto the grid
    if(fl.penStart){R.pen=fl.penStart;delete fl.penStart;R.radio={id:'pemberton',txt:`You start on ${R.pen} penalty points, #8. Keep it clean.`,t:4,angry:true,prio:3,t0:0};R.radioG=4}
    if(fl.stewardsBought!==undefined&&G.race<fl.stewardsBought)R.penMult=0.5;
@@ -858,7 +862,7 @@ function gridMoment(){
     r=(nb&&RIVALS.find(x=>x.id===nb.id))||pool[(G.race*3+Math.floor(Math.random()*pool.length))%pool.length],l=aggr(r.id),L=LINES[r.id],g=grudgeOf(r.id),ln=g?pick(MEMLINES[r.id][g.k]).replace('{t}',shortTrack(g.t)):pick(L[band(l)]);if(g)R.gridGrudge=r.id;
   R.phase='grid';R.gridR=r.id;
   const img=portraitUrl(r.id,'neutral'),btn=(k,t)=>ARTM&&ARTM.choices[k]?`<button data-grid="${k}" aria-label="${t}"><img src="${artUrl(ARTM.choices[k])}" alt="${t}"></button>`:`<button class="txt" data-grid="${k}">${t}</button>`;
-  gp.innerHTML=`${img?`<img class="gpi" src="${img}" alt="">`:`<span class="gpi" style="background:${COLORS[r.id]}">${r.name.replace('The ','')[0]}</span>`}<div><b>#${NUM[r.id]} ${r.name.toUpperCase()}</b><small>Beside you on the grid · ${LEVELS[l]}${g?' · holds a grudge':''}</small><p>“${ln}”</p></div>
+  gp.innerHTML=`${img?`<img class="gpi" src="${img}" alt="">`:`<span class="gpi" style="background:${COLORS[r.id]}">${r.name.replace('The ','')[0]}</span>`}<div><b>#${NUM[r.id]} ${r.name.toUpperCase()}</b><small>Beside you on the grid · ${LEVELS[l]}${g?` · ${ARTM&&ARTM.badges.grudge?`<img class="gb" src="${artUrl(ARTM.badges.grudge)}" alt="">`:''}holds a grudge`:''}</small><p>“${ln}”</p></div>
     <div class="gpc">${btn('taunt','Taunt')}${btn('encourage','Encourage')}${btn('ignore','Ignore')}</div>`;
   gp.hidden=false;
 }
@@ -996,7 +1000,7 @@ function crew(id,k,o={}){
   return say(id,pick(CREWRADIO[id][k]),Object.assign({prio:2,crew:true,cd:5,gap:2.2},o));
 }
 const spotter=()=>G.crew&&G.crew.june&&G.crew.june.in?'june':'rosa';   // no June yet? Rosa watches the monitors
-function spot(k,o){const id=spotter();if(id==='june')return crew('june',k,Object.assign({mood:/^(roo|emu|wreck|win)/.test(k)?'surprised':'focused'},o));if(R&&R.tt||G.crew&&G.crew.rosa&&!G.crew.rosa.in)return false;const t=CREWRADIO.june[k];return t?say('rosa',pick(t),Object.assign({prio:2,crew:true,cd:5,gap:2.2,mood:'surprised'},o)):false}
+function spot(k,o){const id=spotter();if(id==='june')return crew('june',k,Object.assign({mood:/^(win|podium|lead)/.test(k)?'happy':/^(roo|emu|wreck)/.test(k)?'surprised':'focused'},o));if(R&&R.tt||G.crew&&G.crew.rosa&&!G.crew.rosa.in)return false;const t=CREWRADIO.june[k];return t?say('rosa',pick(t),Object.assign({prio:2,crew:true,cd:5,gap:2.2,mood:'surprised'},o)):false}
 /* one place that watches the race and decides who gets on the radio */
 function updChatter(dt){
   const pl=R.pl;if(!pl||R.phase!=='go'||R.tt)return;const C=R.chat||(R.chat={crash:{},dmg:0,roo:null,last:0,final:false,top3:null,lead:false,nitro:pl.nitro,banter:6,rk:{},rkYou:null,q:[]});
@@ -1551,7 +1555,7 @@ BARRY.sponsor=SPONSOR;
 function barry(k){if(!R||(R.barryCD||0)>R.time)return;let txt;if(k.startsWith('grudge:')){const [,id,t]=k.split(':');txt=pick([`Bad blood between #8 and ${NAMES[id]} after ${shortTrack(t)}!`,`${NAMES[id]} hasn’t forgotten ${shortTrack(t)}, folks!`,`Unfinished business from ${shortTrack(t)}!`])}else if(!BARRY[k])return;else txt=pick(BARRY[k]);SND.play(k==='final'?'final':'barry');const nk=G&&G.flags&&G.flags.nick;
   if(nk&&k==='lead'&&R.pl&&rank()[0]===R.pl)txt=pick([`${nk} hits the front!`,`Here comes ${nk}! Nobody can live with that!`,`${nk} takes the lead and the crowd goes off!`]);
   else if(nk&&k==='crash'&&R.pl.crashT>0)txt=pick([`Oh, ${nk}! That’s gonna leave a mark!`,`${nk} has found the scenery!`]);
-  R.tick={txt,t:3.6};R.barryCD=R.time+4.5}
+  R.tick={txt,t:3.6,mood:/^(crash|roo|emu|sledge|shunt|win|flag)$/.test(k)?'excited':'neutral'};R.barryCD=R.time+4.5}
 function hudImg(k,x,y,sc=2){const im=ART.img['hud_'+k];if(!im)return false;ctx.imageSmoothingEnabled=false;ctx.drawImage(im,x,y,im.width*sc,im.height*sc);return true}
 /* Big Channel 8 banners, centred on screen. The Batch13 art has its words painted flush left, so the
    game covers them and draws the words centred. Set BANNER_TEXT_BAKED=true when art with centred words arrives. */
@@ -1589,14 +1593,21 @@ function drawBroadcast(){
   if(R.tick){R.tick.t-=1/60;drawLowerThird(R.tick);if(R.tick.t<=0)R.tick=null}
 }
 function drawLowerThird(tk){   // Barry Doolan, Channel 8 commentary, as a TV lower-third
-  const up=Math.max(0,Math.min(1,(3.6-tk.t)/0.25,tk.t/0.3)),bw=620,bx0=(W-bw)/2,by=(TOUCH?H-78:H-150)+Math.round((1-up)*40),bh=ART.img['pm|neutral|barry|_n']||radioHead('barry','portrait');
+  const up=Math.max(0,Math.min(1,(3.6-tk.t)/0.25,tk.t/0.3)),bw=620,bx0=(W-bw)/2,by=(TOUCH?H-78:H-150)+Math.round((1-up)*40),fr=ART.img.hud_barry_lower_third;
+  const bh=(tk.mood==='excited'&&radioHead('barry','excited'))||ART.img['pm|neutral|barry|_n']||radioHead('barry','portrait');
   ctx.save();ctx.globalAlpha=up;ctx.textBaseline='middle';ctx.textAlign='left';
+  const fit=(t,max,fs)=>{ctx.font=fs+'px "Press Start 2P",monospace';while(ctx.measureText(t).width>max&&fs>7){fs--;ctx.font=fs+'px "Press Start 2P",monospace'}};
+  if(fr){   // frame art (310x31 at 2x): portrait slot on the left, navy text area x 84..612
+    ctx.fillStyle='#181628';ctx.fillRect(bx0+4,by+4,54,54);if(bh){ctx.imageSmoothingEnabled=bh.width>40;ctx.drawImage(bh,bx0+4,by+4,54,54)}
+    ctx.imageSmoothingEnabled=false;ctx.drawImage(fr,bx0,by,bw,62);
+    ctx.fillStyle='#ffcd00';ctx.font='8px "Press Start 2P",monospace';ctx.fillText('BARRY DOOLAN · CH 8 COMMENTARY',bx0+94,by+20);
+    ctx.fillStyle='#e63946';ctx.fillRect(bx0+556,by+13,46,13);ctx.fillStyle='#fff';ctx.fillText('LIVE',bx0+563,by+20);
+    fit(tk.txt,500,12);ctx.fillStyle='#fbf8f2';ctx.fillText(tk.txt,bx0+94,by+40);ctx.restore();return}
   ctx.fillStyle='#ffcd00';ctx.fillRect(bx0+66,by,300,18);ctx.fillStyle='#0c0614';ctx.font='9px "Press Start 2P",monospace';ctx.fillText('CH 8 · BARRY DOOLAN · COMMENTARY',bx0+74,by+10);
   ctx.fillStyle='rgba(16,10,40,.94)';ctx.fillRect(bx0+66,by+18,bw-66,44);ctx.fillStyle='#00843d';ctx.fillRect(bx0+66,by+59,bw-66,3);
   ctx.fillStyle='#e63946';ctx.fillRect(bx0+bw-62,by+4,54,12);ctx.fillStyle='#fff';ctx.font='8px "Press Start 2P",monospace';ctx.fillText('LIVE',bx0+bw-51,by+10);
   ctx.fillStyle='#ffcd00';ctx.fillRect(bx0,by,62,62);if(bh){ctx.imageSmoothingEnabled=bh.width>40;ctx.drawImage(bh,bx0+3,by+3,56,56);ctx.imageSmoothingEnabled=false}else{ctx.fillStyle='#39304a';ctx.fillRect(bx0+3,by+3,56,56)}
-  let fs=12;ctx.font=fs+'px "Press Start 2P",monospace';while(ctx.measureText(tk.txt).width>bw-90&&fs>8){fs--;ctx.font=fs+'px "Press Start 2P",monospace'}
-  ctx.fillStyle='#fbf8f2';ctx.fillText(tk.txt,bx0+78,by+41);ctx.restore();
+  fit(tk.txt,bw-90,12);ctx.fillStyle='#fbf8f2';ctx.fillText(tk.txt,bx0+78,by+41);ctx.restore();
 }
 function drawYouHead(x,y){   // placeholder pixel helmet for #8 until the art lands
   ctx.fillStyle='#1a1230';ctx.fillRect(x,y,64,64);ctx.fillStyle='#ffcd00';ctx.beginPath();ctx.arc(x+32,y+36,24,Math.PI,0);ctx.fill();ctx.fillRect(x+8,y+36,48,16);
@@ -1610,8 +1621,9 @@ function drawRadio(){
   ctx.save();ctx.globalAlpha=al;ctx.font='12px "Press Start 2P",monospace';const tw=Math.max(ctx.measureText(r.txt).width,ctx.measureText(nm).width*.84)+28+(ART.img.ex_walkie?30:0);
   ctx.fillStyle='rgba(12,6,20,.9)';ctx.fillRect(x,y,76+tw,72);ctx.fillStyle=col;ctx.fillRect(x,y,76+tw,3);
   ctx.fillRect(x+4,y+4,68,68);
-  if(head){ctx.imageSmoothingEnabled=head.width>40;ctx.drawImage(head,x+6,y+6,64,64);ctx.imageSmoothingEnabled=false}else if(r.id==='you')drawYouHead(x+6,y+6);else{ctx.fillStyle=COLORS[r.id]||'#39304a';ctx.fillRect(x+6,y+6,64,64)}
-  if(e<0.12){ctx.fillStyle='rgba(255,255,255,'+(0.5-e*4)+')';for(let k=0;k<8;k++)ctx.fillRect(x+6,y+6+Math.random()*60,64,2)}   // radio static as the picture comes in
+  if(head){ctx.fillStyle='#181628';ctx.fillRect(x+6,y+6,64,64);ctx.imageSmoothingEnabled=head.width>40;ctx.drawImage(head,x+6,y+6,64,64);ctx.imageSmoothingEnabled=false}else if(r.id==='you')drawYouHead(x+6,y+6);else{ctx.fillStyle=COLORS[r.id]||'#39304a';ctx.fillRect(x+6,y+6,64,64)}
+  if(e<0.2&&ART.img.hud_radio_static){ctx.imageSmoothingEnabled=false;ctx.globalAlpha=al*(e<0.15?1:(0.2-e)/0.05);ctx.drawImage(ART.img.hud_radio_static,Math.min(3,Math.floor(e/0.05))*32,0,32,32,x+6,y+6,64,64);ctx.globalAlpha=al}
+  else if(e<0.12){ctx.fillStyle='rgba(255,255,255,'+(0.5-e*4)+')';for(let k=0;k<8;k++)ctx.fillRect(x+6,y+6+Math.random()*60,64,2)}   // radio static as the picture comes in
   {const wk=ART.img.ex_walkie;if(wk){ctx.imageSmoothingEnabled=false;const ww=wk.width*.6,wh=wk.height*.6;ctx.drawImage(wk,x+76+tw-ww-8,y+36-wh/2+(e<1.2?Math.sin(e*40)*1.5:0),ww,wh)}}
   ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillStyle=col==='#e63946'?'#ff8a92':col;ctx.font='10px "Press Start 2P",monospace';ctx.fillText(nm,x+84,y+22);
   ctx.fillStyle='#fbf8f2';ctx.font='12px "Press Start 2P",monospace';ctx.fillText(txt,x+84,y+48);
@@ -1731,7 +1743,7 @@ const ctlCard=()=>(TOUCH?`<div class="card" style="margin-top:14px"><h3>Phone co
 function applyCtl(){pad.className=(CTL.mode==='stick'?'m-stick':'m-buttons')+(CTL.lefty?' lefty':'');
   document.getElementById('hintL').textContent=CTL.mode==='stick'?'Drag to steer':'Hold to steer';
   document.getElementById('hintR').textContent=CTL.mode==='stick'?'Gas is automatic. Tap NITRO or SHUNT':'Hold GAS, roll to NITRO';
-  const sb=pad.querySelector('.shn');if(sb)sb.classList.toggle('art',!!(ARTM&&ARTM.hud.btn_shunt));
+  const sb=pad.querySelector('.shn');if(sb)sb.classList.toggle('art',!!(ARTM&&ARTM.hud.btn_shunt));const tb=pad.querySelector('.tlk');if(tb)tb.classList.toggle('art',!!(ARTM&&ARTM.hud.btn_talk));
   try{localStorage.setItem('aussie8-ctl',JSON.stringify(CTL))}catch(e){}}
 /* ---------- ONLINE (tiny-mana-jams Supabase, `aussie8` edge function) ----------
    Sign-in is arcade style like Typlympics: a name and a four-digit PIN. Best Laps come from Time Trial, where
@@ -2149,7 +2161,7 @@ function showGarage(){
     <h3 style="margin-top:20px">Season points</h3><table><tbody>${st.map((id,i)=>`<tr class="${id==='you'?'me':''}"><td>${i+1}</td><td><span class="dot" style="background:${COLORS[id]}"></span>${NAMES[id]}</td><td class="n">${G.points[id]}</td></tr>`).join('')}</tbody></table></div>
   </div>
   <div class="card" style="margin-top:12px"><h3>Crew</h3>${Object.keys(CREW).map(crewCard).join('')}</div>
-  <div class="card rivals" style="margin-top:12px"><h3>Rivals</h3>${RIVALS.slice().sort((x,y)=>NUM[x.id]-NUM[y.id]).map(r=>{const l=aggr(r.id),pu=portraitUrl(r.id,'neutral'),bd=ARTM&&ARTM.badges[LEVELS[l]];return `<div class="rv">${pu?`<img class="pt" src="${pu}" alt="">`:`<span class="pt" style="--c:${COLORS[r.id]}">${r.name.replace('The ','')[0]}</span>`}<div><b>#${NUM[r.id]} ${r.name}</b><small>Opinion of you: ${opinion(r.id)} · races you like a ${LEVELS[l]}${h2hText(r.id)?' · '+h2hText(r.id):''}</small>${grudgeOf(r.id)?`<small class="grudge">⚡ ${esc(GRUDGE_TXT[grudgeOf(r.id).k].replace('{t}',shortTrack(grudgeOf(r.id).t)))}</small>`:''}</div>${bd?`<img class="bd" src="${artUrl(bd)}" alt="${LEVELS[l]}">`:`<span class="pill">${LEVELS[l]}</span>`}</div>`}).join('')}</div>
+  <div class="card rivals" style="margin-top:12px"><h3>Rivals</h3>${RIVALS.slice().sort((x,y)=>NUM[x.id]-NUM[y.id]).map(r=>{const l=aggr(r.id),pu=portraitUrl(r.id,'neutral'),bd=ARTM&&ARTM.badges[LEVELS[l]];return `<div class="rv">${pu?`<img class="pt" src="${pu}" alt="">`:`<span class="pt" style="--c:${COLORS[r.id]}">${r.name.replace('The ','')[0]}</span>`}<div><b>#${NUM[r.id]} ${r.name}</b><small>Opinion of you: ${opinion(r.id)} · races you like a ${LEVELS[l]}${h2hText(r.id)?' · '+h2hText(r.id):''}</small>${grudgeOf(r.id)?`<small class="grudge">${ARTM&&ARTM.badges.grudge?`<img class="gb" src="${artUrl(ARTM.badges.grudge)}" alt="">`:'⚡'} ${esc(GRUDGE_TXT[grudgeOf(r.id).k].replace('{t}',shortTrack(grudgeOf(r.id).t)))}</small>`:''}</div>${bd?`<img class="bd" src="${artUrl(bd)}" alt="${LEVELS[l]}">`:`<span class="pill">${LEVELS[l]}</span>`}</div>`}).join('')}</div>
   ${ctlUI()}
   <div class="actions"><button class="btn" data-act="race">Race ${T.name}</button><button class="btn ghost" data-act="title">Title screen</button></div></div>`;
 }

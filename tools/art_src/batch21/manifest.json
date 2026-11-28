@@ -1,0 +1,216 @@
+{
+  "batch": 21,
+  "assets": [
+    {
+      "path": "portraits/sal_angry.png",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "path": "portraits/sal_smug.png",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "path": "portraits/sal_happy.png",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "path": "portraits/sal_sad.png",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "path": "portraits/sal_surprised.png",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "path": "portraits/shazza_angry.png",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "path": "portraits/shazza_smug.png",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "path": "portraits/shazza_happy.png",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "path": "portraits/shazza_sad.png",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "path": "portraits/shazza_surprised.png",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "path": "portraits/tash_angry.png",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "path": "portraits/tash_smug.png",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "path": "portraits/tash_happy.png",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "path": "portraits/tash_sad.png",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "path": "portraits/tash_surprised.png",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "path": "portraits/thommo_angry.png",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "path": "portraits/thommo_smug.png",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "path": "portraits/thommo_happy.png",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "path": "portraits/thommo_sad.png",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "path": "portraits/thommo_surprised.png",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "path": "portraits/earl_angry.png",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "path": "portraits/earl_smug.png",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "path": "portraits/earl_happy.png",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "path": "portraits/earl_sad.png",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "path": "portraits/earl_surprised.png",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "path": "portraits/rosa_happy.png",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "path": "portraits/rosa_smug.png",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "path": "portraits/june_happy.png",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "path": "portraits/gazza_happy.png",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "path": "portraits/gazza_angry.png",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "path": "portraits/dex_surprised.png",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "path": "portraits/barry_excited.png",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "path": "radio/you.png",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "path": "radio/you_cocky.png",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "path": "hud/btn_talk.png",
+      "width": 46,
+      "height": 22
+    },
+    {
+      "path": "hud/btn_talk_pressed.png",
+      "width": 46,
+      "height": 22
+    },
+    {
+      "path": "hud/barry_lower_third.png",
+      "width": 310,
+      "height": 31
+    },
+    {
+      "path": "fx/radio_static_01.png",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "path": "fx/radio_static_02.png",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "path": "fx/radio_static_03.png",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "path": "fx/radio_static_04.png",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "path": "ui/grudge.png",
+      "width": 16,
+      "height": 16
+    }
+  ],
+  "notes": "earl is proposed character key; confirm existing lookup. Portraits extracted from generated atlas; inspect edges and identity."
+}

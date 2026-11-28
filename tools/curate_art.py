@@ -429,6 +429,28 @@ if B20.exists():
     ok('wildlife impact: fireball, wallaby and emu bursts, feathers, dust', 'art/fx/wild_*.png', 'BATCH20 *.png', 'played over the collision point; the animal is removed')
     held.append(('BATCH20 preview.png', 'Sample sheet, not a runtime sprite.'))
 
+# ---------------------------------------------------------------- radio and commentary pack (Batch21), kept in tools/art_src/batch21
+# Crew and Barry moods, the #8 radio head, TALK button, Barry's lower-third frame, radio static and the grudge badge.
+# Portraits come on transparency; they are flattened onto the dark portrait backdrop so they match the approved neutrals.
+B21 = REPO / 'tools' / 'art_src' / 'batch21'
+if B21.exists():
+    def flat21(f, bg=(24, 22, 40, 255)):
+        a = np.array(Image.open(B21 / f).convert('RGBA')); a[a[:, :, 3] < 40] = 0   # drop the faint colour-key haze at the edges
+        out = Image.new('RGBA', (a.shape[1], a.shape[0]), bg); out.alpha_composite(Image.fromarray(a)); return out
+    for cid, moods in {'rosa': ['happy', 'smug'], 'june': ['happy'], 'gazza': ['happy', 'angry'], 'dex': ['surprised'], 'barry': ['excited']}.items():
+        portraits.setdefault(cid, {})
+        for m in moods: portraits[cid][m] = save(flat21(f'portraits/{cid}_{m}.png'), f'portraits/{cid}_{m}.png')
+    ok('portrait moods: Rosa happy/smug, June happy, Gazza happy/angry, Dex surprised, Barry excited', 'art/portraits/*_{mood}.png', 'BATCH21 portraits')
+    held.append(('BATCH21 rival moods: Sal, Shazza, Tash, Thommo, Big Earl (25 portraits)', 'Different character designs from the approved neutral portraits (hair, headwear, face). Waiting on the owner: redraw to match, or adopt the new looks.'))
+    radio['you'] = save(Image.open(B21 / 'radio' / 'you.png').convert('RGBA'), 'radio/you.png')
+    held.append(('BATCH21 radio/you_cocky.png', 'Optional; shows a face, and #8 is every player. Kept out so the helmet stays anonymous.'))
+    for k in ('btn_talk', 'btn_talk_pressed', 'barry_lower_third'):
+        hud[k] = save(Image.open(B21 / 'hud' / f'{k}.png').convert('RGBA'), f'hud/{k}.png')
+    hud['radio_static'] = save(strip([Image.open(B21 / 'fx' / f'radio_static_{i:02d}.png').convert('RGBA') for i in range(1, 5)]), 'fx/radio_static.png')
+    badges['grudge'] = save(Image.open(B21 / 'ui' / 'grudge.png').convert('RGBA'), 'ui/grudge.png')
+    ok('radio pack: #8 radio head, TALK button (normal/pressed), Barry lower-third frame, radio static (4 x 32, 50 ms), grudge badge', 'art/radio/you.png, art/hud/*, art/fx/radio_static.png, art/ui/grudge.png', 'BATCH21 radio, hud, fx, ui')
+    held.append(('BATCH21 preview.png', 'Sample sheet, not a runtime sprite.'))
+
 # ---------------------------------------------------------------- missing artwork
 missing += [
     ('More moods: June sad, Hank happy, Dex sad/smug, and moods for Barry, Pemberton and the new faces', 'The nearest pose is shown with the placeholder frame.'),

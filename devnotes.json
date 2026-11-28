@@ -2,6 +2,29 @@
   "_howto": "Newest first. Add an entry at the top each time you push an update; the website and the in-game 'What's new' both read this file. tag: new | improved | fixed.",
   "notes": [
     {
+      "version": "2.5",
+      "date": "2026-11-27",
+      "title": "Radio & commentary pack",
+      "items": [
+        {
+          "tag": "improved",
+          "text": "New art on the radio: your #8 helmet when you talk back, a burst of static as each call connects, and more crew faces (Rosa pleased with a repair, June cheering when you lead or win, Gazza happy or furious about his bet)."
+        },
+        {
+          "tag": "improved",
+          "text": "Barry Doolan's lower-third now uses a proper Channel 8 frame, and he gets excited for crashes, wildlife hits and sledges."
+        },
+        {
+          "tag": "improved",
+          "text": "The TALK button on phones has its own walkie-talkie art and a pressed state. It's the same size and in the same place as before."
+        },
+        {
+          "tag": "improved",
+          "text": "Grudges get a red angry-face badge in the garage and on the grid."
+        }
+      ]
+    },
+    {
       "version": "2.4",
       "date": "2026-11-27",
       "title": "Rivalries you can see",
