@@ -2,6 +2,21 @@
   "_howto": "Newest first. Add an entry at the top each time you push an update; the website and the in-game 'What's new' both read this file. tag: new | improved | fixed.",
   "notes": [
     {
+      "version": "2.3.1",
+      "date": "2026-11-27",
+      "title": "Clean wildlife hits",
+      "items": [
+        {
+          "tag": "fixed",
+          "text": "Hitting a wallaby or emu now plays only the new explosion art: an impact fireball with a feather burst for emus or a dust ring for wallabies, centred where you hit it. The old dot particles and the doubled crash flash are gone."
+        },
+        {
+          "tag": "fixed",
+          "text": "If two trucks hit the same animal at once, you see one explosion, not two. The animal also no longer flashes on screen for a frame after it's hit."
+        }
+      ]
+    },
+    {
       "version": "2.3",
       "date": "2026-11-27",
       "title": "Talk back",

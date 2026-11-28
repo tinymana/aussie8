@@ -422,7 +422,8 @@ wildfx = None
 if B20.exists():
     def frames(prefix, n):
         return [Image.open(B20 / f'{prefix}_{i:02d}.png').convert('RGBA') for i in range(1, n + 1)]
-    wildfx = {'ms': 85}
+    _m = json.loads((B20 / 'manifest.json').read_text()) if (B20 / 'manifest.json').exists() else {}
+    wildfx = {'ms': int(_m.get('frame_ms', 85))}   # 85 ms a frame, from the batch manifest
     for k, n, sz in (('impact', 4, 48), ('wallaby_burst', 6, 48), ('emu_burst', 6, 48), ('emu_feathers', 3, 24), ('dust', 2, 32)):
         wildfx[k] = {'src': save(strip(frames(k, n)), f'fx/wild_{k}.png'), 'w': sz, 'h': sz, 'n': n}
     ok('wildlife impact: fireball, wallaby and emu bursts, feathers, dust', 'art/fx/wild_*.png', 'BATCH20 *.png', 'played over the collision point; the animal is removed')

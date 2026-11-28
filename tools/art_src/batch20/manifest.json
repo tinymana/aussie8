@@ -1,0 +1,112 @@
+{
+  "assets": [
+    {
+      "file": "impact_01.png",
+      "width": 48,
+      "height": 48
+    },
+    {
+      "file": "impact_02.png",
+      "width": 48,
+      "height": 48
+    },
+    {
+      "file": "impact_03.png",
+      "width": 48,
+      "height": 48
+    },
+    {
+      "file": "impact_04.png",
+      "width": 48,
+      "height": 48
+    },
+    {
+      "file": "emu_feathers_01.png",
+      "width": 24,
+      "height": 24
+    },
+    {
+      "file": "emu_feathers_02.png",
+      "width": 24,
+      "height": 24
+    },
+    {
+      "file": "emu_feathers_03.png",
+      "width": 24,
+      "height": 24
+    },
+    {
+      "file": "dust_01.png",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "file": "dust_02.png",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "file": "emu_burst_01.png",
+      "width": 48,
+      "height": 48
+    },
+    {
+      "file": "emu_burst_02.png",
+      "width": 48,
+      "height": 48
+    },
+    {
+      "file": "emu_burst_03.png",
+      "width": 48,
+      "height": 48
+    },
+    {
+      "file": "emu_burst_04.png",
+      "width": 48,
+      "height": 48
+    },
+    {
+      "file": "emu_burst_05.png",
+      "width": 48,
+      "height": 48
+    },
+    {
+      "file": "emu_burst_06.png",
+      "width": 48,
+      "height": 48
+    },
+    {
+      "file": "wallaby_burst_01.png",
+      "width": 48,
+      "height": 48
+    },
+    {
+      "file": "wallaby_burst_02.png",
+      "width": 48,
+      "height": 48
+    },
+    {
+      "file": "wallaby_burst_03.png",
+      "width": 48,
+      "height": 48
+    },
+    {
+      "file": "wallaby_burst_04.png",
+      "width": 48,
+      "height": 48
+    },
+    {
+      "file": "wallaby_burst_05.png",
+      "width": 48,
+      "height": 48
+    },
+    {
+      "file": "wallaby_burst_06.png",
+      "width": 48,
+      "height": 48
+    }
+  ],
+  "frame_ms": 85,
+  "anchor": "center",
+  "loop": false
+}

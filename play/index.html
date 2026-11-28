@@ -1429,14 +1429,16 @@ function crash(a,b,J){
   barry('crash');
   R.floats.push({x:mx,y:my-24,txt:'CRASH!',col:pl?'#e63946':'#fbf8f2',life:1.1});
 }
-function kaboom(r){const emu=r.kind==='emu',art=!!ART.img.wf_impact;(R.booms=R.booms||[]).push({x:r.x,y:r.y,t0:R.time,emu,art});
-  if(!art)for(let i=0;i<26;i++){const a=rnd(0,7),v=rnd(60,260);R.parts.push({x:r.x,y:r.y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:rnd(.5,.9),max:.9,r:rnd(6,10),col:pick(['#ffd34d','#ff9a2e','#e0612a','#c1440e'])})}
-  for(let i=0;i<(art?8:18);i++){const a=rnd(0,7),v=rnd(30,140);R.parts.push({x:r.x,y:r.y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-40,life:rnd(1,1.6),max:1.6,r:rnd(5,8),col:emu?pick(['#ece6da','#bdb4a6','#3b3530']):pick(['#c08a55','#9a6a3c','#7a4e2c'])})}   // fur or feathers, drifting
-  if(!art)for(let i=0;i<10;i++)R.parts.push({x:r.x+rnd(-14,14),y:r.y+rnd(-14,14),vx:rnd(-25,25),vy:rnd(-35,-5),life:rnd(.9,1.5),max:1.5,r:rnd(8,14),col:pick(['#8a5a3a','#6e4a36','#a7774f']),grow:1});   // red-dirt smoke
-  fxSpawn('crash',r.x,r.y);R.shake=Math.max(R.shake,5);SND.play('crash',.8);if(R.crowd)crowdEvent('crash',r.x/2)}
+function kaboom(r){if(r.boomed)return;r.boomed=true;const emu=r.kind==='emu',art=!!(ART.img.wf_impact&&ARTM.wildfx);(R.booms=R.booms||[]).push({x:r.x,y:r.y,t0:R.time,emu,art});   // one boom per animal, at the hit point
+  if(!art){   // no Batch 20 art: the code-drawn fireball, fur or feathers and red-dirt smoke
+    for(let i=0;i<26;i++){const a=rnd(0,7),v=rnd(60,260);R.parts.push({x:r.x,y:r.y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:rnd(.5,.9),max:.9,r:rnd(6,10),col:pick(['#ffd34d','#ff9a2e','#e0612a','#c1440e'])})}
+    for(let i=0;i<18;i++){const a=rnd(0,7),v=rnd(30,140);R.parts.push({x:r.x,y:r.y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-40,life:rnd(1,1.6),max:1.6,r:rnd(5,8),col:emu?pick(['#ece6da','#bdb4a6','#3b3530']):pick(['#c08a55','#9a6a3c','#7a4e2c'])})}
+    for(let i=0;i<10;i++)R.parts.push({x:r.x+rnd(-14,14),y:r.y+rnd(-14,14),vx:rnd(-25,25),vy:rnd(-35,-5),life:rnd(.9,1.5),max:1.5,r:rnd(8,14),col:pick(['#8a5a3a','#6e4a36','#a7774f']),grow:1});
+    fxSpawn('crash',r.x,r.y)}
+  R.shake=Math.max(R.shake,5);SND.play('crash',.8);if(R.crowd)crowdEvent('crash',r.x/2)}
 function drawBooms(){if(!R.booms)return;R.booms=R.booms.filter(b=>R.time-b.t0<(b.art?1.3:.55));const WF=ARTM&&ARTM.wildfx;
   for(const b of R.booms){if(b.art&&WF){   // Batch20: impact fireball + species burst at 85 ms a frame, dust and feathers drifting
-    const t=R.time-b.t0,f=Math.floor(t*1000/WF.ms),a=A(b.x,b.y),fr=(k,i,x,y,al)=>{const m=WF[k],im=ART.img['wf_'+k];if(!im||i<0||i>=m.n)return;bx.globalAlpha=al;bx.drawImage(im,i*m.w,0,m.w,m.h,ri(x-m.w/2),ri(y-m.h/2),m.w,m.h)};
+    const t=R.time-b.t0,f=Math.floor(t*1000/WF.ms),a=A(b.x,b.y),fr=(k,i,x,y,al)=>{const m=WF[k],im=ART.img['wf_'+k];if(!im||i<0||i>=m.n)return;if(window.__fxLog)window.__fxLog.push([R.time-b.t0,k,i,x,y]);bx.globalAlpha=al;bx.drawImage(im,i*m.w,0,m.w,m.h,ri(x-m.w/2),ri(y-m.h/2),m.w,m.h)};
     if(t<1.2)for(let i=0;i<2;i++)fr('dust',t<.45?0:1,a.x+(i?9:-9)+t*(i?10:-10),a.y+4-t*6,t<.7?.9:Math.max(0,.9-(t-.7)*1.8));
     fr('impact',f,a.x,a.y,1);fr(b.emu?'emu_burst':'wallaby_burst',f,a.x,a.y,1);
     if(b.emu&&t<1.3)for(let i=0;i<3;i++){const an=i*2.1+b.t0;fr('emu_feathers',i,a.x+Math.cos(an)*(8+t*24),a.y+Math.sin(an)*(5+t*12)+t*t*14,Math.max(0,1-t/1.3))}
@@ -1451,7 +1453,7 @@ function updRoo(dt){
   const r=R.roo;r.t+=dt;r.big=Math.max(0,r.big-dt);r.x+=r.vx*dt;r.y+=r.vy*dt;r.trav+=Math.hypot(r.vx,r.vy)*dt;
   if(r.poof){R.roo=null;R.rooT=rnd(9,15);return}   // gone in a cartoon puff of red dirt
   r.h=Math.abs(Math.sin(r.t*7))*(r.big>0?16:7);
-  for(const c of R.cars){if(r.hit[c.id]||c.z>5||r.h>4)continue;if(Math.hypot(c.x-r.x,c.y-r.y)<(ART.img.wl_roo_run?28:24)){r.hit[c.id]=1;c.vx*=0.5;c.vy*=0.5;c.a+=rnd(-0.5,0.5);r.vx=c.vx*1.6+r.vx*.6;r.vy=c.vy*1.6+r.vy*.6;r.big=0.8;kaboom(r);r.poof=true;
+  for(const c of R.cars){if(r.hit[c.id]||c.z>5||r.h>4)continue;if(Math.hypot(c.x-r.x,c.y-r.y)<(ART.img.wl_roo_run?28:24)){r.hit[c.id]=1;c.vx*=0.5;c.vy*=0.5;c.a+=rnd(-0.5,0.5);r.vx*=1.8;r.vy*=1.8;r.big=0.8;kaboom(r);r.poof=true;
     if(c.isP){R.shake=Math.max(R.shake,3);R.floats.push({x:r.x,y:r.y-20,txt:r.kind==='emu'?'KA-SQUAWK!':'KA-BOING!',col:'#ffcd00',life:1.2});SND.play(r.kind==='emu'?'emu':'roo');unlock('roo')}barry(r.kind==='emu'?'emu':'roo')}}
   if(r.trav>2*(WALL+20)+40){R.roo=null;R.rooT=rnd(9,15)}
 }
@@ -1509,10 +1511,10 @@ function drawRace(){
   drawGhost(idx);
   for(const c of R.cars){const a=A(c.x,c.y),S=SPRITES[c.id][dstage(c)];bx.drawImage(S.shadow[idx(c.a)],ri(a.x-15+2+c.z*0.2),ri(a.y-15+3+c.z*0.25))}
   const WK=r=>r.kind==='emu'?(r.big>0?'emu_evade':'emu_run'):(r.big>0?'roo_leap':'roo_run');
-  if(R.roo&&ART.img['wl_'+WK(R.roo)]){const r=R.roo,a=A(r.x,r.y),k=WK(r),m=ARTM.wildlife[k],fr=Math.floor(r.t*(r.big>0?10:13))%m.n;
+  if(R.roo&&!R.roo.poof&&ART.img['wl_'+WK(R.roo)]){const r=R.roo,a=A(r.x,r.y),k=WK(r),m=ARTM.wildlife[k],fr=Math.floor(r.t*(r.big>0?10:13))%m.n;
     bx.fillStyle='rgba(0,0,0,.35)';bx.fillRect(ri(a.x-7),ri(a.y+5),14,3);
     bx.save();bx.translate(ri(a.x),ri(a.y-6-(r.kind==='roo'?r.h*0.3:0)-(r.lz||0)*0.5));if(r.ang)bx.rotate(r.ang);if(r.vx<0)bx.scale(-1,1);bx.drawImage(ART.img['wl_'+k],fr*32,0,32,32,-16,-16,32,32);bx.restore()}
-  else if(R.roo){const r=R.roo,a=A(r.x,r.y),s=r.vx*1+r.vy*0<0?SPR.rooL:SPR.roo;bx.fillStyle='rgba(0,0,0,.4)';bx.fillRect(ri(a.x-4),ri(a.y+4),9,2);bx.drawImage(s,ri(a.x-7),ri(a.y-10-r.h/2-(r.lz||0)*0.5))}
+  else if(R.roo&&!R.roo.poof){const r=R.roo,a=A(r.x,r.y),s=r.vx*1+r.vy*0<0?SPR.rooL:SPR.roo;bx.fillStyle='rgba(0,0,0,.4)';bx.fillRect(ri(a.x-4),ri(a.y+4),9,2);bx.drawImage(s,ri(a.x-7),ri(a.y-10-r.h/2-(r.lz||0)*0.5))}
   for(const c of R.cars.slice().sort((p,q)=>p.y+p.z*3-(q.y+q.z*3))){const a=A(c.x,c.y);
     if(c.nitroT>0&&FXI('nitro')){const m=FXM('nitro'),fr=Math.floor(R.time*18)%m.n,b=A(c.x-Math.cos(c.a)*22,c.y-Math.sin(c.a)*22);bx.save();bx.translate(ri(b.x),ri(b.y-c.z*0.35));bx.rotate(c.a);bx.drawImage(FXI('nitro'),fr*32,0,32,32,-16,-16,32,32);bx.restore()}
     bx.drawImage(SPRITES[c.id][dstage(c)].spr[idx(c.a)],ri(a.x-15),ri(a.y-15-c.z*0.35))}
@@ -2304,7 +2306,7 @@ function loop(now){
   requestAnimationFrame(loop);
 }
 showTitle();requestAnimationFrame(loop);if(NET.me)setTimeout(()=>cloudPull(true),1500);
-window.__A8={get G(){return G},get R(){return R},TRACKS,TS,ART,SPRITES,DMG,spawnDebris,gridChoice,doShunt,aggr,crowdEvent,SND,CRASH,updRace:dt=>updRace(dt),liveStart:g=>liveStart(g),liveState:p=>liveState(p),LIVE,NET,EVENTS,TROPHY,SET,PAD,padInput:i=>padInput(i),cloudPull:q=>cloudPull(q),say,radio:(i,k)=>radio(i,k),talk:()=>{talkPress=true},grudgeCall:()=>grudgeCall(),barry:k=>barry(k),XLINES,CREWRADIO,radioHead};
+window.__A8={get G(){return G},get R(){return R},TRACKS,TS,ART,SPRITES,DMG,kaboom:r=>kaboom(r),updRoo:dt=>updRoo(dt),spawnDebris,gridChoice,doShunt,aggr,crowdEvent,SND,CRASH,updRace:dt=>updRace(dt),liveStart:g=>liveStart(g),liveState:p=>liveState(p),LIVE,NET,EVENTS,TROPHY,SET,PAD,padInput:i=>padInput(i),cloudPull:q=>cloudPull(q),say,radio:(i,k)=>radio(i,k),talk:()=>{talkPress=true},grudgeCall:()=>grudgeCall(),barry:k=>barry(k),XLINES,CREWRADIO,radioHead};
 loadArt().catch(e=>console.warn('Aussie 8: art load failed',e));
 }
 </script>
