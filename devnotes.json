@@ -17,6 +17,10 @@
         {
           "tag": "new",
           "text": "The results screen replays the radio moment of the race: your best sledge and the comeback, or the last word from a rival at the flag."
+        },
+        {
+          "tag": "new",
+          "text": "The season ending now gives your rivals a closing line, based on how you did against them: \"Duke Vance never beat you once all season. He’s still trying to work out how.\""
         }
       ]
     },

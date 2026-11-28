@@ -2168,6 +2168,25 @@ function showResults(){
   ${r.notes.map(n=>`<div class="note">${n}</div>`).join('')}
   <div class="actions"><button class="btn" data-act="after">${G.race>=SEASON?'See how your season ends':'Continue'}</button></div></div>`;
 }
+const RIV_END={   // one closing line per rival, from the season's head-to-head record
+ duke:{you:'He’s still trying to work out how.',them:'He brings it up in every interview.',even:'His dad has already booked the rematch.'},
+ shazza:{you:'She’s demanding a rematch in the car park.',them:'She had the scoreline tattooed on her forearm.',even:'She calls it a draw. She calls everything a draw.'},
+ tash:{you:'She has a forty-page spreadsheet about why.',them:'She emailed you the telemetry. Twice.',even:'Her model says next season decides it.'},
+ sal:{you:'He shakes your hand anyway. “Good drive, kid.”',them:'“Patience, kid.” He says it every time.',even:'He buys the first round. You buy the second.'},
+ thommo:{you:'He edited it into a comeback video anyway.',them:'The highlights reel got a million views.',even:'Chat is split. Chat is always split.'},
+ yowie:{you:'It left a pie on your bonnet. Respect, probably.',them:'Nobody believes you about it anyway.',even:'It nods at you across the paddock. Once.'},
+ earl:{you:'He reckons he let you win.',them:'Not bad for seventy, he says. Often.',even:'He’ll be back next year. His knees might not.'}
+};
+function rivalEndings(){
+  const H=G.h2h||{},out=[];
+  const rows=RIVALS.map(r=>({id:r.id,w:(H[r.id]||{}).w||0,l:(H[r.id]||{}).l||0})).filter(x=>x.w+x.l>=3&&RIV_END[x.id]);
+  rows.sort((a,b)=>Math.abs(b.w-b.l)-Math.abs(a.w-a.l)||Math.random()-.5);
+  const pickRows=[rows.find(x=>x.w>x.l),rows.find(x=>x.l>x.w),rows.find(x=>x.w===x.l)].filter(Boolean).slice(0,3);
+  for(const x of pickRows){const n=NAMES[x.id],e=RIV_END[x.id],tot=x.w+x.l;
+    out.push(x.l===0?`${n} never beat you once all season. ${e.you}`:x.w===0?`You never beat ${n} once all season. ${e.them}`:
+      x.w>x.l?`You beat ${n} ${x.w} times out of ${tot}. ${e.you}`:x.l>x.w?`${n} beat you ${x.l} times out of ${tot}. ${e.them}`:`You and ${n} split the season ${x.w}–${x.l}. ${e.even}`)}
+  return out;
+}
 function showEnding(){
   setMode('menu','title');
   const st=standings(),champ=st[0]==='you',k=G.karma;
@@ -2193,6 +2212,7 @@ function showEnding(){
   lines.push(G.rival>=30?'Duke Vance shouts you a beer at the presentation night. Somewhere along the way, a rival became a mate.':G.rival<=-30?'Duke Vance swears he’ll put you in the tyre wall next season. You believe him.':'Duke Vance nods at you across the presentation night. Respect, maybe.');
   if(G.flags.yowieRevealed!==undefined)lines.push(`The Yowie's fur helmet hangs behind the bar at the Coober Pedy pub now. ${REVEAL.name} tells anyone who asks that you were the only one who could catch him.`);
   else if(G.flags.yowieBeaten===undefined)lines.push('Nobody beat the Yowie this year. He walks out of the presentation night with a pie in each hand, still masked.');
+  lines.push(...rivalEndings());
   ov.innerHTML=`<div class="panel">${EK&&ARTM&&ARTM.endings[EK]?`<img class="endart" src="${artUrl(ARTM.endings[EK])}" alt="${title}">`:''}<p class="kicker">Season over</p><div class="title-logo" style="font-size:clamp(20px,4.4vw,40px)">${title.toUpperCase()}</div>
   ${lines.map(l=>`<p class="story" style="margin-bottom:10px">${l}</p>`).join('')}
   <div class="pills" style="margin-top:12px"><span class="pill">Karma ${k}</span><span class="pill">Duke ${G.rival}</span><span class="pill">Level ${G.lvl}</span><span class="pill">$${G.money.toLocaleString()}</span></div>
