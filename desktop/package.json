@@ -1,0 +1,69 @@
+{
+  "name": "aussie8",
+  "productName": "Aussie 8",
+  "version": "1.0.0",
+  "description": "Outback trophy-truck racing. Every choice rides shotgun.",
+  "author": "tinymana",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "prepare-game": "node scripts/copy-game.js",
+    "start": "npm run prepare-game && electron .",
+    "build:win": "npm run prepare-game && electron-builder --win dir",
+    "build:mac": "npm run prepare-game && electron-builder --mac dir",
+    "build:linux": "npm run prepare-game && electron-builder --linux dir",
+    "build:all": "npm run prepare-game && electron-builder --win dir --linux dir --mac dir"
+  },
+  "build": {
+    "appId": "com.tinymana.aussie8",
+    "productName": "Aussie 8",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "steam.js",
+      "game/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "asarUnpack": [
+      "node_modules/steamworks.js/**"
+    ],
+    "extraFiles": [
+      {
+        "from": "steam_appid.txt",
+        "to": "steam_appid.txt"
+      }
+    ],
+    "win": {
+      "target": "dir",
+      "icon": "build/icon.png",
+      "signAndEditExecutable": false
+    },
+    "mac": {
+      "target": "dir",
+      "icon": "build/icon.png",
+      "category": "public.app-category.racing-games",
+      "identity": null
+    },
+    "linux": {
+      "target": "dir",
+      "icon": "build/icon.png",
+      "category": "Game",
+      "executableName": "aussie8"
+    },
+    "electronLanguages": [
+      "en-US"
+    ]
+  },
+  "dependencies": {
+    "steamworks.js": "^0.4.0"
+  },
+  "devDependencies": {
+    "electron": "^45.5.0",
+    "electron-builder": "^26.18.0"
+  }
+}

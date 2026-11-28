@@ -201,6 +201,15 @@ table.board .btn{padding:4px 8px;font-size:11px}
 .trophy{background:rgba(18,10,30,.7);border:2px solid #3a2d52;border-radius:12px;padding:10px;opacity:.55}.trophy.got{opacity:1;border-color:var(--gold)}
 .trophy .cup{font-size:22px;display:block}.trophy b{display:block}.trophy small{color:rgba(251,248,242,.75)}
 .medalshelf{font-size:18px;margin:6px 0 12px}
+/* desktop / Steam build: the game fills the window, no web page around it */
+body.desktop{overflow:hidden;min-height:0;background:#0b0612}
+body.desktop .wrap{max-width:none;padding:0}
+body.desktop .marquee,body.desktop .foot{display:none}
+body.desktop .cab{border:0;border-radius:0;padding:0;box-shadow:none;background:none}
+body.desktop .screen{position:fixed;inset:0;aspect-ratio:auto;border-radius:0;box-shadow:none;background:#0b0612;min-height:0}
+body.desktop .screen canvas{inset:auto;left:50%;top:50%;transform:translate(-50%,-50%);width:min(100vw,150vh);height:auto}
+body.desktop .screen.menu canvas{inset:0;left:0;top:0;transform:none;width:100%;height:100%}
+body.desktop .screen.menu .ov{position:absolute;inset:0;overflow-y:auto;align-items:flex-start}
 </style>
 </head>
 <body>
@@ -228,6 +237,10 @@ table.board .btn{padding:4px 8px;font-size:11px}
 <script src="art/manifest.js"></script>
 <script>
 {
+const DESK=window.A8Desktop||null;   // set by the Steam/desktop build; null on the web
+if(DESK){const S=Storage.prototype,set=S.setItem,del=S.removeItem;
+  S.setItem=function(k,v){set.call(this,k,v);if(this===localStorage&&/^aussie8/.test(k))DESK.store(k,String(v))};
+  S.removeItem=function(k){del.call(this,k);if(this===localStorage&&/^aussie8/.test(k))DESK.store(k,null)}}
 const cv=document.getElementById('cv'),ctx=cv.getContext('2d'),W=960,H=640,AW=480,AH=320,OY=40;
 const ov=document.getElementById('ov'),scr=document.getElementById('screen'),pad=document.getElementById('pad'),stickEl=document.getElementById('stick');
 const TOUCH=matchMedia('(pointer:coarse)').matches||location.hash==='#touch';
@@ -1719,6 +1732,7 @@ const SCENE_IMG={};
 let bgKind='title';
 titleImg.onload=()=>{if(mode!=='race')drawBg(bgKind)};
 function setMode(m,bg){
+  if(DESK&&m!==mode)DESK.presence(m==='race'&&R?(R.tt?'Time trial at ':R.net?'Live race at ':'Racing at ')+R.T.name:m==='title'?'At the title screen':'In the paddock');
   mode=m;SND.musVol();if(m!=='race')SND.silence();scr.classList.toggle('menu',m==='menu');scr.classList.toggle('title',m==='title');ov.hidden=m==='race';
   const playing=m==='race'&&TOUCH;scr.classList.toggle('playing',playing);pad.hidden=!playing;document.documentElement.style.overflow=playing?'hidden':'';
   if(!playing){ptrs.clear();syncTS();stickEl.classList.remove('on')}
@@ -2031,7 +2045,7 @@ const TROPHIES=[
 const TROPHY={got:(()=>{try{return JSON.parse(localStorage.getItem('aussie8-trophies')||'[]')}catch(e){return[]}})(),
   keep(){try{localStorage.setItem('aussie8-trophies',JSON.stringify(this.got))}catch(e){}},
   merge(list){let ch=false;for(const id of list)if(!this.got.includes(id)&&TROPHIES.some(t=>t[0]===id)){this.got.push(id);ch=true}if(ch)this.keep()}};
-function unlock(id){if(TROPHY.got.includes(id))return;const t=TROPHIES.find(x=>x[0]===id);if(!t)return;TROPHY.got.push(id);TROPHY.keep();toast('🏆 Trophy unlocked: '+t[1],3800);SND.play('cash');cloudPush()}
+function unlock(id){if(TROPHY.got.includes(id))return;const t=TROPHIES.find(x=>x[0]===id);if(!t)return;TROPHY.got.push(id);TROPHY.keep();if(DESK)DESK.achievement(id);toast('🏆 Trophy unlocked: '+t[1],3800);SND.play('cash');cloudPush()}
 function showTrophies(){setMode('menu','title');const n=TROPHY.got.length;
   ov.innerHTML=`<div class="panel wide"><p class="kicker">Trophy cabinet</p><h2>${n} of ${TROPHIES.length}</h2>
   <div class="trophies">${TROPHIES.map(([id,nm,ds])=>{const g=TROPHY.got.includes(id);return`<div class="trophy ${g?'got':''}"><span class="cup">${g?'🏆':'🔒'}</span><b>${esc(nm)}</b><small>${esc(ds)}</small></div>`}).join('')}</div>
@@ -2058,7 +2072,8 @@ function padMenus(){const g=gpad();if(!g)return;
   else if(padEdge(g,1)){const back=bs.find(b=>/^(Back|Head back)/.test(b.textContent.trim()));if(back)back.click()}}
 function showSettings(){setMode('menu','title');const seg=(k,opts)=>`<div class="seg">${opts.map(([v,l])=>`<button class="btn sm ${SET[k]===v?'':'ghost'}" data-act="set:${k}:${v}">${l}</button>`).join('')}</div>`;
   ov.innerHTML=`<div class="panel"><p class="kicker">Settings</p><h2>Settings</h2>
-  <div class="card"><h3>Steering</h3>${seg('sens',[[0.7,'Gentle'],[1,'Normal'],[1.35,'Twitchy']])}</div>
+  ${DESK?`<div class="card"><h3>Display</h3><div class="seg"><button class="btn sm" data-act="fullscreen" aria-pressed="${DESK.isFullscreen()}">${DESK.isFullscreen()?'Fullscreen':'Windowed'}</button></div><p class="muted" style="margin:0">F11 or Alt+Enter switches any time.</p></div>`:''}
+  <div class="card"${DESK?' style="margin-top:14px"':''}><h3>Steering</h3>${seg('sens',[[0.7,'Gentle'],[1,'Normal'],[1.35,'Twitchy']])}</div>
   <div class="card" style="margin-top:14px"><h3>Screen shake</h3>${seg('shake',[[1,'Full'],[0.4,'Less'],[0,'Off']])}</div>
   <div class="card" style="margin-top:14px"><h3>Controller</h3><p class="muted" style="margin:0">${gpad()?`Connected: ${esc(PAD.name||'gamepad')}. Left stick or d-pad steers, A or right trigger for gas, B or left trigger brakes, X for nitro, Y or right bumper to shunt, Start pauses. In menus the d-pad moves and A picks.`:'Plug in a controller (Xbox, PlayStation or Switch Pro) and press any button.'}</p></div>
   ${ctlUI()}<div class="actions"><button class="btn ghost" data-act="title">Back</button></div></div>`}
@@ -2091,7 +2106,7 @@ function showMenu(){
   ov.innerHTML=`<div class="panel"><p class="kicker">One season · eight trucks · four loops and four figure-8s</p>
   <div class="title-logo"><img src="wordmark.png" alt="Aussie 8"></div>
   <p class="story">Eight trophy trucks and eight red-dirt arenas from the Red Centre to the Daintree. Half are flat-out loops; the other half are figure-8s with a crossover where everybody meets. Then live with what you do between races. Help strangers or rob them, take the bribe or leak it. Your crew remembers every call, and they’ll walk if you push them too far.</p>
-  <div class="actions">${s&&s.race<SEASON?`<button class="btn" data-act="cont">Continue season (race ${s.race+1} of ${SEASON})</button><button class="btn ghost" data-act="new">New season</button>`:`<button class="btn" data-act="new">Start season</button>`}<button class="btn ghost" data-act="online">Online${NET.me?' · '+esc(NET.me.name):''}</button><button class="btn ghost" data-act="trophies">Trophies ${TROPHY.got.length}/${TROPHIES.length}</button><button class="btn ghost" data-act="settings">Settings</button></div>
+  <div class="actions">${s&&s.race<SEASON?`<button class="btn" data-act="cont">Continue season (race ${s.race+1} of ${SEASON})</button><button class="btn ghost" data-act="new">New season</button>`:`<button class="btn" data-act="new">Start season</button>`}<button class="btn ghost" data-act="online">Online${NET.me?' · '+esc(NET.me.name):''}</button><button class="btn ghost" data-act="trophies">Trophies ${TROPHY.got.length}/${TROPHIES.length}</button><button class="btn ghost" data-act="settings">Settings</button>${DESK?'<button class="btn ghost" data-act="quit">Quit to desktop</button>':''}</div>
   <div class="keys">
     <div class="key"><b>Drive</b>Arrow keys or WASD. On phones, drag your thumb where you want to go, or switch to buttons below.</div>
     <div class="key"><b>Nitro</b>Space or Shift. Grab green N canisters on track for more.</div>
@@ -2277,6 +2292,8 @@ ov.addEventListener('click',e=>{
   else if(a==='new'){G=fresh();save();setMode('menu');showEvent(nextEvent())}
   else if(a==='cont'){G=load();resume()}
   else if(a==='title')showTitle();
+  else if(a==='quit'&&DESK)DESK.quit();
+  else if(a==='fullscreen'&&DESK){DESK.setFullscreen(!DESK.isFullscreen());setTimeout(showSettings,250)}
   else if(a.startsWith('ch:'))choose(+a.slice(3));
   else if(a==='garage')showGarage();
   else if(a==='paddock')showPaddock();
@@ -2369,6 +2386,7 @@ function loop(now){
   requestAnimationFrame(loop);
 }
 showTitle();requestAnimationFrame(loop);if(NET.me)setTimeout(()=>cloudPull(true),1500);
+if(DESK){DESK.syncAchievements(TROPHY.got);document.body.classList.add('desktop');const ft=document.querySelector('.foot span:last-child');if(ft)ft.textContent='Progress saves on this computer'+(DESK.steam().ok?' and Steam Cloud':'')}
 window.__A8={get G(){return G},get R(){return R},TRACKS,TS,ART,SPRITES,DMG,kaboom:r=>kaboom(r),updRoo:dt=>updRoo(dt),spawnDebris,gridChoice,doShunt,aggr,crowdEvent,SND,CRASH,updRace:dt=>updRace(dt),liveStart:g=>liveStart(g),liveState:p=>liveState(p),LIVE,NET,EVENTS,TROPHY,SET,PAD,padInput:i=>padInput(i),cloudPull:q=>cloudPull(q),crowdEmoji:(k,x)=>crowdEmoji(R.crowd,k,x),emojiOK:()=>emojiOK(),say,radio:(i,k)=>radio(i,k),talk:()=>{talkPress=true},grudgeCall:()=>grudgeCall(),barry:k=>barry(k),XLINES,CREWRADIO,radioHead};
 loadArt().catch(e=>console.warn('Aussie 8: art load failed',e));
 }

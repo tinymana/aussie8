@@ -117,3 +117,7 @@ Online features run on the owner's **tiny-mana-jams** Supabase project, in their
 - `supabase/migrations/`: the schema. The API roles have no access to it; only the function does.
 - Live races use Supabase Realtime broadcast on channel `aussie8:<ROOM>` with the publishable key; each player broadcasts their own truck up to 15 times a second (less in a full room, to stay inside the free plan's 100 Realtime messages a second), the host also broadcasts the AI rivals. `play/vendor/supabase-2.119.2.js` is the supabase-js browser build (MIT).
 
+
+## Desktop / Steam build
+
+`desktop/` wraps the game as an Electron app with Steam achievements, overlay, rich presence and Steam Cloud saves. See [docs/STEAM.md](docs/STEAM.md).
