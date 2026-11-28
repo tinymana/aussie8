@@ -902,7 +902,7 @@ function talkBack(){
   const t=R.talk;R.talk=null;if(!t||!R.pl)return;const c=R.cars.find(x=>x.id===t.id);if(!c)return;
   const lv=band(aggr(t.id,c.rage>0)),friendly=lv==='high',k=friendly?'banter':'taunt';
   R.radioG=0;const mine=pick(YOU_LINES[k]);say('you',mine,{prio:4,cd:0,gap:1.4,t:2});const hl={id:t.id,you:mine,back:null,k};if(!friendly||!R.highlight)R.highlight=hl;
-  if(friendly)opDelta(t.id,2);else{opDelta(t.id,-Math.max(1,4-G.stats.charm));c.rage=Math.max(c.rage,6);memo(t.id).taunt++;R.cash+=15;R.floats.push({x:R.pl.x,y:R.pl.y-30,txt:'SLEDGE! +$15',col:'#ffcd00',life:1.2});crowdEvent('ram',R.pl.x/2)}
+  if(friendly)opDelta(t.id,2);else{opDelta(t.id,-Math.max(1,4-G.stats.charm));c.rage=Math.max(c.rage,6);memo(t.id).taunt++;R.cash+=15;R.floats.push({x:R.pl.x,y:R.pl.y-30,txt:'SLEDGE! +$15',col:'#ffcd00',life:1.2});crowdEvent('ram',R.pl.x/2);if(R.crowd)crowdEmoji(R.crowd,'sledge',R.pl.x/2)}
   R.talkN=(R.talkN||0)+1;
   (R.chat||{q:[]}).q.push({at:R.time+1.5,fn:()=>{R.radioCD[t.id]=0;R.radioG=0;hl.back=pick(COMEBACK[t.id]?.[k]||['...']);say(t.id,hl.back,{prio:4,angry:!friendly,mood:friendly?'happy':'angry',gap:2.2})}});
   if(!friendly&&Math.random()<.5)(R.chat||{q:[]}).q.push({at:R.time+3.9,fn:()=>barry('sledge')});
@@ -1385,16 +1385,34 @@ function drawStadium(g,C,L,ox,oy){
     const fr=(fr0+f.ph)%4,dy=hop&&(fr===1||fr===2)?-1:0;
     g.drawImage(im,(acts.indexOf(a)*4+fr)*10,f.f*12,10,12,f.x,f.fy-11+dy,10,12);
     if(a==='photo'&&fr===2&&(f.ph&1)){g.fillStyle='#fff';g.fillRect(f.x+6,f.fy-6,3,1);g.fillRect(f.x+7,f.fy-7,1,3)}
-    if(C&&C.wow&&C.wow.t>t&&f.h0<.45&&Math.abs(f.x+5-C.wow.x)<100&&((t*10|0)%3)){const bx0=f.x+3,by0=f.fy-17+dy;g.fillStyle='#0c0b0e';g.fillRect(bx0-1,by0-1,3,7);g.fillStyle='#ffcd00';g.fillRect(bx0,by0,1,3);g.fillRect(bx0,by0+4,1,1)}}
+    if(C&&C.wow&&C.wow.t>t&&!emojiOK()&&f.h0<.45&&Math.abs(f.x+5-C.wow.x)<100&&((t*10|0)%3)){const bx0=f.x+3,by0=f.fy-17+dy;g.fillStyle='#0c0b0e';g.fillRect(bx0-1,by0-1,3,7);g.fillStyle='#ffcd00';g.fillRect(bx0,by0,1,3);g.fillRect(bx0,by0+4,1,1)}}
+  if(C&&C.emo)for(const e of C.emo){const a=t-e.t0;if(a<0||a>1.3)continue;g.globalAlpha=a<1?1:1-(a-1)/.3;g.drawImage(emojiSprite(e.ch),ri(e.x),ri(e.y-Math.min(a,.25)*16-a*4));g.globalAlpha=1}
   g.restore();
 }
 function crowdNew(T){const L=stadLayout(T),full=L.ti===TRACKS.length-1;
   return {L,fans:L.fans,t:0,ex:full?.3:.08,base:full?.3:.08,cd:{},wave:-99,waveNext:22+L.ti*4,tick:0,pos:null,n:0,hot:[],flash:0}}
+/* crowd emoji: little pixel emoji pop up over the fans' heads, NHL '94 thought-bubble style */
+const CEMO={crash:['😱','😮','🤯','😬'],roo:['🦘','📸','😂'],emu:['🐦','📸','😂'],ram:['😠','👎','😤'],pen:['👎','😠'],close:['😬','😮'],
+ pass:['👏','🔥'],lead:['🔥','👏','🙌'],jump:['📸','😮'],final:['🏁','🔥'],finish:['👏','🏁'],podium:['🎉','👏','🏆'],win:['🎉','🏆','🙌','🔥','🥳'],sledge:['😂','🔥','🗣️'],go:['🔥','🙌']};
+const CEMO_N={crash:6,roo:4,emu:4,ram:4,pen:5,close:2,pass:2,lead:6,jump:2,final:6,finish:3,podium:10,win:14,sledge:4,go:6};
+const EMOJI={c:{},ok:null};
+function emojiOK(){if(EMOJI.ok!==null)return EMOJI.ok;try{const c=document.createElement('canvas');c.width=c.height=16;const x=c.getContext('2d');x.font='14px sans-serif';x.textBaseline='top';x.fillText('😱',0,0);
+  const d=x.getImageData(0,0,16,16).data;let col=0;for(let i=0;i<d.length;i+=4)if(d[i+3]>100&&Math.abs(d[i]-d[i+2])>40)col++;EMOJI.ok=col>8}catch(e){EMOJI.ok=false}return EMOJI.ok}
+function emojiSprite(ch){   // rendered once at 14px, alpha snapped so it reads as pixel art when the strip is scaled up
+  if(EMOJI.c[ch])return EMOJI.c[ch];const c=document.createElement('canvas');c.width=c.height=16;const x=c.getContext('2d');
+  x.font='14px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(ch,8,8.5);
+  const im=x.getImageData(0,0,16,16),d=im.data;for(let i=3;i<d.length;i+=4)d[i]=d[i]>110?255:0;x.putImageData(im,0,0);return EMOJI.c[ch]=c}
+function crowdEmoji(C,k,ax){
+  const set=CEMO[k];if(!set||!emojiOK())return;const n=CEMO_N[k]||3,r=CRE[k]&&CRE[k].r||0,ox=ax==null?240:ax;
+  const pool=C.fans.filter(f=>!r||Math.abs(f.x+5-ox)<Math.max(r,90));C.emo=C.emo||[];
+  for(let i=0;i<n&&pool.length;i++){const f=pool[(Math.random()*pool.length)|0];C.emo.push({x:f.x-3,y:f.fy-17,t0:C.t+i*.07+Math.random()*.15,ch:set[(Math.random()*set.length)|0]})}
+  if(C.emo.length>40)C.emo.splice(0,C.emo.length-40)}
 function crowdEvent(k,ax){
   const C=R&&R.crowd,e=CRE[k];if(!C||!e)return;
   if((C.cd[k]||0)>C.t)return;C.cd[k]=C.t+e.cd;C.ex=Math.min(1,C.ex+e.ex);C.n++;
   if(k==='win'||k==='podium')C.flash=C.t+2;
   if(k==='crash')C.wow={x:ax==null?240:ax,t:C.t+1};
+  crowdEmoji(C,k,ax);
   {const sk=e.a==='boo'?'boo':k==='crash'||k==='close'?'ooh':e.a==='cheer'||e.a==='victory'||k==='final'?'cheer':null;if(sk)SND.play(sk,e.r?.55:1)}
   const ox=ax==null?240:ax,sp=e.r?360:520;
   for(const f of C.fans){const d=Math.abs(f.x+5-ox);if(e.r&&d>e.r)continue;
@@ -1414,7 +1432,7 @@ function crowdWatch(C){
   if(R.ute&&!C.ute)crowdEvent('pen');C.ute=!!R.ute;
 }
 function crowdUpd(dt){
-  const C=R.crowd;if(!C)return;C.t+=dt;C.ex=Math.max(C.base,C.ex-dt*.1);
+  const C=R.crowd;if(!C)return;C.t+=dt;C.ex=Math.max(C.base,C.ex-dt*.1);if(C.emo&&C.emo.length)C.emo=C.emo.filter(e=>C.t-e.t0<1.3);
   if(R.phase==='go'){C.tick-=dt;if(C.tick<=0){C.tick=.2;crowdWatch(C)}
     if(C.t>C.waveNext&&C.ex<.6){C.wave=C.t;C.waveNext=C.t+38+(C.L.ti*7)%18}}
   for(const f of C.fans){
@@ -1447,7 +1465,7 @@ function kaboom(r){if(r.boomed)return;r.boomed=true;const emu=r.kind==='emu',art
     for(let i=0;i<18;i++){const a=rnd(0,7),v=rnd(30,140);R.parts.push({x:r.x,y:r.y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-40,life:rnd(1,1.6),max:1.6,r:rnd(5,8),col:emu?pick(['#ece6da','#bdb4a6','#3b3530']):pick(['#c08a55','#9a6a3c','#7a4e2c'])})}
     for(let i=0;i<10;i++)R.parts.push({x:r.x+rnd(-14,14),y:r.y+rnd(-14,14),vx:rnd(-25,25),vy:rnd(-35,-5),life:rnd(.9,1.5),max:1.5,r:rnd(8,14),col:pick(['#8a5a3a','#6e4a36','#a7774f']),grow:1});
     fxSpawn('crash',r.x,r.y)}
-  R.shake=Math.max(R.shake,5);SND.play('crash',.8);if(R.crowd)crowdEvent('crash',r.x/2)}
+  R.shake=Math.max(R.shake,5);SND.play('crash',.8);if(R.crowd){crowdEvent('crash',r.x/2);crowdEmoji(R.crowd,emu?'emu':'roo',r.x/2)}}
 function drawBooms(){if(!R.booms)return;R.booms=R.booms.filter(b=>R.time-b.t0<(b.art?1.3:.55));const WF=ARTM&&ARTM.wildfx;
   for(const b of R.booms){if(b.art&&WF){   // Batch20: impact fireball + species burst at 85 ms a frame, dust and feathers drifting
     const t=R.time-b.t0,f=Math.floor(t*1000/WF.ms),a=A(b.x,b.y),fr=(k,i,x,y,al)=>{const m=WF[k],im=ART.img['wf_'+k];if(!im||i<0||i>=m.n)return;if(window.__fxLog)window.__fxLog.push([R.time-b.t0,k,i,x,y]);bx.globalAlpha=al;bx.drawImage(im,i*m.w,0,m.w,m.h,ri(x-m.w/2),ri(y-m.h/2),m.w,m.h)};
@@ -2351,7 +2369,7 @@ function loop(now){
   requestAnimationFrame(loop);
 }
 showTitle();requestAnimationFrame(loop);if(NET.me)setTimeout(()=>cloudPull(true),1500);
-window.__A8={get G(){return G},get R(){return R},TRACKS,TS,ART,SPRITES,DMG,kaboom:r=>kaboom(r),updRoo:dt=>updRoo(dt),spawnDebris,gridChoice,doShunt,aggr,crowdEvent,SND,CRASH,updRace:dt=>updRace(dt),liveStart:g=>liveStart(g),liveState:p=>liveState(p),LIVE,NET,EVENTS,TROPHY,SET,PAD,padInput:i=>padInput(i),cloudPull:q=>cloudPull(q),say,radio:(i,k)=>radio(i,k),talk:()=>{talkPress=true},grudgeCall:()=>grudgeCall(),barry:k=>barry(k),XLINES,CREWRADIO,radioHead};
+window.__A8={get G(){return G},get R(){return R},TRACKS,TS,ART,SPRITES,DMG,kaboom:r=>kaboom(r),updRoo:dt=>updRoo(dt),spawnDebris,gridChoice,doShunt,aggr,crowdEvent,SND,CRASH,updRace:dt=>updRace(dt),liveStart:g=>liveStart(g),liveState:p=>liveState(p),LIVE,NET,EVENTS,TROPHY,SET,PAD,padInput:i=>padInput(i),cloudPull:q=>cloudPull(q),crowdEmoji:(k,x)=>crowdEmoji(R.crowd,k,x),emojiOK:()=>emojiOK(),say,radio:(i,k)=>radio(i,k),talk:()=>{talkPress=true},grudgeCall:()=>grudgeCall(),barry:k=>barry(k),XLINES,CREWRADIO,radioHead};
 loadArt().catch(e=>console.warn('Aussie 8: art load failed',e));
 }
 </script>

@@ -2,6 +2,17 @@
   "_howto": "Newest first. Add an entry at the top each time you push an update; the website and the in-game 'What's new' both read this file. tag: new | improved | fixed.",
   "notes": [
     {
+      "version": "2.6",
+      "date": "2026-11-27",
+      "title": "Crowd emoji",
+      "items": [
+        {
+          "tag": "new",
+          "text": "The stadium crowd reacts with pixel emoji over their heads: 😱 at wrecks, 🦘📸 when you hit wildlife, 😠👎 for dirty driving, 😂🔥 for a good sledge, 🔥👏 when you take the lead, and a wall of 🎉🏆 when you win."
+        }
+      ]
+    },
+    {
       "version": "2.5",
       "date": "2026-11-27",
       "title": "Radio & commentary pack",
